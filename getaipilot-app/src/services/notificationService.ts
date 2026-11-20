@@ -209,7 +209,7 @@ export class NotificationService {
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId ??
-        '08c04d39-4b19-437c-ba60-bac94d475279';
+        'b20e09aa-b2a4-483d-ba57-6b1b70f6d988';
 
       let token: string | null = null;
       let lastFetchError: any = null;

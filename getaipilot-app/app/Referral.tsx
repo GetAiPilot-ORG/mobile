@@ -64,6 +64,7 @@ import {
 } from "../src/services/referralService";
 import { AnimatedReferralCard } from "../src/components/home/AnimatedReferralCard";
 import { ReferralWithdrawModal } from "../src/components/referral/ReferralWithdrawModal";
+import { ReferralLoadingScreen } from "../src/components/referral/ReferralLoadingScreen";
 
 type ReferralStatus = "pending" | "completed" | "rewarded" | "cancelled";
 
@@ -140,13 +141,24 @@ export default function ReferralScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadReferralData = async () => {
+  const loadReferralData = async (isInitial = false) => {
+    const startTime = Date.now();
+    const MINIMUM_LOADING_MS = 3200; // 3 to 5 second duration as recommended
+
+    if (isInitial) setLoading(true);
+
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError || !user?.id) {
+      if (isInitial) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MINIMUM_LOADING_MS) {
+          await new Promise((res) => setTimeout(res, MINIMUM_LOADING_MS - elapsed));
+        }
+      }
       setLoading(false);
       return;
     }
@@ -291,18 +303,24 @@ export default function ReferralScreen() {
     } catch (err: any) {
       console.error("[Referral] Failed to load referral data:", err);
     } finally {
+      if (isInitial) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MINIMUM_LOADING_MS) {
+          await new Promise((res) => setTimeout(res, MINIMUM_LOADING_MS - elapsed));
+        }
+      }
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadReferralData();
+    loadReferralData(true);
   }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadReferralData();
+      await loadReferralData(false);
     } finally {
       setRefreshing(false);
     }
@@ -563,14 +581,7 @@ export default function ReferralScreen() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading referral system...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ReferralLoadingScreen minDurationMs={3200} />;
   }
 
   if (error) {
@@ -580,7 +591,7 @@ export default function ReferralScreen() {
           <Text style={[styles.errorTitle, { color: colors.text }]}>Something went wrong</Text>
           <Text style={[styles.errorMessage, { color: colors.textSecondary }]}>{error}</Text>
           <Pressable
-            onPress={loadReferralData}
+            onPress={() => loadReferralData(false)}
             style={[styles.retryButton, { backgroundColor: colors.primary }]}
           >
             <Text style={[styles.retryText, { color: colors.primaryForeground }]}>Try Again</Text>

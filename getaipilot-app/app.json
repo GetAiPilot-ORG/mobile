@@ -4,12 +4,13 @@
     "slug": "getaipilot",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logolarge.webp",
+    "icon": "./assets/images/logolarge.png",
     "scheme": "getaipilot",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.getaipilot",
+      "appleTeamId": "59PG4S626N",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Allow GetAIPilot to use Face ID for fast and secure authentication.",
         "NSMicrophoneUsageDescription": "Allow GetAIPilot to access your microphone to record voice notes and convert speech to text.",
@@ -29,6 +30,7 @@
       }
     },
     "android": {
+      "allowBackup": false,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
@@ -57,7 +59,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.webp"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       [
@@ -88,9 +90,9 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logobag.webp",
+          "icon": "./assets/images/logobag.png",
           "color": "#DEA5A4",
-          "largeIcon": "./assets/images/logo-white-bg.webp"
+          "largeIcon": "./assets/images/logo-white-bg.png"
         }
       ],
       "expo-sharing",
