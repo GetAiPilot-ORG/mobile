@@ -4,8 +4,15 @@ import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 import "react-native-url-polyfill/auto";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
+const DEFAULT_SUPABASE_URL = "https://uklxlappjcuvdqjvecfh.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbHhsYXBwamN1dmRxanZlY2ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNDcwODMsImV4cCI6MjA4MzcyMzA4M30.v-TvyQrYpttcmCnzT9MkUlBgGXXU3lspZCxCYm-Oil4";
+
+const rawUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+const rawKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+const supabaseUrl = rawUrl && rawUrl.startsWith("http") ? rawUrl : DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = rawKey && rawKey.length > 20 ? rawKey : DEFAULT_SUPABASE_ANON_KEY;
 
 const safeStorage = {
   getItem: async (key: string): Promise<string | null> => {
