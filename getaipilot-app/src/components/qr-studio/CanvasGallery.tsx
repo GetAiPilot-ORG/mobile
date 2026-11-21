@@ -8,7 +8,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { CanvasTemplateId, CANVAS_TEMPLATES, CanvasTemplateMeta } from './types';
+import { CanvasTemplateId, CANVAS_TEMPLATES, CanvasTemplateMeta, CanvasConfig, QRStyles } from './types';
+import { NativeCanvasTemplate } from './NativeCanvasTemplate';
 import { useTheme, getColors } from '@/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -16,6 +17,9 @@ interface CanvasGalleryProps {
   selectedCanvas: CanvasTemplateId;
   onSelectCanvas: (id: CanvasTemplateId) => void;
   onNextStep: () => void;
+  config: CanvasConfig;
+  styles: QRStyles;
+  qrContent: string;
 }
 
 const CATEGORIES = [
@@ -33,6 +37,9 @@ export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
   selectedCanvas,
   onSelectCanvas,
   onNextStep,
+  config,
+  styles: qrStyles,
+  qrContent,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -227,6 +234,31 @@ export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
                 </View>
               </View>
 
+              {/* Visual Live Template Mockup Box */}
+              <View
+                style={[
+                  styles.mockupContainer,
+                  {
+                    backgroundColor: isDark ? '#111018' : '#F8FAFC',
+                    borderColor: isSelected
+                      ? isDark
+                        ? '#1E3A2F'
+                        : '#A7F3D0'
+                      : isDark
+                      ? '#242232'
+                      : '#E2E8F0',
+                  },
+                ]}
+              >
+                <NativeCanvasTemplate
+                  canvasId={item.id}
+                  config={config}
+                  styles={qrStyles}
+                  qrContent={qrContent}
+                  scale={0.52}
+                />
+              </View>
+
               {/* Title & Tagline */}
               <View style={{ marginTop: 10 }}>
                 <Text
@@ -410,6 +442,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+  },
+  mockupContainer: {
+    width: '100%',
+    height: 190,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   cardTitle: {
     fontSize: 15,

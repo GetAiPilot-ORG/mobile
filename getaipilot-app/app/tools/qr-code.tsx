@@ -626,6 +626,9 @@ export default function QRCodeGeneratorScreen() {
                 selectedCanvas={selectedCanvas}
                 onSelectCanvas={handleSelectCanvas}
                 onNextStep={() => setActiveStep(2)}
+                config={canvasConfig}
+                styles={qrStyles}
+                qrContent={computedQRContent}
               />
             )}
 

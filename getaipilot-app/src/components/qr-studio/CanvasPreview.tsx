@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { CanvasConfig, CanvasTemplateId, QRStyles, QRType } from './types';
 import { buildCanvasHtml } from './htmlCanvasRenderer';
+import { NativeCanvasTemplate } from './NativeCanvasTemplate';
 import { useTheme, getColors } from '@/theme';
 
 interface CanvasPreviewProps {
@@ -268,18 +269,26 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         ]}
       >
         {previewMode === 'canvas' ? (
-          /* Realistic Standee Mockup Rendered via Embedded WebView */
-          <View style={styles.webViewContainer}>
-            <WebView
-              ref={webViewRef}
-              originWhitelist={['*']}
-              source={{ html: htmlContent }}
-              onMessage={handleWebViewMessage}
-              style={styles.webView}
-              scrollEnabled={false}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
+          /* Realistic Standee Mockup Rendered via Native Vector Components */
+          <View style={styles.nativeMockupViewport}>
+            <NativeCanvasTemplate
+              canvasId={canvasId}
+              config={config}
+              styles={qrStyles}
+              qrContent={qrContent}
+              scale={0.96}
             />
+            {/* Hidden WebView in background strictly for 300 DPI high-res export generation */}
+            <View style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}>
+              <WebView
+                ref={webViewRef}
+                originWhitelist={['*']}
+                source={{ html: htmlContent }}
+                onMessage={handleWebViewMessage}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+              />
+            </View>
           </View>
         ) : (
           /* Pure Standalone Vector QR Code Card */
@@ -447,6 +456,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     padding: 8,
+  },
+  nativeMockupViewport: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
   },
   webViewContainer: {
     width: '100%',
