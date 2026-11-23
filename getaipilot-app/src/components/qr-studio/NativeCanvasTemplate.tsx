@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { CanvasConfig, CanvasTemplateId, QRStyles } from './types';
@@ -26,6 +26,9 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
   // Render template based on canvasId
   const renderContent = () => {
     switch (canvasId) {
+      /* ══════════════════════════════════════════════════════════════════════════
+         1. BOLD RETAIL PRODUCT PROMO
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'bold-retail-promo': {
         const c = config.boldRetailPromo || {
           headline: 'SCAN HERE',
@@ -69,6 +72,9 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         2. CURVED WAVE DIGITAL E-MENU
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'curved-wave-menu': {
         const c = config.curvedWaveMenu || {
           menuTitle: 'E-MENU',
@@ -100,46 +106,51 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
               </View>
             </View>
 
-            <View style={[styles.waveBottom, { padding: 14 * scale }]}>
-              <Text style={[styles.waveDescTitle, { fontSize: 11 * scale }]}>
+            <View style={[styles.waveBottomBox, { padding: 14 * scale }]}>
+              <Text style={[styles.waveDescTitle, { fontSize: 10.5 * scale, color: t.canopy }]}>
                 {c.descriptionTitle || 'QR MENU DESCRIPTION'}
               </Text>
-              <Text style={[styles.waveDescText, { fontSize: 10 * scale }]}>
-                {c.descriptionText || 'More comfortable, faster and eco-friendly.'}
-              </Text>
-              <Text style={[styles.waveBrand, { fontSize: 9.5 * scale, marginTop: 6 * scale }]}>
-                {config.brandName || 'GETAIPILOT'}
+              <Text style={[styles.waveDescText, { fontSize: 9.5 * scale }]}>
+                {c.descriptionText || 'More comfortable, faster and environmentally friendly.'}
               </Text>
             </View>
           </View>
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         3. CLEAR ACRYLIC REVIEW STANDEE
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'acrylic-standee': {
-        const isDark = config.acrylic.acrylicTone === 'smoked';
-        const woodMap: Record<string, string> = {
+        const isSmoked = config.acrylic.acrylicTone === 'smoked';
+        const isFrosted = config.acrylic.acrylicTone === 'frosted';
+        const cardBg = isSmoked ? '#1E293B' : isFrosted ? '#F8FAFC' : '#FFFFFF';
+        const textColor = isSmoked ? '#FFFFFF' : '#0F172A';
+
+        const woodColors: Record<string, string> = {
           walnut: '#3E2723',
           oak: '#A07855',
           birch: '#D7CCC8',
           black: '#1A1A1A',
         };
-        const woodColor = woodMap[config.acrylic.woodFinish] || woodMap.oak;
+        const woodColor = woodColors[config.acrylic.woodFinish] || woodColors.oak;
 
         return (
-          <View style={{ alignItems: 'center', width: 310 * scale }}>
-            {/* Acrylic Glass Plaque */}
+          <View style={[styles.acrylicWrapper, { width: 310 * scale }]}>
             <View
               style={[
                 styles.acrylicPlaque,
                 {
-                  backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.92)',
-                  borderColor: isDark ? '#334155' : '#E2E8F0',
+                  backgroundColor: cardBg,
+                  borderColor: isSmoked ? '#334155' : '#E2E8F0',
                   padding: 16 * scale,
-                  width: 290 * scale,
                 },
               ]}
             >
-              <Text style={[styles.acrylicBrand, { fontSize: 11 * scale, color: isDark ? '#FFFFFF' : '#1E293B' }]}>
+              <View style={[styles.logoPill, { width: 36 * scale, height: 36 * scale }]}>
+                <Ionicons name="business-outline" size={18 * scale} color="#0A4737" />
+              </View>
+              <Text style={[styles.acrylicBrand, { fontSize: 13 * scale, color: textColor }]}>
                 {config.brandName || 'YOUR BUSINESS'}
               </Text>
 
@@ -147,100 +158,110 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
                 <QRCode value={content} size={qrSize} color={fgColor} backgroundColor="#FFFFFF" />
               </View>
 
-              <Text style={[styles.acrylicTagline, { fontSize: 10 * scale, color: isDark ? '#CBD5E1' : '#475569' }]}>
-                {config.acrylic.tagline || 'Scan this QR code to review our stay on Google'}
+              <Text style={[styles.acrylicTagline, { fontSize: 10 * scale, color: isSmoked ? '#CBD5E1' : '#64748B' }]}>
+                {config.acrylic.tagline || 'Scan this QR code to review our service on Google'}
               </Text>
 
-              <View style={[styles.googleReviewRow, { marginTop: 8 * scale }]}>
-                <Text style={{ color: '#F59E0B', fontSize: 12 * scale }}>★★★★★</Text>
-                <Text style={[styles.googleReviewText, { fontSize: 10 * scale, color: isDark ? '#FFFFFF' : '#1E293B' }]}>
-                  {config.acrylic.googleRatingText || 'Google 4.9'}
+              <View style={[styles.googleBadge, { marginTop: 8 * scale }]}>
+                <Ionicons name="star" size={14 * scale} color="#F59E0B" />
+                <Text style={[styles.googleRating, { fontSize: 10.5 * scale, color: textColor }]}>
+                  {config.acrylic.googleRatingText || 'Google 4.9 ★★★★★'}
                 </Text>
               </View>
             </View>
 
             {/* Wooden Base */}
-            <View style={[styles.woodBase, { backgroundColor: woodColor, width: 310 * scale, height: 20 * scale }]}>
-              <View style={styles.woodGroove} />
+            <View style={[styles.woodBase, { backgroundColor: woodColor, height: 18 * scale, width: 320 * scale }]}>
+              <View style={[styles.woodSlot, { height: 3 * scale, width: 280 * scale }]} />
             </View>
-            <View style={[styles.woodShadow, { width: 280 * scale }]} />
+            <View style={[styles.tableShadow, { height: 6 * scale, width: 290 * scale }]} />
           </View>
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         4. TABLETOP FOLDED TENT STAND
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'tent-stand': {
-        const themeMap: Record<string, { bg: string; text: string; border: string }> = {
-          cream: { bg: '#F7EFE9', text: '#3D312A', border: '#E5D7CD' },
-          craft: { bg: '#DFD3C3', text: '#3A3845', border: '#C7B198' },
-          slate: { bg: '#1E293B', text: '#FFFFFF', border: '#475569' },
-          emerald: { bg: '#064E3B', text: '#FFFFFF', border: '#047857' },
+        const themeMap: Record<string, { bg: string; text: string; sub: string }> = {
+          cream: { bg: '#F7EFE9', text: '#3D312A', sub: '#7B695E' },
+          craft: { bg: '#DFD3C3', text: '#3A3845', sub: '#595567' },
+          slate: { bg: '#1E293B', text: '#FFFFFF', sub: '#94A3B8' },
+          emerald: { bg: '#064E3B', text: '#FFFFFF', sub: '#A7F3D0' },
         };
         const t = themeMap[config.tent.standColor] || themeMap.cream;
 
         return (
-          <View style={{ alignItems: 'center', width: 290 * scale }}>
-            <View style={[styles.tentFace, { backgroundColor: t.bg, borderColor: t.border, padding: 16 * scale, width: 280 * scale }]}>
+          <View style={[styles.tentWrapper, { width: 290 * scale }]}>
+            <View style={[styles.tentFace, { backgroundColor: t.bg, padding: 18 * scale }]}>
               <Text style={[styles.tentHeadline, { fontSize: 20 * scale, color: t.text }]}>
-                {config.tent.headline || 'SCAN QR CODE'}
+                {config.tent.headline || 'SCAN'}
               </Text>
-              <Text style={[styles.tentSubtitle, { fontSize: 10 * scale, color: t.text, opacity: 0.8 }]}>
-                {config.tent.subtitle || 'TO VIEW OUR MENU'}
+              <Text style={[styles.tentSubtitle, { fontSize: 10.5 * scale, color: t.sub }]}>
+                {config.tent.subtitle || 'QR CODE TO VIEW MENU'}
               </Text>
+              <View style={[styles.tentDivider, { width: 36 * scale, height: 3 * scale }]} />
 
-              <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale }]}>
+              <View style={[styles.qrPlateWhite, { marginVertical: 12 * scale, padding: 8 * scale }]}>
                 <QRCode value={content} size={qrSize} color={fgColor} backgroundColor="#FFFFFF" />
               </View>
 
-              <Text style={[styles.tentTableNumber, { fontSize: 11 * scale, color: t.text }]}>
-                {config.tent.tableNumber || 'TABLE #04'}
+              <Text style={[styles.tentTable, { fontSize: 11 * scale, color: t.text }]}>
+                {config.tent.tableNumber || 'TABLE #05'}
               </Text>
-              <Text style={[styles.tentNote, { fontSize: 9.5 * scale, color: t.text, opacity: 0.7 }]}>
+              <Text style={[styles.tentNote, { fontSize: 9.5 * scale, color: t.sub }]}>
                 {config.tent.note || 'Touchless digital menu • Order from phone'}
               </Text>
             </View>
-
-            <View style={[styles.tentBaseFold, { width: 285 * scale, height: 10 * scale }]} />
+            <View style={[styles.tentFoldBase, { height: 10 * scale, width: 296 * scale }]} />
+            <View style={[styles.tableShadow, { height: 6 * scale, width: 270 * scale }]} />
           </View>
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         5. RETAIL SCAN & PAY STAND (QRIS / UPI)
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'retail-pay': {
         const themeMap: Record<string, { bg: string; ribbon: string; title: string; border: string }> = {
-          pink: { bg: '#FFF0F5', ribbon: '#EC4899', title: '#F43F5E', border: '#F472B6' },
-          teal: { bg: '#E6FFFA', ribbon: '#14B8A6', title: '#0F766E', border: '#5EEAD4' },
-          amber: { bg: '#FFFBEB', ribbon: '#F59E0B', title: '#92400E', border: '#FCD34D' },
-          indigo: { bg: '#EEF2FF', ribbon: '#6366F1', title: '#4338CA', border: '#A5B4FC' },
+          pink: { bg: '#FFF0F5', ribbon: '#F43F5E', title: '#E11D48', border: '#FBCFE8' },
+          teal: { bg: '#E6FFFA', ribbon: '#0D9488', title: '#0F766E', border: '#99F6E4' },
+          amber: { bg: '#FFFBEB', ribbon: '#D97706', title: '#B45309', border: '#FDE68A' },
+          indigo: { bg: '#EEF2FF', ribbon: '#4F46E5', title: '#4338CA', border: '#C7D2FE' },
         };
         const t = themeMap[config.retailPay.theme] || themeMap.pink;
 
         return (
           <View style={[styles.cardBase, { backgroundColor: t.bg, borderColor: t.border, borderWidth: 3, width: 300 * scale }]}>
-            <View style={[styles.retailRibbon, { backgroundColor: t.ribbon, paddingHorizontal: 12 * scale, paddingVertical: 4 * scale }]}>
-              <Text style={[styles.retailRibbonText, { fontSize: 10 * scale }]}>
+            <View style={[styles.ribbonPill, { backgroundColor: t.ribbon, paddingHorizontal: 12 * scale, paddingVertical: 4 * scale }]}>
+              <Text style={[styles.ribbonText, { fontSize: 9.5 * scale }]}>
                 ✦ {config.retailPay.ribbonText || 'SCAN & PAY'} ✦
               </Text>
             </View>
 
-            <Text style={[styles.retailTitle, { fontSize: 24 * scale, color: t.title }]}>
-              {config.retailPay.title || 'QRIS / UPI PAY'}
+            <Text style={[styles.payTitle, { fontSize: 24 * scale, color: t.title }]}>
+              {config.retailPay.title || 'QRIS / UPI'}
             </Text>
-            <Text style={[styles.retailSub, { fontSize: 9 * scale }]}>
-              {config.retailPay.subtitle || 'AMAN • CEPAT • TERPERCAYA'}
+            <Text style={[styles.paySubtitle, { fontSize: 9 * scale }]}>
+              {config.retailPay.subtitle || 'SAFE • INSTANT • VERIFIED'}
             </Text>
 
-            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale }]}>
+            <View style={[styles.retailQrFrame, { marginVertical: 10 * scale, padding: 12 * scale }]}>
               <QRCode value={content} size={qrSize} color={fgColor} backgroundColor="#FFFFFF" />
             </View>
 
-            <Text style={[styles.retailStoreName, { fontSize: 11 * scale }]}>
-              {config.brandName || 'GETAIPILOT STORE'}
+            <Text style={[styles.merchantName, { fontSize: 11 * scale }]}>
+              {config.brandName || 'BELLA SWEET CAFE'}
             </Text>
 
-            <View style={[styles.retailFooterRow, { marginTop: 8 * scale, paddingTop: 6 * scale }]}>
-              <Text style={[styles.retailFooterText, { fontSize: 9.5 * scale }]}>
-                🛡 {config.retailPay.securityBadge || '100% Instant Verified'}
-              </Text>
-              <Text style={[styles.retailFooterPill, { fontSize: 8.5 * scale }]}>
+            <View style={[styles.retailFooter, { marginTop: 8 * scale }]}>
+              <View style={styles.flexRowCenter}>
+                <Ionicons name="shield-checkmark" size={13 * scale} color="#059669" />
+                <Text style={[styles.verifiedText, { fontSize: 9 * scale }]}>
+                  {config.retailPay.securityBadge || '100% Verified'}
+                </Text>
+              </View>
+              <Text style={[styles.methodsText, { fontSize: 8.5 * scale }]}>
                 {config.retailPay.acceptedMethods || 'All UPI / Cards'}
               </Text>
             </View>
@@ -248,86 +269,672 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         6. ARTISAN SPECIALTY COFFEE ROASTERS
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'coffee-roaster': {
+        const c = config.coffeeRoaster || {
+          shopName: 'NORDIC ROAST CO.',
+          roastOrigin: 'ETHIOPIA YIRGACHEFFE',
+          headline: 'SCAN FOR BREW PROFILE & NOTES',
+          tastingNotes: 'Jasmine • Bergamot • Wild Peach',
+          loyaltyOffer: 'BUY 5 CUPS, GET 1 FREE',
+          coffeeBeansBadge: 'SINGLE ORIGIN // GRADE 1',
+        };
+
         return (
-          <View style={[styles.cardBase, { backgroundColor: '#221C17', borderColor: '#8C6B45', borderWidth: 2, width: 300 * scale }]}>
-            <Text style={[styles.coffeeBadge, { fontSize: 9 * scale }]}>☕ SPECIALTY COFFEE ROASTERS</Text>
-            <Text style={[styles.coffeeTitle, { fontSize: 16 * scale }]}>
-              {config.coffeeRoaster?.shopName || config.brandName || 'TIMBER & BEAN'}
-            </Text>
-            <Text style={[styles.coffeeOrigin, { fontSize: 9.5 * scale }]}>
-              {config.coffeeRoaster?.roastOrigin || 'Single Origin Heirloom'}
-            </Text>
-
-            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, backgroundColor: '#FFFAF2' }]}>
-              <QRCode value={content} size={qrSize} color="#221C17" backgroundColor="#FFFAF2" />
-            </View>
-
-            <Text style={[styles.coffeeHeadline, { fontSize: 11 * scale }]}>
-              {config.coffeeRoaster?.headline || 'SCAN FOR SPECIALTY BREW MENU'}
-            </Text>
-            <Text style={[styles.coffeeNotes, { fontSize: 9.5 * scale }]}>
-              {config.coffeeRoaster?.tastingNotes || 'Jasmine • Blueberry • Honeycomb'}
-            </Text>
-            <Text style={[styles.coffeeLoyalty, { fontSize: 9.5 * scale, marginTop: 6 * scale }]}>
-              {config.coffeeRoaster?.loyaltyOffer || '☕ 10TH CUP FREE'}
-            </Text>
-          </View>
-        );
-      }
-
-      case 'cyber-hologram': {
-        return (
-          <View style={[styles.cardBase, { backgroundColor: '#090D16', borderColor: '#059669', borderWidth: 1, width: 300 * scale }]}>
-            <View style={styles.cyberTopRow}>
-              <Text style={[styles.cyberProject, { fontSize: 9 * scale }]}>
-                {config.cyberHologram?.projectName || 'QUANTUM OS'}
+          <View style={[styles.cardBase, { backgroundColor: '#FDFBF7', borderColor: '#E7E0D3', borderWidth: 2, width: 310 * scale }]}>
+            <View style={styles.centerAlign}>
+              <View style={[styles.coffeeIconCircle, { width: 34 * scale, height: 34 * scale }]}>
+                <Ionicons name="cafe" size={18 * scale} color="#78350F" />
+              </View>
+              <Text style={[styles.coffeeShop, { fontSize: 14 * scale }]}>
+                {c.shopName || 'NORDIC ROAST CO.'}
               </Text>
-              <Text style={[styles.cyberLive, { fontSize: 9 * scale }]}>● LIVE</Text>
+              <Text style={[styles.coffeeOrigin, { fontSize: 9.5 * scale }]}>
+                {c.roastOrigin || 'ETHIOPIA YIRGACHEFFE'}
+              </Text>
             </View>
 
-            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, backgroundColor: '#030712', borderColor: '#059669', borderWidth: 1 }]}>
-              <QRCode value={content} size={qrSize} color="#34D399" backgroundColor="#030712" />
+            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, borderColor: '#D7CCC8', borderWidth: 1 }]}>
+              <QRCode value={content} size={qrSize} color="#451A03" backgroundColor="#FFFFFF" />
             </View>
 
-            <Text style={[styles.cyberHeadline, { fontSize: 11 * scale }]}>
-              {config.cyberHologram?.headline || 'SCAN FOR AR INTERFACE'}
+            <Text style={[styles.coffeeNotes, { fontSize: 10 * scale }]}>
+              {c.tastingNotes || 'Jasmine • Bergamot • Wild Peach'}
             </Text>
-            <Text style={[styles.cyberCoord, { fontSize: 8.5 * scale }]}>
-              {config.cyberHologram?.hudCoordinate || 'SYS.GRID // 47.6062° N'}
+
+            <View style={[styles.loyaltyBox, { marginTop: 8 * scale, paddingVertical: 4 * scale, paddingHorizontal: 10 * scale }]}>
+              <Text style={[styles.loyaltyText, { fontSize: 9 * scale }]}>
+                ★ {c.loyaltyOffer || 'BUY 5 CUPS, GET 1 FREE'} ★
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         7. PRISMATIC CYBER HOLOGRAM & AR
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'cyber-hologram': {
+        const c = config.cyberHologram || {
+          projectName: 'NEO-NEXUS AR',
+          systemTag: 'PROTOCOL // V.4.9',
+          headline: 'SCAN FOR IMMERSIVE AR EXPERIENCE',
+          hudCoordinate: 'NODE: 37.7749° N, 122.4194° W',
+          actionBadge: 'INITIALIZE AR PROTOCOL',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#090D16', borderColor: '#00F0FF', borderWidth: 1.5, width: 310 * scale }]}>
+            <View style={[styles.cyberBadge, { paddingHorizontal: 8 * scale, paddingVertical: 3 * scale }]}>
+              <Text style={[styles.cyberBadgeText, { fontSize: 8.5 * scale }]}>
+                {c.systemTag || 'PROTOCOL // V.4.9'}
+              </Text>
+            </View>
+
+            <Text style={[styles.cyberProject, { fontSize: 16 * scale }]}>
+              {c.projectName || 'NEO-NEXUS AR'}
+            </Text>
+
+            <View style={[styles.cyberQrBox, { marginVertical: 10 * scale, padding: 10 * scale }]}>
+              <QRCode value={content} size={qrSize} color="#00F0FF" backgroundColor="#090D16" />
+            </View>
+
+            <Text style={[styles.cyberCta, { fontSize: 10 * scale }]}>
+              {c.actionBadge || 'INITIALIZE AR PROTOCOL'}
+            </Text>
+            <Text style={[styles.cyberCoord, { fontSize: 8 * scale }]}>
+              {c.hudCoordinate || 'NODE: 37.7749° N, 122.4194° W'}
             </Text>
           </View>
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         8. LUXURY REAL ESTATE MARBLE PLAQUE
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'luxury-realestate': {
+        const c = config.luxuryRealEstate || {
+          propertyTitle: 'VILLA PALAZZO',
+          propertyLocation: 'BEVERLY HILLS PRIVATE ESTATE',
+          ctaHeadline: 'SCAN FOR 3D VIRTUAL TOUR & BROCHURE',
+          agentName: 'Marcus Vance // Global Realty',
+          bedrooms: '6 BEDS',
+          bathrooms: '8 BATHS',
+          areaSqFt: '9,450 SQ FT',
+        };
+
         return (
-          <View style={[styles.cardBase, { backgroundColor: '#0D0F12', borderColor: '#B45309', borderWidth: 1, width: 300 * scale }]}>
-            <Text style={[styles.luxuryBadge, { fontSize: 8.5 * scale }]}>EXCLUSIVE LISTING</Text>
-            <Text style={[styles.luxuryTitle, { fontSize: 16 * scale }]}>
-              {config.luxuryRealEstate?.propertyTitle || 'VILLA SERENA'}
+          <View style={[styles.cardBase, { backgroundColor: '#131217', borderColor: '#D4AF37', borderWidth: 1.5, width: 310 * scale }]}>
+            <Text style={[styles.luxuryTitle, { fontSize: 15 * scale }]}>
+              {c.propertyTitle || 'VILLA PALAZZO'}
             </Text>
-            <Text style={[styles.luxuryLocation, { fontSize: 9.5 * scale }]}>
-              {config.luxuryRealEstate?.propertyLocation || 'Palm Jumeirah'}
-            </Text>
-            <Text style={[styles.luxuryPrice, { fontSize: 10.5 * scale }]}>
-              {config.luxuryRealEstate?.priceGuide || 'From $4,850,000'}
+            <Text style={[styles.luxurySub, { fontSize: 8.5 * scale }]}>
+              {c.propertyLocation || 'BEVERLY HILLS PRIVATE ESTATE'}
             </Text>
 
-            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale }]}>
-              <QRCode value={content} size={qrSize} color="#0D0F12" backgroundColor="#FFFFFF" />
+            <View style={[styles.luxurySpecsRow, { marginVertical: 8 * scale }]}>
+              <Text style={[styles.specText, { fontSize: 9 * scale }]}>{c.bedrooms || '6 BEDS'}</Text>
+              <Text style={styles.specDot}>•</Text>
+              <Text style={[styles.specText, { fontSize: 9 * scale }]}>{c.bathrooms || '8 BATHS'}</Text>
+              <Text style={styles.specDot}>•</Text>
+              <Text style={[styles.specText, { fontSize: 9 * scale }]}>{c.areaSqFt || '9,450 SQ FT'}</Text>
+            </View>
+
+            <View style={[styles.luxuryQrBox, { marginVertical: 6 * scale, padding: 8 * scale }]}>
+              <QRCode value={content} size={qrSize} color="#D4AF37" backgroundColor="#1A1820" />
             </View>
 
             <Text style={[styles.luxuryHeadline, { fontSize: 10.5 * scale }]}>
-              {config.luxuryRealEstate?.ctaHeadline || 'SCAN FOR 3D VIRTUAL TOUR'}
+              {c.ctaHeadline || 'SCAN FOR 3D VIRTUAL TOUR'}
             </Text>
             <Text style={[styles.luxuryAgent, { fontSize: 9 * scale }]}>
-              {config.luxuryRealEstate?.agentName || 'Global Realty'}
+              {c.agentName || 'Global Realty'}
             </Text>
           </View>
         );
       }
 
+      /* ══════════════════════════════════════════════════════════════════════════
+         9. VINTAGE BOTANICAL APOTHECARY & SPA
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'botanical-apothecary': {
+        const c = config.botanicalApothecary || {
+          brandName: 'ST. CLAIR BOTANICALS',
+          apothecarySubtitle: 'Organic Herbal Apothecary & Spa',
+          headline: 'SCAN FOR ELIXIR & SPA RITUAL MENU',
+          batchNumber: 'BATCH NO. 84 • EST. 1928',
+          waxSealText: '100% BOTANICAL',
+          theme: 'emerald-sage',
+        };
+        const themeMap: Record<string, { bg: string; border: string; accent: string; qrColor: string }> = {
+          'vintage-amber': { bg: '#2E1908', border: '#B48246', accent: '#F3CAA1', qrColor: '#221104' },
+          'rose-quartz': { bg: '#2E1420', border: '#D48B9F', accent: '#FED7E2', qrColor: '#290918' },
+          'midnight-apothecary': { bg: '#151C19', border: '#C5A059', accent: '#F5ECD5', qrColor: '#0F1612' },
+          'emerald-sage': { bg: '#182E22', border: '#C9A767', accent: '#FAE5BE', qrColor: '#0B2014' },
+        };
+        const t = themeMap[c.theme] || themeMap['emerald-sage'];
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: t.bg, borderColor: t.border, borderWidth: 2, width: 310 * scale, borderRadius: 28 }]}>
+            <View style={styles.centerAlign}>
+              <View style={[styles.waxSealCircle, { width: 32 * scale, height: 32 * scale, borderColor: t.border }]}>
+                <Ionicons name="leaf" size={16 * scale} color={t.accent} />
+              </View>
+              <Text style={[styles.apothecaryBrand, { fontSize: 13 * scale, color: t.accent }]}>
+                {c.brandName || 'ST. CLAIR BOTANICALS'}
+              </Text>
+              <Text style={[styles.apothecarySub, { fontSize: 9 * scale, color: '#C2D7CB' }]}>
+                {c.apothecarySubtitle || 'Organic Herbal Apothecary & Spa'}
+              </Text>
+            </View>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, borderColor: t.border, borderWidth: 1 }]}>
+              <QRCode value={content} size={qrSize} color={t.qrColor} backgroundColor="#FBF9F4" />
+            </View>
+
+            <Text style={[styles.apothecaryHeadline, { fontSize: 10 * scale, color: t.accent }]}>
+              {c.headline || 'SCAN FOR SPA MENU'}
+            </Text>
+            <Text style={[styles.apothecaryBatch, { fontSize: 8.5 * scale, color: '#8DAA99' }]}>
+              {c.batchNumber || 'BATCH NO. 84 • EST. 1928'}
+            </Text>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         10. FINE DINING LEATHER SOMMELIER
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'leather-sommelier': {
+        const c = config.leatherSommelier || {
+          restaurantName: 'LE CELLIER VINTAGE',
+          sommelierTitle: 'GRAND CRU WINE & TASTING ROOM',
+          headline: 'SCAN FOR SOMMELIER RESERVE WINE LIST',
+          vintageRating: '96 PTS // CELLAR SELECTION',
+          tableNumber: 'TABLE 14 • SOMMELIER SERVICE',
+          theme: 'saddle-cognac',
+        };
+        const themeMap: Record<string, { bg: string; border: string; gold: string; qrColor: string }> = {
+          'midnight-noir': { bg: '#18181B', border: '#D4AF37', gold: '#FAE6A3', qrColor: '#121214' },
+          'bordeaux-burgundy': { bg: '#330F19', border: '#E0A96D', gold: '#F7D8B5', qrColor: '#2B040E' },
+          'forest-hunter': { bg: '#102418', border: '#C9A767', gold: '#F5E2B8', qrColor: '#05160D' },
+          'saddle-cognac': { bg: '#3A1D0D', border: '#C29B38', gold: '#FAE6A3', qrColor: '#240E04' },
+        };
+        const t = themeMap[c.theme] || themeMap['saddle-cognac'];
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: t.bg, borderColor: t.border, borderWidth: 2, width: 310 * scale }]}>
+            <View style={styles.centerAlign}>
+              <Ionicons name="wine" size={20 * scale} color={t.gold} />
+              <Text style={[styles.sommelierName, { fontSize: 13.5 * scale, color: '#FFFFFF' }]}>
+                {c.restaurantName || 'LE CELLIER VINTAGE'}
+              </Text>
+              <Text style={[styles.sommelierTitle, { fontSize: 8.5 * scale, color: t.gold }]}>
+                {c.sommelierTitle || 'GRAND CRU WINE & TASTING ROOM'}
+              </Text>
+            </View>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, borderColor: t.border, borderWidth: 1 }]}>
+              <QRCode value={content} size={qrSize} color={t.qrColor} backgroundColor="#FFFBF7" />
+            </View>
+
+            <View style={[styles.ratingPill, { paddingHorizontal: 10 * scale, paddingVertical: 3 * scale, borderColor: t.border }]}>
+              <Text style={[styles.ratingPillText, { fontSize: 9 * scale, color: t.gold }]}>
+                {c.vintageRating || '96 PTS // CELLAR SELECTION'}
+              </Text>
+            </View>
+            <Text style={[styles.sommelierTable, { fontSize: 8.5 * scale, color: '#D4C4B5', marginTop: 5 * scale }]}>
+              {c.tableNumber || 'TABLE 14 • SOMMELIER SERVICE'}
+            </Text>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         11. NEON COCKTAIL BAR & VIP LOUNGE
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'neon-cocktail': {
+        const c = config.neonCocktail || {
+          venueName: 'THE VELVET ROOM',
+          venueSubtitle: 'Rooftop Cocktail Lounge',
+          tableOrSection: 'VIP BOOTH #07',
+          headline: 'SCAN FOR DRINKS & TAPAS',
+          happyHourText: 'HAPPY HOUR • 2-FOR-1 TIL 9 PM',
+          theme: 'neon-amber',
+        };
+        const themeMap: Record<string, { bg: string; tube: string; neon: string; qrColor: string }> = {
+          'cyber-magenta': { bg: '#20051D', tube: '#F43F5E', neon: '#FB7185', qrColor: '#200216' },
+          'electric-emerald': { bg: '#031E15', tube: '#10B981', neon: '#34D399', qrColor: '#022115' },
+          'midnight-violet': { bg: '#180A2E', tube: '#A855F7', neon: '#C084FC', qrColor: '#130324' },
+          'neon-amber': { bg: '#221303', tube: '#F59E0B', neon: '#FBBF24', qrColor: '#1A0B02' },
+        };
+        const t = themeMap[c.theme] || themeMap['neon-amber'];
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: t.bg, borderColor: t.tube, borderWidth: 2.5, width: 310 * scale, borderRadius: 36 }]}>
+            <View style={styles.centerAlign}>
+              <Text style={[styles.neonVenue, { fontSize: 16 * scale, color: t.neon }]}>
+                {c.venueName || 'THE VELVET ROOM'}
+              </Text>
+              <Text style={[styles.neonSub, { fontSize: 9 * scale, color: '#FDE68A' }]}>
+                {c.tableOrSection || 'VIP BOOTH #07'}
+              </Text>
+            </View>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, borderColor: t.tube, borderWidth: 1 }]}>
+              <QRCode value={content} size={qrSize} color={t.qrColor} backgroundColor="#FFFBEB" />
+            </View>
+
+            <Text style={[styles.neonHeadline, { fontSize: 10.5 * scale, color: '#FFFFFF' }]}>
+              {c.headline || 'SCAN FOR DRINKS & TAPAS'}
+            </Text>
+            <View style={[styles.happyHourBox, { backgroundColor: t.tube, paddingHorizontal: 10 * scale, paddingVertical: 4 * scale, marginTop: 6 * scale }]}>
+              <Text style={[styles.happyHourText, { fontSize: 8.5 * scale }]}>
+                ⚡ {c.happyHourText || 'HAPPY HOUR • 2-FOR-1 TIL 9 PM'} ⚡
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         12. SCENIC SOCIAL FLOATING CARD
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'social-card': {
+        const c = config.socialCard || {
+          subtitle: 'Hospitality & Dining Experience',
+          bgTheme: 'gradient-emerald',
+        };
+        const bg = c.bgTheme === 'gradient-purple' ? '#5B21B6' : '#064E3B';
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: bg, width: 310 * scale, padding: 14 * scale }]}>
+            <View style={[styles.socialFrostedInner, { padding: 14 * scale, borderRadius: 20 }]}>
+              <View style={[styles.avatarCircle, { width: 44 * scale, height: 44 * scale }]}>
+                <Text style={[styles.avatarText, { fontSize: 14 * scale }]}>
+                  {config.brandName ? config.brandName.slice(0, 2).toUpperCase() : 'KD'}
+                </Text>
+              </View>
+
+              <Text style={[styles.socialBrand, { fontSize: 13.5 * scale }]}>
+                {config.brandName || 'Keystone Designs'}
+              </Text>
+              <Text style={[styles.socialSubtitle, { fontSize: 9.5 * scale }]}>
+                {c.subtitle || 'Graphic Design & Marketing'}
+              </Text>
+
+              <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 6 * scale }]}>
+                <QRCode value={content} size={qrSize - 15} color="#000000" backgroundColor="#FFFFFF" />
+              </View>
+
+              <View style={[styles.socialFollowBtn, { paddingVertical: 5 * scale, width: '100%' }]}>
+                <Text style={[styles.socialFollowText, { fontSize: 10 * scale }]}>Follow Our Story</Text>
+              </View>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         13. HEXAGONAL DUAL COUNTER SIGN (INSTAGRAM + WI-FI)
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'hexagon-dual': {
+        const c = config.hexagon || {
+          leftTitle: 'Instagram',
+          leftHandle: '@grand_vista',
+          rightTitle: 'Wi-Fi Access',
+          rightSsid: 'GrandVista_Guest',
+          rightPassword: 'welcomevista26',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#FFFFFF', borderColor: '#C29B38', borderWidth: 2, width: 310 * scale, borderRadius: 24 }]}>
+            <Text style={[styles.hexTopBrand, { fontSize: 11 * scale }]}>
+              {config.brandName || 'THE BEAUTY LAB'}
+            </Text>
+
+            <View style={[styles.hexDualRow, { marginVertical: 10 * scale }]}>
+              {/* Instagram Left */}
+              <View style={styles.hexCol}>
+                <Ionicons name="logo-instagram" size={24 * scale} color="#E1306C" />
+                <Text style={[styles.hexColTitle, { fontSize: 11 * scale }]}>{c.leftTitle || 'Instagram'}</Text>
+                <Text style={[styles.hexColSub, { fontSize: 9 * scale }]}>{c.leftHandle || '@the_label'}</Text>
+              </View>
+
+              <View style={styles.hexDivider} />
+
+              {/* Wi-Fi Right */}
+              <View style={styles.hexCol}>
+                <Ionicons name="wifi" size={24 * scale} color="#0284C7" />
+                <Text style={[styles.hexColTitle, { fontSize: 11 * scale }]}>{c.rightTitle || 'Wi-Fi'}</Text>
+                <Text style={[styles.hexColSub, { fontSize: 8.5 * scale }]}>SSID: {c.rightSsid || 'Guest_Wifi'}</Text>
+                <Text style={[styles.hexColSub, { fontSize: 8.5 * scale }]}>Pass: {c.rightPassword || '12345678'}</Text>
+              </View>
+            </View>
+
+            <View style={[styles.qrPlateWhite, { padding: 6 * scale, borderColor: '#E2E8F0', borderWidth: 1 }]}>
+              <QRCode value={content} size={qrSize - 35} color="#000000" backgroundColor="#FFFFFF" />
+            </View>
+            <Text style={[styles.hexScanText, { fontSize: 8.5 * scale, marginTop: 4 * scale }]}>
+              SCAN TO CONNECT
+            </Text>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         14. ARTISAN PIZZA MELT POSTER
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'pizza-melt': {
+        const c = config.pizzaMelt || {
+          headline: 'WOOD-FIRED PIZZERIA',
+          tagline: 'Scan to browse our artisan menu & order table-side',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#1B4D28', borderColor: '#2E7D32', borderWidth: 2, width: 310 * scale }]}>
+            <Text style={[styles.pizzaTagline, { fontSize: 9.5 * scale }]}>
+              {c.tagline || 'Scan to browse our artisan menu'}
+            </Text>
+            <Text style={[styles.pizzaBrand, { fontSize: 14 * scale }]}>
+              {config.brandName || 'PIZZERIA BELLA'}
+            </Text>
+
+            <View style={[styles.pizzaCrustBar, { height: 16 * scale, width: '100%', marginTop: 8 * scale }]}>
+              <Text style={{ fontSize: 9 * scale, color: '#78350F', fontWeight: 'bold' }}>🍕 ARTISAN WOOD-FIRED CRUST 🍕</Text>
+            </View>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale, backgroundColor: '#FFFEF2' }]}>
+              <QRCode value={content} size={qrSize} color="#1B4D28" backgroundColor="#FFFEF2" />
+            </View>
+
+            <Text style={[styles.pizzaHeadline, { fontSize: 12 * scale }]}>
+              {c.headline || 'WOOD-FIRED PIZZERIA'}
+            </Text>
+            <Text style={[styles.pizzaContactless, { fontSize: 8.5 * scale }]}>
+              Contactless Tabletop Ordering
+            </Text>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         15. SWEET STRAWBERRY QR ART
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'strawberry-art': {
+        const c = config.strawberryArt || {
+          categoryText: 'GETAIPILOT / AI QR ART',
+          headline: 'Fresh Berry Design',
+          subheadline: 'Sweet ideas. Fresh creative design.',
+          buttonText: 'Scan to see more',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#F8F9FB', borderColor: '#FBCFE8', borderWidth: 1.5, width: 310 * scale, alignItems: 'flex-start' }]}>
+            <Text style={[styles.strawCategory, { fontSize: 9 * scale }]}>
+              {c.categoryText || 'GETAIPILOT / AI QR ART'}
+            </Text>
+            <Text style={[styles.strawHeadline, { fontSize: 18 * scale }]}>
+              {c.headline || 'Fresh Berry Design'}
+            </Text>
+            <Text style={[styles.strawSub, { fontSize: 10 * scale }]}>
+              {c.subheadline || 'Sweet ideas. Fresh creative design.'}
+            </Text>
+
+            <View style={[styles.centerAlign, { width: '100%', marginVertical: 8 * scale }]}>
+              <View style={[styles.qrPlateWhite, { padding: 8 * scale, borderColor: '#F472B6', borderWidth: 1 }]}>
+                <QRCode value={content} size={qrSize} color="#B72836" backgroundColor="#FFFFFF" />
+              </View>
+            </View>
+
+            <View style={[styles.strawBtn, { paddingHorizontal: 12 * scale, paddingVertical: 5 * scale }]}>
+              <Ionicons name="nutrition" size={13 * scale} color="#B72836" />
+              <Text style={[styles.strawBtnText, { fontSize: 10 * scale }]}>
+                {c.buttonText || 'Scan to see more'}
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         16. RETRO DAISY FLORAL CAFE POSTER
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'retro-floral': {
+        const c = config.retroFloral || {
+          topBrand: 'GETAIPILOT',
+          subheadline: 'TO SEE OUR MENU AND PROMO',
+          shopName: 'our retro cafe',
+          address: '123 Anywhere St., Any City',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#FFFDEE', borderColor: '#EAE3D2', borderWidth: 2, width: 310 * scale }]}>
+            <Text style={[styles.retroTopBrand, { fontSize: 9.5 * scale }]}>
+              ✿ {c.topBrand || 'GETAIPILOT CAFE'} ✿
+            </Text>
+            <Text style={[styles.retroScanHere, { fontSize: 24 * scale }]}>
+              scan here
+            </Text>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale, borderColor: '#2E261F', borderWidth: 2, borderRadius: 14 }]}>
+              <QRCode value={content} size={qrSize} color="#2E261F" backgroundColor="#FFFFFF" />
+            </View>
+
+            <Text style={[styles.retroSub, { fontSize: 10 * scale }]}>
+              {c.subheadline || 'TO SEE OUR MENU AND PROMO'}
+            </Text>
+            <View style={[styles.retroShopBox, { marginTop: 6 * scale, width: '100%', paddingTop: 6 * scale }]}>
+              <Text style={[styles.retroShopTitle, { fontSize: 12 * scale }]}>{c.shopName || 'our shop'}</Text>
+              <Text style={[styles.retroShopDetail, { fontSize: 9 * scale }]}>{c.address || '123 Anywhere St.'}</Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         17. 3D FLOATING TOKEN SOCIAL SHOWCASE
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'social-showcase': {
+        const c = config.socialShowcase || {
+          platform: 'spotify',
+          username: 'getaipilot',
+          actionText: 'Scan the QR Code to listen',
+        };
+        const platformTheme: Record<string, { bg: string; token: string; icon: any }> = {
+          spotify: { bg: '#128A42', token: '#1ED760', icon: 'musical-notes' },
+          instagram: { bg: '#8134AF', token: '#E1306C', icon: 'logo-instagram' },
+          youtube: { bg: '#990A0A', token: '#FF0000', icon: 'logo-youtube' },
+          tiktok: { bg: '#181822', token: '#25F4EE', icon: 'musical-notes' },
+        };
+        const p = platformTheme[c.platform] || platformTheme.spotify;
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: p.bg, width: 310 * scale, padding: 16 * scale }]}>
+            <View style={[styles.socialShowcaseInner, { padding: 14 * scale, borderRadius: 22 }]}>
+              <View style={[styles.showcaseToken, { backgroundColor: p.token, width: 36 * scale, height: 36 * scale }]}>
+                <Ionicons name={p.icon} size={18 * scale} color="#FFFFFF" />
+              </View>
+
+              <Text style={[styles.showcaseHandle, { fontSize: 14 * scale }]}>
+                @{c.username || 'getaipilot'}
+              </Text>
+              <Text style={[styles.showcaseAction, { fontSize: 9.5 * scale }]}>
+                {c.actionText || 'Scan the QR Code to connect'}
+              </Text>
+
+              <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale }]}>
+                <QRCode value={content} size={qrSize - 15} color="#000000" backgroundColor="#FFFFFF" />
+              </View>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         18. DENIM & LUXURY APPAREL CLOTHING BRAND
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'clothing-brand': {
+        const c = config.clothingBrand || {
+          brandHeader: 'GetAiPilot Denim',
+          headline: 'download GetAiPilot today',
+          subheadline: 'and enjoy exclusive savings',
+          promoBadge: 'NEW COLLECTION',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#F4F8F7', borderColor: '#CBD5E1', borderWidth: 2, width: 310 * scale }]}>
+            <View style={{ width: '100%', alignItems: 'flex-end', marginBottom: 4 * scale }}>
+              <Text style={[styles.denimHeadline, { fontSize: 11 * scale }]}>{c.headline}</Text>
+              <Text style={[styles.denimSub, { fontSize: 10 * scale }]}>{c.subheadline}</Text>
+              <View style={[styles.denimBadge, { backgroundColor: '#000000', paddingHorizontal: 6 * scale, paddingVertical: 2 * scale, marginTop: 3 * scale }]}>
+                <Text style={{ color: '#FFFFFF', fontSize: 7.5 * scale, fontWeight: '800' }}>{c.promoBadge || 'NEW'}</Text>
+              </View>
+            </View>
+
+            <View style={[styles.denimCollarMock, { width: 220 * scale, height: 18 * scale, backgroundColor: '#244A73', borderRadius: 4 }]}>
+              <Text style={{ color: '#E2E8F0', fontSize: 8 * scale, fontWeight: '700' }}>── DENIM COLLAR ──</Text>
+            </View>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 4 * scale, padding: 8 * scale, backgroundColor: '#FFFFFF' }]}>
+              <QRCode value={content} size={qrSize} color="#244A73" backgroundColor="#FFFFFF" />
+            </View>
+
+            <View style={[styles.denimCollarMock, { width: 220 * scale, height: 14 * scale, backgroundColor: '#244A73', borderRadius: 4 }]}>
+              <Text style={{ color: '#E2E8F0', fontSize: 7.5 * scale }}>AUTHENTIC WEAVE</Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         19. DOODLE NATURE LINE-ART LANDSCAPE
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'doodle-nature': {
+        const c = config.doodleNature || {
+          headline: 'DISCOVER NATURE',
+          subheadline: 'Scan to explore wild paths',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#FDFDFA', borderColor: '#E6E2D8', borderWidth: 2, width: 310 * scale }]}>
+            <View style={styles.flexRowBetween}>
+              <Ionicons name="sunny" size={24 * scale} color="#EF4444" />
+              <View style={styles.centerAlign}>
+                <Text style={[styles.doodleTitle, { fontSize: 12 * scale }]}>{c.headline || 'DISCOVER NATURE'}</Text>
+                <Text style={[styles.doodleSub, { fontSize: 8.5 * scale }]}>{c.subheadline || 'Scan to explore wild paths'}</Text>
+              </View>
+              <Ionicons name="sparkles" size={18 * scale} color="#10B981" />
+            </View>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 10 * scale, padding: 8 * scale, borderColor: '#1E293B', borderWidth: 2 }]}>
+              <QRCode value={content} size={qrSize} color="#1E293B" backgroundColor="#FFFFFF" />
+            </View>
+
+            <View style={[styles.doodleBaseline, { width: '100%', borderTopColor: '#1E293B', borderTopWidth: 1.5, paddingTop: 4 * scale }]}>
+              <Text style={{ fontSize: 9 * scale, color: '#64748B', fontWeight: 'bold' }}>
+                🌵 🏔️ 🦆 ORIGINAL ARTWORK 🦆 🏔️ 🌵
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         20. LUXURY FLORAL REVIEW CARD
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'floral-review': {
+        const c = config.floralReview || {
+          headerTitle: 'PLEASE',
+          scriptSubtitle: 'leave us a review',
+          promptText: 'Scan QR code to review us!',
+          ratingStars: 5,
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#D0D5D8', width: 310 * scale, borderRadius: 28 }]}>
+            <Text style={[styles.floralReviewHead, { fontSize: 18 * scale }]}>{c.headerTitle || 'PLEASE'}</Text>
+            <Text style={[styles.floralReviewScript, { fontSize: 13 * scale }]}>{c.scriptSubtitle || 'leave us a review'}</Text>
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale, borderColor: '#D4AF37', borderWidth: 1 }]}>
+              <QRCode value={content} size={qrSize} color="#1A1A1A" backgroundColor="#FFFFFF" />
+            </View>
+
+            <View style={[styles.flexRowCenter, { gap: 4 * scale, marginVertical: 4 * scale }]}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Ionicons key={i} name="star" size={14 * scale} color="#D4AF37" />
+              ))}
+            </View>
+            <Text style={[styles.floralReviewPrompt, { fontSize: 9.5 * scale }]}>
+              {c.promptText || 'Scan QR code to review us!'}
+            </Text>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         21. BOTANICAL BLOOM ON STEM
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'blooming-flower': {
+        const c = config.bloomingFlower || {
+          brandName: 'GetAiPilot',
+          tagline: 'ORGANIC ESSENCE',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#FFFFFF', borderColor: '#FBCFE8', borderWidth: 1.5, width: 310 * scale }]}>
+            <View style={[styles.flowerCore, { padding: 8 * scale, borderColor: '#F472B6', borderWidth: 1.5, borderRadius: 24 }]}>
+              <QRCode value={content} size={qrSize} color="#C22B1E" backgroundColor="#FFFFFF" />
+            </View>
+
+            {/* Botanical Stem */}
+            <View style={[styles.stemBar, { height: 26 * scale, width: 4 * scale, backgroundColor: '#4A7C59', marginVertical: 4 * scale }]} />
+
+            <View style={[styles.flexRowBetween, { width: '100%', borderTopColor: '#F1F5F9', borderTopWidth: 1, paddingTop: 6 * scale }]}>
+              <View style={styles.flexRowCenter}>
+                <Ionicons name="leaf" size={16 * scale} color="#4A7C59" />
+                <Text style={[styles.flowerBrand, { fontSize: 12 * scale, marginLeft: 4 * scale }]}>
+                  {c.brandName || 'GetAiPilot'}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 8 * scale, color: '#4A7C59', fontWeight: 'bold' }}>
+                {c.tagline || 'ORGANIC ESSENCE'}
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         22. 3D PLUSH FUZZY CHARACTER CREATURE
+         ══════════════════════════════════════════════════════════════════════════ */
+      case 'plush-character': {
+        const c = config.plushCharacter || {
+          brandTag: 'GETAIPILOT',
+          headline: 'QR codes. With character.',
+        };
+
+        return (
+          <View style={[styles.cardBase, { backgroundColor: '#FBF6EE', borderColor: '#EDE3D4', borderWidth: 1.5, width: 310 * scale }]}>
+            <Text style={[styles.plushTag, { fontSize: 9 * scale }]}>{c.brandTag || 'GETAIPILOT'}</Text>
+            <Text style={[styles.plushHeadline, { fontSize: 16 * scale }]}>{c.headline || 'QR codes. With character.'}</Text>
+
+            <View style={[styles.plushCube, { backgroundColor: '#FDE68A', padding: 8 * scale, borderRadius: 22, marginVertical: 8 * scale }]}>
+              <QRCode value={content} size={qrSize} color="#3B2210" backgroundColor="#FEF9C3" />
+            </View>
+
+            <Text style={[styles.plushScanText, { fontSize: 9 * scale }]}>
+              Scan to see more character designs
+            </Text>
+          </View>
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         23. CLASSIC / MINIMAL FALLBACK
+         ══════════════════════════════════════════════════════════════════════════ */
       case 'classic':
       default: {
         return (
@@ -373,42 +980,59 @@ const styles = StyleSheet.create({
   },
   centerAlign: {
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flexRowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flexRowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   qrPlateWhite: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
+
+  // 1. Bold Retail
   boldHeadline: {
     fontWeight: '900',
-    letterSpacing: -0.3,
-    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   boldSubheadline: {
     fontWeight: '700',
     letterSpacing: 0.8,
     marginTop: 2,
-    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   promoPill: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 10,
+    backgroundColor: '#041812',
+    borderRadius: 12,
     alignItems: 'center',
     width: '100%',
   },
   promoPillText: {
     fontWeight: '900',
+    letterSpacing: 0.5,
   },
   promoUrl: {
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 1,
+    color: '#9CA3AF',
+    marginTop: 2,
+    fontWeight: '500',
   },
+
+  // 2. Wave Menu
   waveCanopy: {
     width: '100%',
     alignItems: 'center',
@@ -416,248 +1040,620 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 22,
   },
   waveTitle: {
-    fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1,
+    fontWeight: '900',
+    letterSpacing: 2,
   },
   waveSub: {
-    color: 'rgba(255,255,255,0.9)',
+    color: '#E0F2FE',
+    fontWeight: '600',
     marginTop: 2,
   },
-  waveBottom: {
+  waveBottomBox: {
+    width: '100%',
     alignItems: 'center',
   },
   waveDescTitle: {
-    fontWeight: '800',
-    color: '#1E293B',
-    textTransform: 'uppercase',
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   waveDescText: {
     color: '#64748B',
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: 4,
+    lineHeight: 14,
   },
-  waveBrand: {
-    fontWeight: '700',
-    color: '#94A3B8',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+
+  // 3. Acrylic Standee
+  acrylicWrapper: {
+    alignItems: 'center',
   },
   acrylicPlaque: {
-    borderRadius: 20,
+    width: '100%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderBottomLeftRadius: 4,
     borderBottomRightRadius: 4,
     borderWidth: 2,
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+  },
+  logoPill: {
+    borderRadius: 18,
+    backgroundColor: '#E8F5E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
   acrylicBrand: {
-    fontWeight: '900',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    fontWeight: '800',
+    letterSpacing: 1.2,
   },
   acrylicTagline: {
     textAlign: 'center',
-    fontWeight: '500',
     marginTop: 4,
   },
-  googleReviewRow: {
+  googleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.06)',
-    paddingTop: 6,
-    width: '100%',
-    justifyContent: 'center',
+    gap: 4,
   },
-  googleReviewText: {
+  googleRating: {
     fontWeight: '700',
   },
   woodBase: {
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: -2,
   },
-  woodGroove: {
-    width: '85%',
-    height: 2,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 1,
+  woodSlot: {
+    backgroundColor: '#00000040',
+    borderRadius: 3,
   },
-  woodShadow: {
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    borderRadius: 2,
-    marginTop: 1,
+  tableShadow: {
+    backgroundColor: '#00000020',
+    borderRadius: 10,
+    marginTop: 2,
+  },
+
+  // 4. Tent Stand
+  tentWrapper: {
+    alignItems: 'center',
   },
   tentFace: {
-    borderRadius: 18,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    borderWidth: 2,
+    width: '100%',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
     alignItems: 'center',
   },
   tentHeadline: {
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 2,
   },
   tentSubtitle: {
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    marginTop: 2,
   },
-  tentTableNumber: {
+  tentDivider: {
+    backgroundColor: '#D97706',
+    borderRadius: 2,
+    marginTop: 4,
+  },
+  tentTable: {
     fontWeight: '900',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
   tentNote: {
-    textAlign: 'center',
-    marginTop: 1,
+    marginTop: 2,
   },
-  tentBaseFold: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
+  tentFoldBase: {
+    backgroundColor: '#00000030',
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
   },
-  retailRibbon: {
-    borderRadius: 20,
-    marginBottom: 6,
+
+  // 5. Retail Pay
+  ribbonPill: {
+    borderRadius: 12,
+    marginBottom: 4,
   },
-  retailRibbonText: {
-    fontWeight: '900',
+  ribbonText: {
     color: '#FFFFFF',
-    letterSpacing: 0.8,
-  },
-  retailTitle: {
     fontWeight: '900',
-    letterSpacing: -0.3,
+    letterSpacing: 1,
   },
-  retailSub: {
+  payTitle: {
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  paySubtitle: {
     color: '#64748B',
     fontWeight: '700',
     letterSpacing: 0.8,
   },
-  retailStoreName: {
+  retailQrFrame: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+  },
+  merchantName: {
     fontWeight: '900',
     color: '#1E293B',
-    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
-  retailFooterRow: {
+  retailFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    paddingTop: 6,
+    borderTopColor: '#00000010',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.06)',
   },
-  retailFooterText: {
+  verifiedText: {
+    color: '#059669',
     fontWeight: '700',
-    color: '#10B981',
+    marginLeft: 3,
   },
-  retailFooterPill: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    color: '#475569',
+  methodsText: {
+    color: '#64748B',
     fontWeight: '600',
   },
-  coffeeBadge: {
-    color: '#D9A86C',
-    fontWeight: '800',
-    letterSpacing: 0.8,
+
+  // 6. Coffee Roaster
+  coffeeIconCircle: {
+    borderRadius: 17,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  coffeeTitle: {
-    color: '#FFFFFF',
+  coffeeShop: {
     fontWeight: '900',
-    marginTop: 2,
+    color: '#451A03',
+    letterSpacing: 1,
   },
   coffeeOrigin: {
-    color: '#E0CFBE',
-    fontStyle: 'italic',
-  },
-  coffeeHeadline: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    color: '#92400E',
+    letterSpacing: 0.8,
+    marginTop: 1,
   },
   coffeeNotes: {
-    color: '#D9A86C',
-    marginTop: 2,
-  },
-  coffeeLoyalty: {
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '700',
-  },
-  cyberTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(5,150,105,0.3)',
-    paddingBottom: 4,
-  },
-  cyberProject: {
-    color: '#34D399',
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  cyberLive: {
-    color: '#34D399',
-    fontWeight: '800',
-  },
-  cyberHeadline: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    fontWeight: '600',
+    color: '#78350F',
     letterSpacing: 0.5,
   },
-  cyberCoord: {
-    color: '#6EE7B7',
-    marginTop: 2,
+  loyaltyBox: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
   },
-  luxuryBadge: {
-    color: '#F59E0B',
+  loyaltyText: {
     fontWeight: '800',
+    color: '#92400E',
+    letterSpacing: 0.5,
+  },
+
+  // 7. Cyber Hologram
+  cyberBadge: {
+    borderWidth: 1,
+    borderColor: '#00F0FF',
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  cyberBadgeText: {
+    color: '#00F0FF',
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  cyberProject: {
+    color: '#FFFFFF',
+    fontWeight: '900',
     letterSpacing: 1.2,
   },
+  cyberQrBox: {
+    backgroundColor: '#090D16',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#00F0FF',
+  },
+  cyberCta: {
+    color: '#00F0FF',
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  cyberCoord: {
+    color: '#64748B',
+    fontFamily: 'monospace',
+    marginTop: 4,
+  },
+
+  // 8. Luxury Real Estate
   luxuryTitle: {
     color: '#FFFFFF',
     fontWeight: '900',
-    marginTop: 2,
+    letterSpacing: 1.5,
   },
-  luxuryLocation: {
-    color: '#94A3B8',
+  luxurySub: {
+    color: '#D4AF37',
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 1,
   },
-  luxuryPrice: {
-    color: '#F59E0B',
-    fontWeight: '800',
-    marginTop: 2,
+  luxurySpecsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  specText: {
+    color: '#E2E8F0',
+    fontWeight: '600',
+  },
+  specDot: {
+    color: '#D4AF37',
+    fontWeight: 'bold',
+  },
+  luxuryQrBox: {
+    backgroundColor: '#1A1820',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
   },
   luxuryHeadline: {
-    color: '#FDE68A',
+    color: '#FFFFFF',
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   luxuryAgent: {
     color: '#94A3B8',
     marginTop: 2,
   },
+
+  // 9. Botanical Apothecary
+  waxSealCircle: {
+    borderRadius: 16,
+    backgroundColor: '#0B3820',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  apothecaryBrand: {
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  apothecarySub: {
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  apothecaryHeadline: {
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  apothecaryBatch: {
+    marginTop: 2,
+    fontWeight: '500',
+  },
+
+  // 10. Leather Sommelier
+  sommelierName: {
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginTop: 2,
+  },
+  sommelierTitle: {
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 1,
+  },
+  ratingPill: {
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: '#261105',
+  },
+  ratingPillText: {
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  sommelierTable: {
+    fontWeight: '600',
+  },
+
+  // 11. Neon Cocktail
+  neonVenue: {
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  neonSub: {
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 1,
+  },
+  neonHeadline: {
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  happyHourBox: {
+    borderRadius: 8,
+  },
+  happyHourText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+
+  // 12. Social Card
+  socialFrostedInner: {
+    backgroundColor: '#FFFFFFEE',
+    alignItems: 'center',
+    width: '100%',
+  },
+  avatarCircle: {
+    borderRadius: 22,
+    backgroundColor: '#829079',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+  },
+  socialBrand: {
+    color: '#0F172A',
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  socialSubtitle: {
+    color: '#64748B',
+    marginTop: 1,
+  },
+  socialFollowBtn: {
+    backgroundColor: '#829079',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  socialFollowText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+
+  // 13. Hexagon Dual
+  hexTopBrand: {
+    fontWeight: '800',
+    color: '#EC4899',
+    letterSpacing: 1.5,
+  },
+  hexDualRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  hexCol: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  hexColTitle: {
+    fontWeight: '900',
+    color: '#0F172A',
+    marginTop: 3,
+  },
+  hexColSub: {
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  hexDivider: {
+    width: 1,
+    height: 48,
+    backgroundColor: '#CBD5E1',
+  },
+  hexScanText: {
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+  },
+
+  // 14. Pizza Melt
+  pizzaTagline: {
+    color: '#FAEED0',
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  pizzaBrand: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    marginTop: 2,
+  },
+  pizzaCrustBar: {
+    backgroundColor: '#F5EBC6',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pizzaHeadline: {
+    color: '#FAEED0',
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  pizzaContactless: {
+    color: '#A2C4AC',
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+
+  // 15. Strawberry Art
+  strawCategory: {
+    color: '#BF3844',
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  strawHeadline: {
+    color: '#B72836',
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  strawSub: {
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  strawBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDE9EB',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F8C5CB',
+    gap: 4,
+  },
+  strawBtnText: {
+    color: '#B72836',
+    fontWeight: '800',
+  },
+
+  // 16. Retro Floral
+  retroTopBrand: {
+    color: '#4A3E35',
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  retroScanHere: {
+    fontWeight: '900',
+    color: '#2E261F',
+    letterSpacing: 0.5,
+  },
+  retroSub: {
+    color: '#2E261F',
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  retroShopBox: {
+    alignItems: 'center',
+    borderTopColor: '#E2D7C5',
+    borderTopWidth: 1,
+  },
+  retroShopTitle: {
+    fontWeight: '900',
+    color: '#34523C',
+  },
+  retroShopDetail: {
+    color: '#5E544A',
+  },
+
+  // 17. Social Showcase
+  socialShowcaseInner: {
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    width: '100%',
+  },
+  showcaseToken: {
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  showcaseHandle: {
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  showcaseAction: {
+    color: '#64748B',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+
+  // 18. Denim Clothing
+  denimHeadline: {
+    color: '#1E293B',
+    fontWeight: '500',
+  },
+  denimSub: {
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  denimBadge: {
+    borderRadius: 6,
+  },
+  denimCollarMock: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // 19. Doodle Nature
+  doodleTitle: {
+    fontWeight: '900',
+    color: '#1E293B',
+    letterSpacing: 1,
+  },
+  doodleSub: {
+    color: '#64748B',
+  },
+  doodleBaseline: {
+    alignItems: 'center',
+  },
+
+  // 20. Floral Review
+  floralReviewHead: {
+    fontWeight: '900',
+    color: '#1A1B1D',
+    letterSpacing: 2,
+  },
+  floralReviewScript: {
+    fontStyle: 'italic',
+    color: '#34383D',
+  },
+  floralReviewPrompt: {
+    color: '#34383D',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // 21. Blooming Flower
+  flowerCore: {
+    backgroundColor: '#FFFFFF',
+  },
+  stemBar: {
+    borderRadius: 2,
+  },
+  flowerBrand: {
+    fontWeight: '900',
+    color: '#1C1917',
+  },
+
+  // 22. Plush Character
+  plushTag: {
+    fontWeight: '700',
+    color: '#93785D',
+    letterSpacing: 1.5,
+  },
+  plushHeadline: {
+    fontWeight: '800',
+    color: '#2C241E',
+    marginTop: 2,
+  },
+  plushCube: {
+    borderWidth: 2,
+    borderColor: '#FEF08A',
+  },
+  plushScanText: {
+    color: '#6F5E51',
+    fontWeight: '600',
+  },
+
+  // 23. Classic
   classicBrand: {
     fontWeight: '800',
     color: '#0F172A',
-    textTransform: 'uppercase',
+    marginBottom: 4,
   },
   classicScanText: {
     color: '#64748B',
-    marginTop: 2,
+    fontWeight: '500',
   },
 });
