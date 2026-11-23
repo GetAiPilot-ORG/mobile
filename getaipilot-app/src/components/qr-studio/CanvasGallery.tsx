@@ -9,9 +9,10 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SvgXml } from 'react-native-svg';
 import { CanvasTemplateId, CANVAS_TEMPLATES, CanvasTemplateMeta, CanvasConfig, QRStyles } from './types';
 import { NativeCanvasTemplate } from './NativeCanvasTemplate';
-import { TEMPLATE_PREVIEW_IMAGES } from './templateAssets';
+import { TEMPLATE_RASTER_IMAGES, TEMPLATE_SVG_STRINGS } from './templateAssets';
 import { useTheme, getColors } from '@/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -30,9 +31,22 @@ const CATEGORIES = [
   'Restaurants, Cafes & Bars',
   'Wellness, Spas & Beauty',
   'Fine Dining & Wineries',
-  'Tech, SaaS & Events',
-  'Hotels, Clinics & Salons',
+  'Specialty Cafes & Bakeries',
+  'Tech Startups & Web3',
+  'Influencers & Musicians',
+  'Fashion & Retail',
+  'Influencers & Creators',
+  'Salons, Cafes & Studios',
   'Creative & Art',
+  'Florists, Spas & Salons',
+  'Organic & Wellness',
+  'Character & Gaming',
+  'Real Estate & Architecture',
+  'Nightlife & Dining',
+  'Hospitality & Retail',
+  'Creative & Posters',
+  'Cafes & Bakeries',
+  'General Purpose',
 ];
 
 export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
@@ -252,11 +266,19 @@ export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
                   },
                 ]}
               >
-                {TEMPLATE_PREVIEW_IMAGES[item.id] ? (
+                {TEMPLATE_SVG_STRINGS[item.id] ? (
+                  <View style={{ width: '100%', height: '100%', padding: 6, alignItems: 'center', justifyContent: 'center' }}>
+                    <SvgXml
+                      xml={TEMPLATE_SVG_STRINGS[item.id]}
+                      width="100%"
+                      height="100%"
+                    />
+                  </View>
+                ) : TEMPLATE_RASTER_IMAGES[item.id] ? (
                   <Image
-                    source={TEMPLATE_PREVIEW_IMAGES[item.id]}
+                    source={TEMPLATE_RASTER_IMAGES[item.id]}
                     style={styles.templateImage}
-                    resizeMode="cover"
+                    resizeMode="contain"
                   />
                 ) : (
                   <NativeCanvasTemplate
@@ -455,7 +477,7 @@ const styles = StyleSheet.create({
   },
   mockupContainer: {
     width: '100%',
-    height: 190,
+    height: 220,
     borderRadius: 16,
     borderWidth: 1,
     marginTop: 10,

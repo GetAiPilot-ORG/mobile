@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import QRCode from 'react-native-qrcode-svg';
+import { SvgXml } from 'react-native-svg';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
@@ -19,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CanvasConfig, CanvasTemplateId, QRStyles, QRType } from './types';
 import { buildCanvasHtml } from './htmlCanvasRenderer';
 import { NativeCanvasTemplate } from './NativeCanvasTemplate';
-import { TEMPLATE_PREVIEW_IMAGES } from './templateAssets';
+import { TEMPLATE_RASTER_IMAGES, TEMPLATE_SVG_STRINGS } from './templateAssets';
 import { useTheme, getColors } from '@/theme';
 
 interface CanvasPreviewProps {
@@ -304,33 +305,39 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         {previewMode === 'poster' ? (
           /* High-Resolution Studio Poster Design from getaipilot.in */
           <View style={styles.posterContainer}>
-            <Image
-              source={TEMPLATE_PREVIEW_IMAGES[canvasId] || TEMPLATE_PREVIEW_IMAGES['bold-retail-promo']}
-              style={styles.fullPosterImage}
-              resizeMode="contain"
-            />
+            {TEMPLATE_SVG_STRINGS[canvasId] ? (
+              <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                <SvgXml xml={TEMPLATE_SVG_STRINGS[canvasId]} width="100%" height="100%" />
+              </View>
+            ) : TEMPLATE_RASTER_IMAGES[canvasId] ? (
+              <Image
+                source={TEMPLATE_RASTER_IMAGES[canvasId]}
+                style={styles.fullPosterImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <Image
+                source={TEMPLATE_RASTER_IMAGES['bold-retail-promo']}
+                style={styles.fullPosterImage}
+                resizeMode="contain"
+              />
+            )}
           </View>
         ) : previewMode === 'canvas' ? (
-          /* Realistic Standee Mockup Rendered via Native Vector Components */
-          <View style={styles.nativeMockupViewport}>
-            <NativeCanvasTemplate
-              canvasId={canvasId}
-              config={config}
-              styles={qrStyles}
-              qrContent={qrContent}
-              scale={0.96}
+          /* True-to-life Standee Mockup Rendered via HTML/CSS Studio Canvas matching getaipilot.in */
+          <View style={styles.webViewContainer}>
+            <WebView
+              ref={webViewRef}
+              originWhitelist={['*']}
+              source={{ html: htmlContent }}
+              onMessage={handleWebViewMessage}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              style={styles.webView}
+              scrollEnabled={true}
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
             />
-            {/* Hidden WebView in background strictly for 300 DPI high-res export generation */}
-            <View style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}>
-              <WebView
-                ref={webViewRef}
-                originWhitelist={['*']}
-                source={{ html: htmlContent }}
-                onMessage={handleWebViewMessage}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-              />
-            </View>
           </View>
         ) : (
           /* Pure Standalone Vector QR Code Card */
@@ -519,7 +526,7 @@ const styles = StyleSheet.create({
   },
   webViewContainer: {
     width: '100%',
-    height: 480,
+    height: 530,
     borderRadius: 16,
     overflow: 'hidden',
   },

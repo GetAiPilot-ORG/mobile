@@ -1,28 +1,24 @@
-export const TEMPLATE_PREVIEW_IMAGES: Record<string, any> = {
-  'bold-retail-promo': require('../../../assets/templates/bold-retail-promo.jpg'),
-  'curved-wave-menu': require('../../../assets/templates/curved-wave-menu.jpg'),
-  'botanical-apothecary': require('../../../assets/templates/botanical-apothecary.jpg'),
-  'leather-sommelier': require('../../../assets/templates/leather-sommelier.jpg'),
-  'coffee-roaster': require('../../../assets/templates/coffee-roaster.jpg'),
-  'cyber-hologram': require('../../../assets/templates/cyber-hologram.jpg'),
-  'luxury-realestate': require('../../../assets/templates/luxury-realestate.jpg'),
-  'neon-cocktail': require('../../../assets/templates/neon-cocktail.jpg'),
+import { TEMPLATE_SVG_STRINGS } from './templateSvgAssets';
+
+export const TEMPLATE_RASTER_IMAGES: Record<string, any> = {
   'acrylic-standee': require('../../../assets/templates/acrylic-standee.png'),
+  'social-card': require('../../../assets/templates/social-card.png'),
+  'hexagon-dual': require('../../../assets/templates/hexagon-dual.png'),
+  'tent-stand': require('../../../assets/templates/tent-stand.png'),
+  'retail-pay': require('../../../assets/templates/retail-pay.png'),
   'pizza-melt': require('../../../assets/templates/pizza-melt.jpg'),
   'strawberry-art': require('../../../assets/templates/strawberry-art.jpg'),
   'retro-floral': require('../../../assets/templates/retro-floral.jpg'),
   'social-showcase': require('../../../assets/templates/social-showcase.jpg'),
   'clothing-brand': require('../../../assets/templates/denim-fashion.jpg'),
-  'social-card': require('../../../assets/templates/social-card.png'),
-  'hexagon-dual': require('../../../assets/templates/hexagon-dual.png'),
-  'tent-stand': require('../../../assets/templates/tent-stand.png'),
-  'retail-pay': require('../../../assets/templates/retail-pay.png'),
   'doodle-nature': require('../../../assets/templates/doodle-nature.jpg'),
   'floral-review': require('../../../assets/templates/floral-review.jpg'),
   'blooming-flower': require('../../../assets/templates/blooming-flower.jpg'),
   'plush-character': require('../../../assets/templates/plush-character.jpg'),
   'classic': require('../../../assets/templates/acrylic-standee.png'),
 };
+
+export { TEMPLATE_SVG_STRINGS };
 
 export const TEMPLATE_COMPONENT_ASSETS = {
   pizzaTop: require('../../../assets/templates/pizza-top.jpg'),
