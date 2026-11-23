@@ -6,10 +6,12 @@ import {
   Pressable,
   TextInput,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CanvasTemplateId, CANVAS_TEMPLATES, CanvasTemplateMeta, CanvasConfig, QRStyles } from './types';
 import { NativeCanvasTemplate } from './NativeCanvasTemplate';
+import { TEMPLATE_PREVIEW_IMAGES } from './templateAssets';
 import { useTheme, getColors } from '@/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -250,13 +252,21 @@ export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
                   },
                 ]}
               >
-                <NativeCanvasTemplate
-                  canvasId={item.id}
-                  config={config}
-                  styles={qrStyles}
-                  qrContent={qrContent}
-                  scale={0.52}
-                />
+                {TEMPLATE_PREVIEW_IMAGES[item.id] ? (
+                  <Image
+                    source={TEMPLATE_PREVIEW_IMAGES[item.id]}
+                    style={styles.templateImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <NativeCanvasTemplate
+                    canvasId={item.id}
+                    config={config}
+                    styles={qrStyles}
+                    qrContent={qrContent}
+                    scale={0.52}
+                  />
+                )}
               </View>
 
               {/* Title & Tagline */}
@@ -452,6 +462,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  templateImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
   },
   cardTitle: {
     fontSize: 15,

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { CanvasConfig, CanvasTemplateId, QRStyles } from './types';
+import { TEMPLATE_COMPONENT_ASSETS } from './templateAssets';
 
 interface NativeCanvasTemplateProps {
   canvasId: CanvasTemplateId;
@@ -642,13 +643,23 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
               {config.brandName || 'PIZZERIA BELLA'}
             </Text>
 
-            <View style={[styles.pizzaCrustBar, { height: 16 * scale, width: '100%', marginTop: 8 * scale }]}>
-              <Text style={{ fontSize: 9 * scale, color: '#78350F', fontWeight: 'bold' }}>🍕 ARTISAN WOOD-FIRED CRUST 🍕</Text>
+            {/* Top Wood-Fired Pizza Arc */}
+            <Image
+              source={TEMPLATE_COMPONENT_ASSETS.pizzaTop}
+              style={{ width: 180 * scale, height: 42 * scale, borderTopLeftRadius: 16, borderTopRightRadius: 16, marginTop: 4 * scale }}
+              resizeMode="cover"
+            />
+
+            <View style={[styles.qrPlateWhite, { padding: 6 * scale, backgroundColor: '#FFFEF2', borderRadius: 0 }]}>
+              <QRCode value={content} size={qrSize - 20} color="#1B4D28" backgroundColor="#FFFEF2" />
             </View>
 
-            <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale, backgroundColor: '#FFFEF2' }]}>
-              <QRCode value={content} size={qrSize} color="#1B4D28" backgroundColor="#FFFEF2" />
-            </View>
+            {/* Bottom Wood-Fired Pizza Arc */}
+            <Image
+              source={TEMPLATE_COMPONENT_ASSETS.pizzaBottom}
+              style={{ width: 180 * scale, height: 42 * scale, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, marginBottom: 4 * scale }}
+              resizeMode="cover"
+            />
 
             <Text style={[styles.pizzaHeadline, { fontSize: 12 * scale }]}>
               {c.headline || 'WOOD-FIRED PIZZERIA'}
@@ -794,17 +805,21 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
               </View>
             </View>
 
-            <View style={[styles.denimCollarMock, { width: 220 * scale, height: 18 * scale, backgroundColor: '#244A73', borderRadius: 4 }]}>
-              <Text style={{ color: '#E2E8F0', fontSize: 8 * scale, fontWeight: '700' }}>── DENIM COLLAR ──</Text>
+            <Image
+              source={TEMPLATE_COMPONENT_ASSETS.denimCollar}
+              style={{ width: 220 * scale, height: 48 * scale }}
+              resizeMode="contain"
+            />
+
+            <View style={[styles.qrPlateWhite, { marginVertical: 2 * scale, padding: 6 * scale, backgroundColor: '#FFFFFF' }]}>
+              <QRCode value={content} size={qrSize - 10} color="#244A73" backgroundColor="#FFFFFF" />
             </View>
 
-            <View style={[styles.qrPlateWhite, { marginVertical: 4 * scale, padding: 8 * scale, backgroundColor: '#FFFFFF' }]}>
-              <QRCode value={content} size={qrSize} color="#244A73" backgroundColor="#FFFFFF" />
-            </View>
-
-            <View style={[styles.denimCollarMock, { width: 220 * scale, height: 14 * scale, backgroundColor: '#244A73', borderRadius: 4 }]}>
-              <Text style={{ color: '#E2E8F0', fontSize: 7.5 * scale }}>AUTHENTIC WEAVE</Text>
-            </View>
+            <Image
+              source={TEMPLATE_COMPONENT_ASSETS.denimHem}
+              style={{ width: 220 * scale, height: 36 * scale }}
+              resizeMode="contain"
+            />
           </View>
         );
       }
@@ -858,8 +873,15 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
             <Text style={[styles.floralReviewHead, { fontSize: 18 * scale }]}>{c.headerTitle || 'PLEASE'}</Text>
             <Text style={[styles.floralReviewScript, { fontSize: 13 * scale }]}>{c.scriptSubtitle || 'leave us a review'}</Text>
 
-            <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale, borderColor: '#D4AF37', borderWidth: 1 }]}>
-              <QRCode value={content} size={qrSize} color="#1A1A1A" backgroundColor="#FFFFFF" />
+            <View style={{ width: 170 * scale, height: 170 * scale, marginVertical: 6 * scale, alignItems: 'center', justifyContent: 'center' }}>
+              <Image
+                source={TEMPLATE_COMPONENT_ASSETS.floralBouquet}
+                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                resizeMode="cover"
+              />
+              <View style={[styles.qrPlateWhite, { padding: 6 * scale, backgroundColor: '#FFFFFFFA' }]}>
+                <QRCode value={content} size={qrSize - 35} color="#1A1A1A" backgroundColor="#FFFFFF" />
+              </View>
             </View>
 
             <View style={[styles.flexRowCenter, { gap: 4 * scale, marginVertical: 4 * scale }]}>

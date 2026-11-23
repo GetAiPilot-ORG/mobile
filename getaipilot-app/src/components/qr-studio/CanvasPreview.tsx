@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import QRCode from 'react-native-qrcode-svg';
@@ -18,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CanvasConfig, CanvasTemplateId, QRStyles, QRType } from './types';
 import { buildCanvasHtml } from './htmlCanvasRenderer';
 import { NativeCanvasTemplate } from './NativeCanvasTemplate';
+import { TEMPLATE_PREVIEW_IMAGES } from './templateAssets';
 import { useTheme, getColors } from '@/theme';
 
 interface CanvasPreviewProps {
@@ -46,7 +48,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
-  const [previewMode, setPreviewMode] = useState<'canvas' | 'pure-qr'>('canvas');
+  const [previewMode, setPreviewMode] = useState<'canvas' | 'poster' | 'pure-qr'>('canvas');
   const [isExporting, setIsExporting] = useState(false);
 
   const webViewRef = useRef<any>(null);
@@ -204,7 +206,38 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
                 },
               ]}
             >
-              Standee Mockup
+              Standee
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.toggleBtn,
+              previewMode === 'poster' && [
+                styles.toggleBtnActive,
+                { backgroundColor: '#0A4737' },
+              ],
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setPreviewMode('poster');
+            }}
+          >
+            <Ionicons
+              name="image-outline"
+              size={14}
+              color={previewMode === 'poster' ? '#FFFFFF' : colors.mutedForeground}
+            />
+            <Text
+              style={[
+                styles.toggleBtnText,
+                {
+                  color: previewMode === 'poster' ? '#FFFFFF' : colors.mutedForeground,
+                  fontWeight: previewMode === 'poster' ? '700' : '500',
+                },
+              ]}
+            >
+              Design
             </Text>
           </Pressable>
 
@@ -268,7 +301,16 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
           },
         ]}
       >
-        {previewMode === 'canvas' ? (
+        {previewMode === 'poster' ? (
+          /* High-Resolution Studio Poster Design from getaipilot.in */
+          <View style={styles.posterContainer}>
+            <Image
+              source={TEMPLATE_PREVIEW_IMAGES[canvasId] || TEMPLATE_PREVIEW_IMAGES['bold-retail-promo']}
+              style={styles.fullPosterImage}
+              resizeMode="contain"
+            />
+          </View>
+        ) : previewMode === 'canvas' ? (
           /* Realistic Standee Mockup Rendered via Native Vector Components */
           <View style={styles.nativeMockupViewport}>
             <NativeCanvasTemplate
@@ -456,6 +498,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     padding: 8,
+  },
+  posterContainer: {
+    width: '100%',
+    height: 480,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  fullPosterImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
   },
   nativeMockupViewport: {
     width: '100%',
