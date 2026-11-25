@@ -32,6 +32,18 @@ import { HeadlessAudioBridge } from "../src/services/HeadlessAudioBridge";
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
 
+// CRITICAL FIX: React Native Android crashes with NullPointerException in setColorScheme
+// when NativeAppearance.setColorScheme is invoked asynchronously.
+// Stub it on Android so that NativeWind/react-native-css-interop or any subcomponent never crashes.
+if (Platform.OS === 'android') {
+  try {
+    const { Appearance } = require('react-native');
+    if (Appearance) {
+      Appearance.setColorScheme = () => {};
+    }
+  } catch {}
+}
+
 export const unstable_settings = {
   anchor: "(tabs)",
 };

@@ -94,4 +94,9 @@ config.resolver.blockList = [
   new RegExp(`^${escapeRegex(path.resolve(__dirname, 'Getaipilot-bff'))}([\\\\/].*)?$`),
 ];
 
-module.exports = withNativeWind(config, { input: './src/global.css' });
+const finalConfig = withNativeWind(config, { input: './src/global.css' });
+
+// Ensure maxWorkers is strictly 1 or 2 on Windows to prevent EMFILE bursts
+finalConfig.maxWorkers = process.platform === 'win32' ? 1 : 2;
+
+module.exports = finalConfig;

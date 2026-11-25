@@ -2,7 +2,7 @@
   "expo": {
     "name": "GetAIPilot",
     "slug": "getaipilot",
-    "version": "1.0.0",
+    "version": "10.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logolarge.png",
     "scheme": "getaipilot",
@@ -40,7 +40,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.getaipilot",
-      "versionCode": 1,
+      "versionCode": 10,
       "permissions": [
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
@@ -98,7 +98,8 @@
       "expo-sharing",
       "expo-build-properties",
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true,
