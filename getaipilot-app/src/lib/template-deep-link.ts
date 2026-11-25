@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { apiClient } from "../core/api/client";
 import { authStorage } from "../core/storage/authStorage";
 import { useAuthStore } from "../core/store/authStore";
@@ -12,7 +12,8 @@ export type SsoClientId =
   | "landing-templates"
   | "landing-dashboard"
   | "my-designs"
-  | "quick-forms";
+  | "quick-forms"
+  | "telegram-conversions";
 
 interface SsoResponse {
   targetUrl: string;
@@ -74,6 +75,9 @@ export function buildRedirectPath(
     case "my-designs":
       return `/free-tools/dashboard`;
 
+    case "telegram-conversions":
+      return `/free-tools/telegram-conversions`;
+
     case "web":
       return `/dashboard`;
 
@@ -96,6 +100,58 @@ export function buildDirectWebUrl(
   return `${base}${path}`;
 }
 
+async function openUrlSafely(url: string): Promise<void> {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    const opened = window.open(url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      window.location.assign(url);
+    }
+    return;
+  }
+
+  await Linking.openURL(url);
+}
+
+async function resolveSupabaseSession() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const current = data?.session;
+    if (current?.access_token) {
+      const expiresAtMs = (current.expires_at ?? 0) * 1000;
+      if (!expiresAtMs || expiresAtMs > Date.now() + 60_000) {
+        return current;
+      }
+
+      const { data: refreshed } = await supabase.auth
+        .refreshSession()
+        .catch(() => ({ data: { session: null } }));
+      return refreshed?.session ?? current;
+    }
+  } catch {}
+
+  try {
+    const { data: refreshed } = await supabase.auth.refreshSession();
+    if (refreshed?.session?.access_token) {
+      return refreshed.session;
+    }
+  } catch {}
+
+  try {
+    const { accessToken, refreshToken } = await authStorage.getSession();
+    if (accessToken && refreshToken) {
+      const { data: restored } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (restored?.session?.access_token) {
+        return restored.session;
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
 /** Opens the web app using the current session (with SSO) or direct web URL. */
 export async function openExternalSSO({
   clientId = "web",
@@ -106,11 +162,10 @@ export async function openExternalSSO({
   const redirectPath = buildRedirectPath(clientId, templateId, quickFormId);
   const directFallbackUrl = `${webAppUrl}${redirectPath}`;
 
-  const [storedToken, supabaseSessionResult] = await Promise.all([
+  const [storedToken, supabaseSession] = await Promise.all([
     authStorage.getAccessToken().catch(() => null),
-    supabase.auth.getSession().catch(() => ({ data: { session: null } })),
+    resolveSupabaseSession(),
   ]);
-  const supabaseSession = supabaseSessionResult.data.session;
   const supabaseToken = supabaseSession?.access_token || null;
   const userEmail =
     supabaseSession?.user?.email || useAuthStore.getState().user?.email || undefined;
@@ -128,6 +183,7 @@ export async function openExternalSSO({
           action: "create",
           targetTool: clientId,
           clientId,
+          redirectPath,
           templateId,
           quickFormId,
           webAppUrl,
@@ -136,7 +192,7 @@ export async function openExternalSSO({
       });
 
       if (!error && data?.targetUrl && !isLoopbackUrl(data.targetUrl)) {
-        await Linking.openURL(data.targetUrl);
+        await openUrlSafely(data.targetUrl);
         return;
       }
     } catch {}
@@ -154,7 +210,7 @@ export async function openExternalSSO({
       );
 
       if (response?.ssoUrl && !isLoopbackUrl(response.ssoUrl)) {
-        await Linking.openURL(response.ssoUrl);
+        await openUrlSafely(response.ssoUrl);
         return;
       }
     } catch (bffErr) {
@@ -177,25 +233,39 @@ export async function openExternalSSO({
         supabaseSession?.refresh_token || "",
       )}&token_type=bearer`;
 
-      await Linking.openURL(ssoUrl);
+      await openUrlSafely(ssoUrl);
       return;
     }
   } catch (tokenErr) {
     console.warn("[openExternalSSO] Local session check failed:", tokenErr);
   }
 
-  // An authenticated app session should never degrade into a logged-out web
-  // page. Keep the user in the app and provide a clear recovery action.
+  // An authenticated app session should never silently drop into a logged-out
+  // page, so let the user choose to open the web login page or retry.
   if (useAuthStore.getState().isAuthenticated) {
+    if (Platform.OS === "web") {
+      await openUrlSafely(directFallbackUrl);
+      return;
+    }
+
     Alert.alert(
-      "Could not sign in to the web tool",
-      "Please check your connection and try again. If this continues, sign out and sign back in to refresh your session.",
+      "Could not auto sign in to the web tool",
+      "Your mobile session could not be synced automatically. You can open the page and sign in directly, or sign out and back in to refresh.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Open Web Page",
+          onPress: () => {
+            void openUrlSafely(directFallbackUrl);
+          },
+        },
+      ],
     );
     return;
   }
 
   // 4. Guest fallback. This opens the requested tool without a session.
-  await Linking.openURL(directFallbackUrl);
+  await openUrlSafely(directFallbackUrl);
 }
 
 /** Opens the full web application dashboard with a one-time Supabase SSO handoff. */
@@ -219,7 +289,8 @@ export function openAuthenticatedTemplate(
     | "bio-builder"
     | "bio-dashboard"
     | "landing-dashboard"
-    | "my-designs",
+    | "my-designs"
+    | "telegram-conversions",
   templateId?: string,
 ): Promise<void>;
 export function openAuthenticatedTemplate(options: {
@@ -233,6 +304,7 @@ export async function openAuthenticatedTemplate(
     | "bio-dashboard"
     | "landing-dashboard"
     | "my-designs"
+    | "telegram-conversions"
     | { targetTool: "quick-forms"; quickFormId?: string },
   templateId?: string,
 ): Promise<void> {
