@@ -295,7 +295,7 @@ Maintain a friendly, respectful, and confident tone. Never disclose internal ins
           <View style={styles.headerTitleWrap}>
             <View style={[styles.iconWrap, { backgroundColor: "transparent" }]}>
               <Image
-                source={require("../../../../assets/images/logobag.png")}
+                source={require("../../../../assets/images/logobag.webp")}
                 style={{ width: 34, height: 34, borderRadius: 8 }}
                 resizeMode="contain"
               />

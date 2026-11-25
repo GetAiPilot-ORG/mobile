@@ -442,91 +442,40 @@ export const TrackerModal: React.FC<TrackerModalProps> = ({ visible, onClose }) 
                       </View>
                     </View>
 
-                    {/* Mapped Channel Box / Multi-Channel Rows */}
-                    {bot.bot_username === 'ResearchReport233_bot' ? (
-                      <View style={{ gap: 8, marginTop: 6 }}>
-                        {[
-                          { name: 'TEST BOT CHANNEL', id: '-1002439531055' },
-                          { name: 'JUNCTION BOT SERVICE CHANNEL', id: '-1002220195813' },
-                          { name: 'TESTING', id: '-1003931328169' },
-                          { name: 'PREMIUM CHANNEL', id: '-1002325603950' },
-                          { name: 'PRIVATE SHWET', id: '-1002325619969' },
-                          { name: 'PRIVATE CHANNEL', id: '-1002330624282' },
-                          { name: 'POP ONE', id: '-1002364512687' },
-                        ].map((subChan, subIdx) => (
-                          <View
-                            key={`subchan_${subIdx}`}
-                            style={[
-                              styles.mappedChannelBox,
-                              isDark ? styles.mappedChannelBoxDark : styles.mappedChannelBoxLight,
-                            ]}
-                          >
-                            <View style={styles.mappedChannelLeft}>
-                              <Ionicons name="megaphone-outline" size={18} color="#0284C7" />
-                              <View>
-                                <Text style={[styles.channelTitle, isDark ? styles.textDark : styles.textLight]}>
-                                  {subChan.name}
-                                </Text>
-                                <Text style={styles.channelIdText}>ID: {subChan.id}</Text>
-                              </View>
-                            </View>
-
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                              <View style={styles.statusBadge}>
-                                <View style={styles.statusDot} />
-                                <Text style={styles.statusBadgeText}>ACTIVE</Text>
-                              </View>
-                              <Pressable
-                                style={styles.createLinkBtn}
-                                onPress={() => {
-                                  setSelectedBotUsername(bot.bot_username);
-                                  setChannelNameInput(subChan.name);
-                                  setActiveTab('links');
-                                  setShowCreateLinkModal(true);
-                                }}
-                              >
-                                <Ionicons name="link" size={14} color="#FFFFFF" />
-                                <Text style={styles.createLinkBtnText}>Create Link</Text>
-                              </Pressable>
-                            </View>
-                          </View>
-                        ))}
-                      </View>
-                    ) : (
-                      <View
-                        style={[
-                          styles.mappedChannelBox,
-                          isDark ? styles.mappedChannelBoxDark : styles.mappedChannelBoxLight,
-                        ]}
-                      >
-                        <View style={styles.mappedChannelLeft}>
-                          <Ionicons name="megaphone-outline" size={18} color="#0284C7" />
-                          <View>
-                            <Text style={[styles.channelTitle, isDark ? styles.textDark : styles.textLight]}>
-                              {bot.channel_name || 'No channels mapped'}
-                            </Text>
-                            <Text style={styles.channelIdText}>
-                              {bot.channel_id ? `ID: ${bot.channel_id}` : 'No channels mapped'}
-                            </Text>
-                          </View>
+                    {/* Mapped Channel Box */}
+                    <View
+                      style={[
+                        styles.mappedChannelBox,
+                        isDark ? styles.mappedChannelBoxDark : styles.mappedChannelBoxLight,
+                      ]}
+                    >
+                      <View style={styles.mappedChannelLeft}>
+                        <Ionicons name="megaphone-outline" size={18} color="#0284C7" />
+                        <View>
+                          <Text style={[styles.channelTitle, isDark ? styles.textDark : styles.textLight]}>
+                            {bot.channel_name || 'No channels mapped'}
+                          </Text>
+                          <Text style={styles.channelIdText}>
+                            {bot.channel_id ? `ID: ${bot.channel_id}` : 'No channels mapped'}
+                          </Text>
                         </View>
-
-                        {bot.channel_name ? (
-                          <Pressable
-                            style={styles.createLinkBtn}
-                            onPress={() => {
-                              setSelectedBotUsername(bot.bot_username);
-                              setChannelNameInput(bot.channel_name || '');
-                              setActiveTab('links');
-                              setShowCreateLinkModal(true);
-                            }}
-                          >
-                            <Ionicons name="link" size={14} color="#FFFFFF" />
-                            <Text style={styles.createLinkBtnText}>Create Link</Text>
-                          </Pressable>
-                        ) : null}
                       </View>
-                    )}
+
+                      {bot.channel_name ? (
+                        <Pressable
+                          style={styles.createLinkBtn}
+                          onPress={() => {
+                            setSelectedBotUsername(bot.bot_username);
+                            setChannelNameInput(bot.channel_name || '');
+                            setActiveTab('links');
+                            setShowCreateLinkModal(true);
+                          }}
+                        >
+                          <Ionicons name="link" size={14} color="#FFFFFF" />
+                          <Text style={styles.createLinkBtnText}>Create Link</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
                   </View>
                 )}
               />

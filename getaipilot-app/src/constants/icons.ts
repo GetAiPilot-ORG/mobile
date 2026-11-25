@@ -42,6 +42,9 @@ import UserGroupIcon from '@hugeicons/core-free-icons/UserGroupIcon';
 import UserIcon from '@hugeicons/core-free-icons/UserIcon';
 import VoiceToTextIcon from '@hugeicons/core-free-icons/VoiceToTextIcon';
 import WhatsappIcon from '@hugeicons/core-free-icons/WhatsappIcon';
+import CreditCardIcon from '@hugeicons/core-free-icons/CreditCardIcon';
+import Share01Icon from '@hugeicons/core-free-icons/Share01Icon';
+import HomeWifiIcon from '@hugeicons/core-free-icons/HomeWifiIcon';
 
 export {
   Activity01Icon,
@@ -58,6 +61,7 @@ export {
   Cancel01Icon,
   CheckmarkCircle01Icon,
   Copy01Icon,
+  CreditCardIcon,
   CrownIcon,
   Delete02Icon,
   Edit02Icon,
@@ -67,6 +71,7 @@ export {
   Forward01Icon,
   GiftIcon,
   Home01Icon,
+  HomeWifiIcon,
   InstagramIcon,
   Layout01Icon,
   Leaf01Icon,
@@ -78,6 +83,7 @@ export {
   QrCode01Icon,
   Rocket01Icon,
   Search01Icon,
+  Share01Icon,
   ShieldCheckIcon,
   SmartPhone01Icon,
   SmileIcon,

@@ -158,8 +158,12 @@ export function LayoutSkeletonScreen() {
           style={[
             styles.tabBarContainer,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: isDark
+                ? 'rgba(28, 26, 37, 0.82)'
+                : 'rgba(255, 255, 255, 0.85)',
+              borderColor: isDark
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
@@ -258,44 +262,11 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     paddingHorizontal: 10,
     borderWidth: StyleSheet.hairlineWidth,
-  },
-  tabBarContainerLight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-      web: {
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-      } as any,
-      default: {},
-    }),
-  },
-  tabBarContainerDark: {
-    backgroundColor: 'rgba(28, 28, 30, 0.94)',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.4,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 10,
-      },
-      web: {
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
-      } as any,
-      default: {},
-    }),
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   tabItem: {
     flex: 1,

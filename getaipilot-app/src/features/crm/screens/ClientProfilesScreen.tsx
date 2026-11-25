@@ -79,7 +79,11 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
   }, [profiles, search]);
 
   const open = (p: CRMBillingProfile) => {
-    Linking.openURL(`${WEB_APP_URL}/dashboard/crm/billing-profiles/${p.id}`).catch(() => {});
+    if (p.contact_id) {
+      router.push(`/products/crm/leads/${p.contact_id}` as any);
+    } else {
+      router.replace('/products/crm');
+    }
   };
 
   return (
@@ -178,7 +182,9 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={refetch}
+              onRefresh={() => {
+                refetch();
+              }}
               tintColor="#3B82F6"
               colors={['#3B82F6']}
             />
@@ -224,7 +230,7 @@ export function ClientProfilesScreen({ onBack }: ClientProfilesScreenProps = {})
                       <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
                         {displayName}
                       </Text>
-                      <Ionicons name="open-outline" size={14} color={colors.textMuted} />
+                      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                     </View>
 
                     {contactName ? (

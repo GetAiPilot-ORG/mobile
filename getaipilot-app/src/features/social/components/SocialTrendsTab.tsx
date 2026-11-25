@@ -1,22 +1,28 @@
-import { ProductHeading } from "@/components/ProductUI";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { apiClient } from '../../../core/api/client';
-import { SocialTrendsSkeleton } from '../../../components/skeletonScreen';
 import { TrendItem, TrendFeedResponse } from '../types';
 import { useTheme, getColors } from '@/theme';
+import {
+  CATEGORIES,
+  REGIONS,
+  TrendCategory,
+  TrendCard,
+  TrendDetailModal,
+  TrendGridSkeleton,
+  useSavedTrends,
+} from './trends';
 
 interface SocialTrendsTabProps {
   trendsLoading: boolean;
@@ -24,31 +30,6 @@ interface SocialTrendsTabProps {
   onUseTrendInPost: (trend: TrendItem) => void;
   onRefreshTrends?: () => void;
 }
-
-interface TrendCategory {
-  id: string;
-  label: string;
-  type: string;
-  category: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}
-
-const CATEGORIES: TrendCategory[] = [
-  { id: 'all', label: 'All Trends', type: 'all', category: 'all', icon: 'flame' },
-  { id: 'reels', label: 'Reels & Shorts', type: 'reel_video', category: 'all', icon: 'videocam' },
-  { id: 'youtube', label: 'YouTube Viral', type: 'video', category: 'all', icon: 'logo-youtube' },
-  { id: 'visuals', label: 'Visual Inspo', type: 'visual', category: 'aesthetic', icon: 'camera' },
-  { id: 'tech', label: 'Tech & AI', type: 'all', category: 'tech', icon: 'hardware-chip' },
-  { id: 'business', label: 'Business', type: 'all', category: 'business', icon: 'briefcase' },
-  { id: 'news', label: 'Breaking News', type: 'news', category: 'all', icon: 'newspaper' },
-  { id: 'surges', label: 'Search Surges', type: 'trend_query', category: 'all', icon: 'trending-up' },
-];
-
-const REGIONS = [
-  { id: 'GLOBAL', label: 'Global', icon: 'globe-outline' as const },
-  { id: 'US', label: 'US', icon: 'location-outline' as const },
-  { id: 'IN', label: 'India', icon: 'location-outline' as const },
-];
 
 export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
   trendsLoading,
@@ -58,21 +39,33 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
+  const { width } = useWindowDimensions();
 
   // Filters State
   const [selectedCategory, setSelectedCategory] = useState<TrendCategory>(CATEGORIES[0]);
   const [selectedRegion, setSelectedRegion] = useState<string>('US');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSavedTabActive, setIsSavedTabActive] = useState<boolean>(false);
+
+  // Detail Modal State
+  const [selectedTrendForDetail, setSelectedTrendForDetail] = useState<TrendItem | null>(null);
 
   // Feed State
   const [liveTrends, setLiveTrends] = useState<TrendItem[]>([]);
   const [isFetchingCategory, setIsFetchingCategory] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
-  const [totalCandidates, setTotalCandidates] = useState<number | null>(null);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
-  // Initialize from props
+  // Saved Trends Storage Hook
+  const {
+    savedTrends,
+    savedCount,
+    isSaved,
+    toggleSave,
+  } = useSavedTrends();
+
+  // Initialize from incoming trendsList prop
   useEffect(() => {
     if (trendsList && trendsList.length > 0 && liveTrends.length === 0) {
       setLiveTrends(trendsList);
@@ -106,7 +99,7 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
           '/mobile/v1/social/trends',
           {
             params: {
-              limit: 25,
+              limit: 24,
               page: targetPage,
               type: cat.type,
               category: cat.category,
@@ -132,13 +125,8 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
           setLiveTrends(newItems);
         }
 
-        if (res?.totalCandidateCount != null) {
-          setTotalCandidates(res.totalCandidateCount);
-        }
-
         setPage(targetPage);
 
-        // Update seen IDs
         setSeenIds((prev) => {
           const updated = new Set(prev);
           newItems.forEach((i) => {
@@ -156,33 +144,46 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
     []
   );
 
-  // Handle Category Change
+  // Category Selection
   const handleSelectCategory = (cat: TrendCategory) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSavedTabActive(false);
     setSelectedCategory(cat);
     fetchTrendsFeed(cat, selectedRegion, 1, seenIds, false);
   };
 
-  // Handle Region Change
+  // Region Selection
   const handleSelectRegion = (region: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSavedTabActive(false);
     setSelectedRegion(region);
     fetchTrendsFeed(selectedCategory, region, 1, seenIds, false);
   };
 
-  // Handle Load More
+  // Toggle Saved View
+  const handleToggleSavedTab = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSavedTabActive((prev) => !prev);
+  };
+
+  // Load More Action
   const handleLoadMore = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     fetchTrendsFeed(selectedCategory, selectedRegion, page + 1, seenIds, true);
   };
 
-  // Client-side search and filtering
+  // Filtering Logic
   const displayList = useMemo(() => {
-    const list = liveTrends.length > 0 ? liveTrends : trendsList;
-    if (!searchQuery.trim()) return list;
+    const baseList = isSavedTabActive
+      ? savedTrends
+      : liveTrends.length > 0
+      ? liveTrends
+      : trendsList;
+
+    if (!searchQuery.trim()) return baseList;
 
     const q = searchQuery.toLowerCase().trim();
-    return list.filter((item) => {
+    return baseList.filter((item) => {
       const titleMatch = (item.title || '').toLowerCase().includes(q);
       const captionMatch = (item.caption || '').toLowerCase().includes(q);
       const creatorMatch = (item.creator || '').toLowerCase().includes(q);
@@ -192,816 +193,608 @@ export const SocialTrendsTab: React.FC<SocialTrendsTabProps> = ({
       );
       return titleMatch || captionMatch || creatorMatch || platformMatch || tagsMatch;
     });
-  }, [liveTrends, trendsList, searchQuery]);
+  }, [isSavedTabActive, savedTrends, liveTrends, trendsList, searchQuery]);
 
-  // Format numbers nicely (e.g. 2,865,086 -> 2.8M, 25,099 -> 25.1K)
-  const formatCompact = (val?: number) => {
-    if (val == null) return null;
-    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-    if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
-    return val.toLocaleString();
-  };
+  // Responsive Grid Calculation (2 cols on mobile, 3 on tablet/desktop)
+  const isTablet = width >= 720;
+  const numColumns = isTablet ? 3 : 2;
 
-  // Helper for platform styling & icons
-  const getPlatformMeta = (platformRaw: string = '') => {
-    const p = platformRaw.toLowerCase();
-    if (p.includes('youtube')) {
-      return {
-        label: 'YouTube',
-        icon: 'logo-youtube' as const,
-        color: '#ef4444',
-        bg: 'rgba(239, 68, 68, 0.12)',
-      };
-    }
-    if (p.includes('pexels')) {
-      return {
-        label: 'Pexels Reel',
-        icon: 'videocam' as const,
-        color: '#10b981',
-        bg: 'rgba(16, 185, 129, 0.12)',
-      };
-    }
-    if (p.includes('unsplash')) {
-      return {
-        label: 'Unsplash',
-        icon: 'camera' as const,
-        color: '#06b6d4',
-        bg: 'rgba(6, 182, 212, 0.12)',
-      };
-    }
-    if (p.includes('gnews') || p.includes('news')) {
-      return {
-        label: 'Google News',
-        icon: 'newspaper' as const,
-        color: '#3b82f6',
-        bg: 'rgba(59, 130, 246, 0.12)',
-      };
-    }
-    if (p.includes('google_trends') || p.includes('trend')) {
-      return {
-        label: 'Google Trends',
-        icon: 'trending-up' as const,
-        color: '#8b5cf6',
-        bg: 'rgba(139, 92, 246, 0.12)',
-      };
-    }
-    if (p.includes('reddit')) {
-      return {
-        label: 'Reddit',
-        icon: 'logo-reddit' as const,
-        color: '#f97316',
-        bg: 'rgba(249, 115, 22, 0.12)',
-      };
-    }
-    return {
-      label: platformRaw || 'Social',
-      icon: 'flame' as const,
-      color: '#ec4899',
-      bg: 'rgba(236, 72, 153, 0.12)',
-    };
-  };
+  const columnItems = useMemo(() => {
+    const cols: TrendItem[][] = Array.from({ length: numColumns }, () => []);
+    displayList.forEach((item, index) => {
+      cols[index % numColumns].push(item);
+    });
+    return cols;
+  }, [displayList, numColumns]);
 
-  const isInitialLoading = trendsLoading && liveTrends.length === 0;
+  const isInitialLoading = trendsLoading && liveTrends.length === 0 && !isSavedTabActive;
 
   return (
     <View style={styles.container}>
-      <ProductHeading title="Find your next idea" />
-      {/* Search and Region Controls Header */}
-      <View style={styles.topFilterBar}>
-        <View
+      {/* 1. Hero Section Header */}
+      <View style={styles.heroSection}>
+        <Text
           style={[
-            styles.searchBox,
-            {
-              backgroundColor: isDark ? '#252230' : '#F0EEF8',
-              borderColor: isDark ? '#334155' : '#E9E6F2',
-            },
+            styles.heroHeading,
+            { color: isDark ? '#F5F3FB' : '#20212B' },
           ]}
         >
-          <Ionicons
-            name="search-outline"
-            size={16}
-            color={isDark ? '#777383' : '#64748b'}
-          />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search viral keywords, hooks, niches..."
-            placeholderTextColor={isDark ? '#64748b' : '#777383'}
-            style={[styles.searchInput, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
-          />
-          {Boolean(searchQuery) && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <Ionicons
-                name="close-circle"
-                size={16}
-                color={isDark ? '#777383' : '#64748b'}
-              />
-            </Pressable>
-          )}
-        </View>
+          Discover what's trending
+        </Text>
+        <Text
+          style={[
+            styles.heroSubtitle,
+            { color: isDark ? '#9CA3AF' : '#73798B' },
+          ]}
+        >
+          Find viral inspiration for your next post.
+        </Text>
+      </View>
 
-        {/* Region Chips */}
-        <View style={styles.regionSelectorRow}>
+      {/* 2. Premium Search Experience */}
+      <View
+        style={[
+          styles.searchContainer,
+          {
+            backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9EAF1',
+          },
+        ]}
+      >
+        <Ionicons
+          name="search-outline"
+          size={18}
+          color={isDark ? '#9CA3AF' : '#73798B'}
+        />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search trends, topics, creators..."
+          placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
+          style={[
+            styles.searchInput,
+            { color: isDark ? '#F5F3FB' : '#20212B' },
+          ]}
+          returnKeyType="search"
+          autoCorrect={false}
+        />
+        {Boolean(searchQuery) && (
+          <Pressable
+            cssInterop={false}
+            hitSlop={8}
+            onPress={() => setSearchQuery('')}
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={isDark ? '#9CA3AF' : '#73798B'}
+            />
+          </Pressable>
+        )}
+      </View>
+
+      {/* 3. Filter Controls: Region Pills + Saved Ideas Toggle */}
+      <View style={styles.regionFilterRow}>
+        <View style={styles.regionPillsWrap}>
           {REGIONS.map((r) => {
-            const isRegActive = selectedRegion === r.id;
+            const isRegActive = !isSavedTabActive && selectedRegion === r.id;
             return (
               <Pressable
                 key={r.id}
+                cssInterop={false}
                 onPress={() => handleSelectRegion(r.id)}
-                style={[
-                  styles.regionChip,
-                  { flexDirection: 'row', alignItems: 'center', gap: 4 },
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${r.label}`}
+                style={({ pressed }) => [
+                  styles.regionPill,
                   {
                     backgroundColor: isRegActive
-                      ? isDark
-                        ? '#3b82f6'
-                        : '#2563eb'
+                      ? '#7055E8'
                       : isDark
-                      ? '#252230'
-                      : '#F0EEF8',
+                      ? '#1C1A25'
+                      : '#FFFFFF',
+                    borderColor: isRegActive
+                      ? '#7055E8'
+                      : isDark
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : '#E9EAF1',
+                    opacity: pressed ? 0.8 : 1,
                   },
                 ]}
               >
                 <Ionicons
                   name={r.icon}
                   size={12}
-                  color={isRegActive ? '#ffffff' : isDark ? '#777383' : '#64748b'}
+                  color={isRegActive ? '#FFFFFF' : isDark ? '#9CA3AF' : '#73798B'}
                 />
                 <Text
                   style={[
-                    styles.regionText,
+                    styles.regionPillText,
                     {
                       color: isRegActive
-                        ? '#ffffff'
+                        ? '#FFFFFF'
                         : isDark
-                        ? '#777383'
-                        : '#64748b',
+                        ? '#F5F3FB'
+                        : '#20212B',
                     },
                   ]}
                 >
-                  {r.label}
+                  {r.id === 'GLOBAL' ? 'Global' : r.id === 'US' ? 'US' : 'India'}
                 </Text>
               </Pressable>
             );
           })}
         </View>
-      </View>
 
-      {/* Category Filter Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-      >
-        {CATEGORIES.map((cat) => {
-          const isActive = selectedCategory.id === cat.id;
-          return (
-            <Pressable
-              key={cat.id}
-              onPress={() => handleSelectCategory(cat)}
-              style={[
-                styles.categoryChip,
-                {
-                  backgroundColor: isActive
-                    ? '#ec4899'
-                    : isDark
-                    ? '#252230'
-                    : '#F0EEF8',
-                },
-              ]}
-            >
-              <Ionicons
-                name={cat.icon}
-                size={14}
-                color={isActive ? '#ffffff' : isDark ? '#777383' : '#64748b'}
-              />
-              <Text
-                style={[
-                  styles.categoryText,
-                  {
-                    color: isActive
-                      ? '#ffffff'
-                      : isDark
-                      ? '#777383'
-                      : '#64748b',
-                  },
-                ]}
-              >
-                {cat.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {isFetchingCategory && <ActivityIndicator size="small" color={colors.accent} />}
-
-      {/* Main Content Area */}
-      {isInitialLoading ? (
-        <SocialTrendsSkeleton />
-      ) : displayList.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        {/* Saved Ideas Bookmark Pill */}
+        <Pressable
+          cssInterop={false}
+          onPress={handleToggleSavedTab}
+          accessibilityRole="button"
+          accessibilityLabel="View saved ideas"
+          style={({ pressed }) => [
+            styles.savedPill,
+            {
+              backgroundColor: isSavedTabActive
+                ? '#E83E91'
+                : isDark
+                ? '#1C1A25'
+                : '#FFFFFF',
+              borderColor: isSavedTabActive
+                ? '#E83E91'
+                : isDark
+                ? 'rgba(255, 255, 255, 0.08)'
+                : '#E9EAF1',
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
+        >
           <Ionicons
-            name="flame-outline"
-            size={48}
-            color={isDark ? '#475569' : '#777383'}
+            name={isSavedTabActive ? 'bookmark' : 'bookmark-outline'}
+            size={13}
+            color={isSavedTabActive ? '#FFFFFF' : isDark ? '#9CA3AF' : '#73798B'}
           />
           <Text
-            style={[styles.emptyTitle, { color: isDark ? '#F5F3FB' : '#1C1A25' }]}
-          >
-            No Trends Found
-          </Text>
-          <Text
-            style={[styles.emptyDesc, { color: isDark ? '#64748b' : '#777383' }]}
-          >
-            {searchQuery
-              ? `No matching items found for "${searchQuery}". Try clearing search.`
-              : 'Try selecting another category or region to discover real-time viral media.'}
-          </Text>
-          <Pressable
-            onPress={() => {
-              setSearchQuery('');
-              handleSelectCategory(CATEGORIES[0]);
-              onRefreshTrends?.();
-            }}
-            style={styles.refreshEmptyBtn}
-          >
-            <Ionicons name="reload" size={14} color="#ffffff" />
-            <Text style={styles.refreshEmptyBtnText}>Reset to All Trends</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={styles.trendsGrid}>
-          {displayList.map((trend: TrendItem, idx: number) => {
-            const platform = getPlatformMeta(
-              trend.source_platform || trend.platform
-            );
-            const views = trend.metrics?.views;
-            const likes = trend.metrics?.likes;
-            const comments = trend.metrics?.comments;
-            const searchVolume = trend.metrics?.searchVolume;
-            const duration = trend.metrics?.duration || (trend.duration ? `${trend.duration}s` : null);
-            const quality = trend.metrics?.quality;
-            const sourceName = trend.metrics?.source || trend.creator;
-            const engagement = trend.engagement_score;
-            const mediaUrl = trend.thumbnail_url || trend.full_image_url;
-
-            return (
-              <View
-                key={trend.id || `trend_${idx}`}
-                style={[
-                  styles.trendCard,
-                  {
-                    backgroundColor: isDark ? '#1C1A25' : '#ffffff',
-                    borderColor: isDark ? '#252230' : '#E9E6F2',
-                  },
-                ]}
-              >
-                {/* Header: Platform Badge + Rank Badge */}
-                <View style={styles.trendHeader}>
-                  <View
-                    style={[
-                      styles.sourceBadge,
-                      { backgroundColor: platform.bg },
-                    ]}
-                  >
-                    <Ionicons
-                      name={platform.icon}
-                      size={14}
-                      color={platform.color}
-                    />
-                    <Text
-                      style={[
-                        styles.trendSource,
-                        { color: platform.color },
-                      ]}
-                    >
-                      {platform.label}
-                    </Text>
-                  </View>
-
-                  <View style={styles.headerRightBadges}>
-                    {engagement != null && engagement > 0 && (
-                      <View style={styles.engagementBadge}>
-                        <Ionicons name="flame" size={12} color="#f59e0b" />
-                        <Text style={styles.engagementText}>
-                          {formatCompact(engagement)}
-                        </Text>
-                      </View>
-                    )}
-                    <View style={styles.rankBadge}>
-                      <Text style={styles.rankText}>#{idx + 1} Trending</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Creator Attribution */}
-                {Boolean(sourceName) && (
-                  <View style={styles.creatorRow}>
-                    <Text
-                      style={[
-                        styles.creatorText,
-                        { color: isDark ? '#777383' : '#64748b' },
-                      ]}
-                    >
-                      by{' '}
-                      <Text
-                        style={[
-                          styles.creatorHighlight,
-                          { color: isDark ? '#F0EEF8' : '#252230' },
-                        ]}
-                      >
-                        {sourceName}
-                      </Text>
-                      {quality ? ` • ${quality.toUpperCase()}` : null}
-                      {duration ? ` • ${duration}` : null}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Title */}
-                <Text
-                  style={[
-                    styles.trendTitle,
-                    { color: isDark ? '#F5F3FB' : '#1C1A25' },
-                  ]}
-                  numberOfLines={3}
-                >
-                  {trend.title || trend.caption || 'Trending viral topic'}
-                </Text>
-
-                {/* Media Preview Image */}
-                {Boolean(mediaUrl) && (
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{ uri: mediaUrl }}
-                      style={styles.trendImage}
-                      resizeMode="cover"
-                    />
-                    {Boolean(duration) && (
-                      <View style={styles.videoDurationBadge}>
-                        <Ionicons name="play" size={10} color="#ffffff" />
-                        <Text style={styles.videoDurationText}>{duration}</Text>
-                      </View>
-                    )}
-                    {Boolean(trend.color) && (
-                      <View
-                        style={[
-                          styles.colorDot,
-                          { backgroundColor: trend.color },
-                        ]}
-                      />
-                    )}
-                  </View>
-                )}
-
-                {/* Metrics Row */}
-                <View style={styles.metricsRow}>
-                  {views != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="eye-outline"
-                        size={13}
-                        color="#ec4899"
-                      />
-                      <Text style={styles.metricBadgeText}>
-                        {formatCompact(Number(views))} views
-                      </Text>
-                    </View>
-                  )}
-                  {likes != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="heart-outline"
-                        size={13}
-                        color="#ec4899"
-                      />
-                      <Text style={styles.metricBadgeText}>
-                        {formatCompact(Number(likes))}
-                      </Text>
-                    </View>
-                  )}
-                  {comments != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="chatbubble-outline"
-                        size={12}
-                        color="#ec4899"
-                      />
-                      <Text style={styles.metricBadgeText}>
-                        {formatCompact(Number(comments))}
-                      </Text>
-                    </View>
-                  )}
-                  {searchVolume != null && (
-                    <View style={styles.metricBadge}>
-                      <Ionicons
-                        name="search-outline"
-                        size={12}
-                        color="#8b5cf6"
-                      />
-                      <Text
-                        style={[styles.metricBadgeText, { color: '#8b5cf6' }]}
-                      >
-                        {formatCompact(Number(searchVolume))} searches
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Niche Tags Pills */}
-                {Array.isArray(trend.niche_tags) && trend.niche_tags.length > 0 && (
-                  <View style={styles.tagsRow}>
-                    {trend.niche_tags.slice(0, 4).map((tag, tagIdx) => (
-                      <View
-                        key={`${trend.id}_tag_${tagIdx}`}
-                        style={[
-                          styles.tagPill,
-                          {
-                            backgroundColor: isDark ? '#252230' : '#F0EEF8',
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.tagPillText,
-                            { color: isDark ? '#777383' : '#64748b' },
-                          ]}
-                        >
-                          #{tag}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {/* Action Buttons Row */}
-                <View style={styles.cardActionsRow}>
-                  {Boolean(trend.source_url) && (
-                    <Pressable
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        if (trend.source_url) {
-                          Linking.openURL(trend.source_url);
-                        }
-                      }}
-                      style={[
-                        styles.sourceLinkBtn,
-                        {
-                          backgroundColor: isDark ? '#252230' : '#F5F3FB',
-                          borderColor: isDark ? '#334155' : '#E9E6F2',
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="open-outline"
-                        size={14}
-                        color={isDark ? '#777383' : '#64748b'}
-                      />
-                      <Text
-                        style={[
-                          styles.sourceLinkText,
-                          { color: isDark ? '#cbd5e1' : '#475569' },
-                        ]}
-                      >
-                        Source
-                      </Text>
-                    </Pressable>
-                  )}
-
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      onUseTrendInPost(trend);
-                    }}
-                    style={styles.useTopicBtn}
-                  >
-                    <Ionicons name="sparkles" size={14} color="#ec4899" />
-                    <Text style={styles.useTopicBtnText}>Use as Post Idea</Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          })}
-
-          {/* Load More Button */}
-          <Pressable
-            disabled={isLoadingMore}
-            onPress={handleLoadMore}
             style={[
-              styles.loadMoreBtn,
+              styles.savedPillText,
               {
-                backgroundColor: isDark ? '#252230' : '#F0EEF8',
-                borderColor: isDark ? '#334155' : '#E9E6F2',
+                color: isSavedTabActive
+                  ? '#FFFFFF'
+                  : isDark
+                  ? '#F5F3FB'
+                  : '#20212B',
               },
             ]}
           >
-            {isLoadingMore ? (
-              <ActivityIndicator size="small" color="#ec4899" />
-            ) : (
-              <>
-                <Ionicons name="arrow-down-circle-outline" size={16} color="#ec4899" />
+            Saved {savedCount > 0 ? `(${savedCount})` : ''}
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* 4. Horizontal Content Category Filter Chips */}
+      {!isSavedTabActive && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScrollContainer}
+          contentContainerStyle={styles.categoryScrollContent}
+        >
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory.id === cat.id;
+            return (
+              <Pressable
+                key={cat.id}
+                cssInterop={false}
+                onPress={() => handleSelectCategory(cat)}
+                accessibilityRole="button"
+                accessibilityLabel={cat.label}
+                style={({ pressed }) => [
+                  styles.categoryChip,
+                  {
+                    backgroundColor: isActive
+                      ? '#7055E8'
+                      : isDark
+                      ? '#1C1A25'
+                      : '#FFFFFF',
+                    borderColor: isActive
+                      ? '#7055E8'
+                      : isDark
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : '#E9EAF1',
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={cat.icon}
+                  size={13}
+                  color={isActive ? '#FFFFFF' : isDark ? '#9CA3AF' : '#73798B'}
+                />
                 <Text
                   style={[
-                    styles.loadMoreText,
-                    { color: isDark ? '#F0EEF8' : '#252230' },
+                    styles.categoryChipText,
+                    {
+                      color: isActive
+                        ? '#FFFFFF'
+                        : isDark
+                        ? '#F5F3FB'
+                        : '#20212B',
+                    },
                   ]}
                 >
-                  Load More Fresh Trends
+                  {cat.label}
                 </Text>
-              </>
-            )}
-          </Pressable>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {/* Fetching Category Indicator */}
+      {isFetchingCategory && (
+        <View style={styles.fetchingCategoryBar}>
+          <ActivityIndicator size="small" color="#7055E8" />
+          <Text
+            style={[
+              styles.fetchingText,
+              { color: isDark ? '#9CA3AF' : '#73798B' },
+            ]}
+          >
+            Updating trends...
+          </Text>
         </View>
       )}
+
+      {/* 5. Main Feed Area */}
+      {isInitialLoading ? (
+        <TrendGridSkeleton isDark={isDark} />
+      ) : isSavedTabActive && savedTrends.length === 0 ? (
+        /* Empty Saved State */
+        <View
+          style={[
+            styles.emptyStateCard,
+            {
+              backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9EAF1',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.emptyIconCircle,
+              { backgroundColor: isDark ? '#252230' : '#FDE7F2' },
+            ]}
+          >
+            <Ionicons name="bookmark-outline" size={28} color="#E83E91" />
+          </View>
+          <Text
+            style={[
+              styles.emptyTitle,
+              { color: isDark ? '#F5F3FB' : '#20212B' },
+            ]}
+          >
+            No Saved Ideas Yet
+          </Text>
+          <Text
+            style={[
+              styles.emptySubtitle,
+              { color: isDark ? '#9CA3AF' : '#73798B' },
+            ]}
+          >
+            Tap the bookmark icon on any trend card to save viral inspiration for later.
+          </Text>
+          <Pressable
+            cssInterop={false}
+            onPress={() => setIsSavedTabActive(false)}
+            style={styles.primaryActionButton}
+          >
+            <Text style={styles.primaryActionButtonText}>Explore Trends</Text>
+          </Pressable>
+        </View>
+      ) : displayList.length === 0 ? (
+        /* Empty Search or Feed State */
+        <View
+          style={[
+            styles.emptyStateCard,
+            {
+              backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9EAF1',
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.emptyIconCircle,
+              { backgroundColor: isDark ? '#252230' : '#F0ECFF' },
+            ]}
+          >
+            <Ionicons name="search-outline" size={28} color="#7055E8" />
+          </View>
+          <Text
+            style={[
+              styles.emptyTitle,
+              { color: isDark ? '#F5F3FB' : '#20212B' },
+            ]}
+          >
+            No Matching Trends
+          </Text>
+          <Text
+            style={[
+              styles.emptySubtitle,
+              { color: isDark ? '#9CA3AF' : '#73798B' },
+            ]}
+          >
+            {searchQuery
+              ? `No items found matching "${searchQuery}". Try different keywords.`
+              : 'No trend items found for this category or region.'}
+          </Text>
+          <Pressable
+            cssInterop={false}
+            onPress={() => {
+              setSearchQuery('');
+              setSelectedCategory(CATEGORIES[0]);
+              onRefreshTrends?.();
+            }}
+            style={styles.primaryActionButton}
+          >
+            <Ionicons name="reload" size={13} color="#FFFFFF" />
+            <Text style={styles.primaryActionButtonText}>Reset Filters</Text>
+          </Pressable>
+        </View>
+      ) : (
+        /* 2-Column Responsive Discovery Grid */
+        <View style={styles.gridWrapper}>
+          <View style={styles.columnsRow}>
+            {columnItems.map((col, colIndex) => (
+              <View key={`col_${colIndex}`} style={styles.gridColumn}>
+                {col.map((item, itemIdx) => (
+                  <TrendCard
+                    key={item.id || `item_${colIndex}_${itemIdx}`}
+                    trend={item}
+                    index={itemIdx * numColumns + colIndex}
+                    isSaved={isSaved(item.id)}
+                    onToggleSave={toggleSave}
+                    onPressCard={(t) => setSelectedTrendForDetail(t)}
+                    onUseIdea={onUseTrendInPost}
+                    isDark={isDark}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
+
+          {/* Load More Button (Only in Discover mode) */}
+          {!isSavedTabActive && (
+            <Pressable
+              cssInterop={false}
+              disabled={isLoadingMore}
+              onPress={handleLoadMore}
+              accessibilityRole="button"
+              accessibilityLabel="Load more fresh trends"
+              style={({ pressed }) => [
+                styles.loadMoreButton,
+                {
+                  backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E9EAF1',
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              {isLoadingMore ? (
+                <ActivityIndicator size="small" color="#7055E8" />
+              ) : (
+                <>
+                  <Ionicons name="arrow-down-circle-outline" size={16} color="#7055E8" />
+                  <Text
+                    style={[
+                      styles.loadMoreButtonText,
+                      { color: isDark ? '#F5F3FB' : '#20212B' },
+                    ]}
+                  >
+                    Load More Fresh Trends
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          )}
+
+          {/* Dedicated bottom spacer to prevent floating bottom navigation overlap */}
+          <View style={styles.bottomNavClearanceSpacer} />
+        </View>
+      )}
+
+      {/* 6. Trend Detail Modal */}
+      <TrendDetailModal
+        visible={Boolean(selectedTrendForDetail)}
+        trend={selectedTrendForDetail}
+        onClose={() => setSelectedTrendForDetail(null)}
+        onUseIdea={onUseTrendInPost}
+        isSaved={selectedTrendForDetail ? isSaved(selectedTrendForDetail.id) : false}
+        onToggleSave={toggleSave}
+        isDark={isDark}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    gap: 16,
+    gap: 14,
   },
-  topFilterBar: {
-    gap: 10,
+  heroSection: {
+    gap: 4,
+    marginBottom: 4,
   },
-  searchBox: {
+  heroHeading: {
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    letterSpacing: -0.6,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 22,
-    borderWidth: 0,
-    gap: 8, minHeight: 48 },
+    gap: 10,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
   searchInput: {
     flex: 1,
-    fontSize: 13,
-    padding: 0,
+    fontSize: 14,
+    paddingVertical: 0,
   },
-  regionSelectorRow: {
+  regionFilterRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
   },
-  regionChip: {
+  regionPillsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  regionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  regionText: {
-    fontSize: 11,
-    fontWeight: '700',
+  regionPillText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
-  categoryScroll: {
-    gap: 8,
+  savedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  savedPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  categoryScrollContainer: {
+    marginHorizontal: -20,
+  },
+  categoryScrollContent: {
+    paddingHorizontal: 20,
+    gap: 7,
     paddingVertical: 2,
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 7.5,
     borderRadius: 20,
+    borderWidth: 1,
   },
-  categoryText: {
+  categoryChipText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  tabHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  tabHeading: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  tabSubheading: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  trendsGrid: {
-    gap: 14,
-  },
-  trendCard: {
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  trendHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  sourceBadge: {
+  fetchingCategoryBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    gap: 8,
     paddingVertical: 4,
-    borderRadius: 8,
   },
-  trendSource: {
+  fetchingText: {
     fontSize: 12,
-    fontWeight: '700',
-  },
-  headerRightBadges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  engagementBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  engagementText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#d97706',
-  },
-  rankBadge: {
-    backgroundColor: 'rgba(148, 163, 184, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  rankText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#64748b',
-  },
-  creatorRow: {
-    marginBottom: 6,
-  },
-  creatorText: {
-    fontSize: 11,
     fontWeight: '500',
   },
-  creatorHighlight: {
-    fontWeight: '700',
+  gridWrapper: {
+    gap: 14,
   },
-  trendTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    lineHeight: 22,
-    marginBottom: 10,
-  },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  trendImage: {
-    width: '100%',
-    height: 190,
-    borderRadius: 12,
-    backgroundColor: '#cbd5e1',
-  },
-  videoDurationBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
+  columnsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  videoDurationText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  colorDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#ffffff',
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 10,
+    alignItems: 'flex-start',
   },
-  metricBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  metricBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#777383',
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 14,
-  },
-  tagPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  tagPillText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  cardActionsRow: {
-    flexDirection: 'row',
-    gap: 8, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
-  sourceLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  sourceLinkText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  useTopicBtn: {
+  gridColumn: {
     flex: 1,
+    gap: 12,
+  },
+  loadMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#ec4899',
-    borderRadius: 10,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(236, 72, 153, 0.08)',
-  },
-  useTopicBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#ec4899',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
     gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  emptyDesc: {
-    fontSize: 13,
-    textAlign: 'center',
-    paddingHorizontal: 24,
-    lineHeight: 18,
-  },
-  refreshEmptyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#ec4899',
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  refreshEmptyBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  loadMoreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+    height: 48,
+    borderRadius: 14,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 13,
     marginTop: 6,
   },
-  loadMoreText: {
-    fontSize: 13,
+  loadMoreButtonText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+  },
+  bottomNavClearanceSpacer: {
+    height: 40,
+  },
+  emptyStateCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 44,
+    paddingHorizontal: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 10,
+    marginTop: 8,
+  },
+  emptyIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 17,
     fontWeight: '700',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  primaryActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#7055E8',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  primaryActionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

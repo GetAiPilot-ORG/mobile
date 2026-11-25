@@ -9,7 +9,6 @@ import {
   FlatList,
   Linking,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,7 +35,7 @@ interface ChatMessage {
 import { getColors, useTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { telegramSupabase } from '../api/telegramSupabase';
-import { ProductHeading } from "@/components/ProductUI";
+import { ProductHeading, ProductMetrics } from "@/components/ProductUI";
 import { ConnectBotTokenModal } from '../components/ConnectBotTokenModal';
 import { usePlatformSubscription } from '@/hooks/usePlatformSubscription';
 import { FeaturePlanModal } from '@/components/FeaturePlanModal';
@@ -88,52 +87,83 @@ export const ChatBotScreen: React.FC<Props> = () => {
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [activeUser, setActiveUser] = useState<ChatUser | null>(null);
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
 
-  // When opening a bot's chats, we might want to fetch its specific messages
-  // For now, we will fetch global bot messages or just leave it empty if no messages are found
-  useEffect(() => {
-    const fetchLiveChatData = async () => {
-      try {
-        const { data: messages } = await supabase
+  const fetchLiveChatData = async (filterBotId?: string) => {
+    setIsLoadingChats(true);
+    try {
+      let query = supabase
+        .from('tg_chat_messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (filterBotId) {
+        query = query.eq('bot_id', filterBotId);
+      }
+
+      let { data: messages } = await query;
+
+      // If no messages found for this specific bot_id, fallback to all recent messages
+      if ((!messages || messages.length === 0) && filterBotId) {
+        const fallback = await supabase
           .from('tg_chat_messages')
           .select('*')
           .order('created_at', { ascending: true })
-          .limit(50);
-
-        if (messages && messages.length > 0) {
-          const userMap = new Map<string, string>();
-          const userMsgs: Record<string, ChatMessage[]> = {};
-
-          messages.forEach((msg: any) => {
-            const uid = String(msg.telegram_user_id || 'unknown');
-            if (!userMap.has(uid)) {
-              userMap.set(uid, msg.user_name || `User ${uid}`);
-            }
-            if (!userMsgs[uid]) userMsgs[uid] = [];
-            userMsgs[uid].push({
-              id: msg.id || String(Math.random()),
-              sender: msg.sender_type === 'user' ? 'user' : 'bot',
-              text: msg.message_text || msg.text || '',
-              time: msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now',
-            });
-          });
-
-          const liveUsersList: ChatUser[] = Array.from(userMap.entries()).map(([uid, name]) => ({
-            id: uid,
-            name,
-            telegramUserId: uid,
-          }));
-
-          if (liveUsersList.length > 0) {
-            setChatUsers(liveUsersList);
-            setActiveUser(liveUsersList[0]);
-            setChatMessages(userMsgs);
-          }
-        }
-      } catch (err) {
-        // Ignored
+          .limit(100);
+        messages = fallback.data;
       }
-    };
+
+      if (messages && messages.length > 0) {
+        const userMap = new Map<string, string>();
+        const userMsgs: Record<string, ChatMessage[]> = {};
+
+        messages.forEach((msg: any) => {
+          const uid = String(msg.telegram_user_id || 'unknown');
+          if (!userMap.has(uid)) {
+            userMap.set(uid, msg.user_name || `User ${uid}`);
+          }
+          if (!userMsgs[uid]) userMsgs[uid] = [];
+
+          const role = (msg.role || msg.sender_type || '').toLowerCase();
+          const isUser = role === 'user';
+          const messageText = msg.content || msg.message_text || msg.text || msg.message || '';
+
+          userMsgs[uid].push({
+            id: msg.id || String(Math.random()),
+            sender: isUser ? 'user' : 'bot',
+            text: messageText,
+            time: msg.created_at
+              ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : 'Now',
+          });
+        });
+
+        const liveUsersList: ChatUser[] = Array.from(userMap.entries()).map(([uid, name]) => ({
+          id: uid,
+          name,
+          telegramUserId: uid,
+        }));
+
+        if (liveUsersList.length > 0) {
+          setChatUsers(liveUsersList);
+          setActiveUser((prev) => {
+            if (prev && liveUsersList.some((u) => u.telegramUserId === prev.telegramUserId)) {
+              return prev;
+            }
+            return liveUsersList[0];
+          });
+          setChatMessages(userMsgs);
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching live chat data:', err);
+    } finally {
+      setIsLoadingChats(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLiveChatData();
   }, []);
 
@@ -240,69 +270,33 @@ export const ChatBotScreen: React.FC<Props> = () => {
       {/* 1. Cyber Animated Hero Banner */}
       <ProductHeading title="Your chatbot" />
 
-      {/* 2. Responsive KPI Command Cards */}
-      <View className="flex-row flex-wrap gap-2.5 w-full">
-        {chatKpis.map((kpi, idx) => (
-          <View
-            key={idx}
-            className="p-3.5 rounded-2xl flex-col justify-between"
-            style={{
-              backgroundColor: colors.card,
-              width: cardWidthPercent,
-              minHeight: 88,
-            }}
-          >
-            <View className="flex-row items-center justify-between mb-1">
-              <Text
-                className="text-[10px] font-bold uppercase "
-                style={{ color: isDark ? '#94A3B8' : '#64748B' }}
-                numberOfLines={1}
-              >
-                {kpi.title}
-              </Text>
-              <View
-                className="w-6 h-6 rounded-lg items-center justify-center"
-                style={{ backgroundColor: `${kpi.color}15` }}
-              >
-                <Ionicons name={kpi.icon} size={13} color={kpi.color} />
-              </View>
-            </View>
-
-            <Text
-              className="text-sm font-medium"
-              style={{ color: colors.text }}
-              numberOfLines={1}
-            >
-              {kpi.value}
-            </Text>
-
-            <Text
-              className="text-[10px] font-medium mt-0.5"
-              style={{ color: isDark ? '#64748B' : '#94A3B8' }}
-              numberOfLines={1}
-            >
-              {kpi.subtext}
-            </Text>
-          </View>
-        ))}
-      </View>
+      {/* 2. KPI Metrics */}
+      <ProductMetrics
+        items={[
+          { label: 'Active bots', value: `${bots.length} Connected` },
+          { label: 'AI engine', value: 'OpenAI GPT' },
+          { label: 'Engine status', value: '24/7 Live' },
+        ]}
+      />
 
       {/* 3. Action Toolbar */}
       <View
-        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl"
-        style={{ backgroundColor: colors.card }}
+        className="w-full flex-row items-center justify-between p-3.5 rounded-2xl mb-1"
+        style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.cardBorder }}
       >
         <View className="flex-1 pr-3">
           <Text className="text-xs font-bold" style={{ color: colors.text }}>
             Connected Assistants ({bots.length})
           </Text>
-          <Text className="text-[11px]" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+          <Text className="text-[11px]" style={{ color: colors.textSecondary }}>
             AI agents managing incoming user queries
           </Text>
         </View>
 
-        <Pressable
-          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0284C7] active:opacity-90 shadow-sm"
+        <TouchableOpacity
+          className="flex-row items-center gap-1.5 px-3 py-2 rounded-xl shadow-sm"
+          style={{ backgroundColor: colors.primary }}
+          activeOpacity={0.8}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             if (!hasTelegram) {
@@ -318,7 +312,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
         >
           <Ionicons name={hasTelegram ? "add" : "lock-closed"} size={13} color="#FFFFFF" />
           <Text className="text-white text-xs font-bold">Connect Bot</Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
 
       {/* Bot Cards list from Supabase */}
@@ -410,26 +404,28 @@ export const ChatBotScreen: React.FC<Props> = () => {
 
               {/* 3. Primary Action Buttons */}
               <View style={styles.mainActionsRow}>
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
                     styles.primaryActionBtn,
                     styles.chatsBtn,
-                    pressed && { opacity: 0.8 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSupportBotName(bot.support_name || bot.bot_name || 'AI Assistant');
+                    fetchLiveChatData(bot.bot_id || bot.id);
                     setIsChatsDrawerOpen(true);
                   }}
                 >
                   <Ionicons name="chatbubbles" size={15} color="#0284C7" />
                   <Text style={styles.chatsBtnText}>Live Chats</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[
                     styles.primaryActionBtn,
                     styles.openLinkBtn,
-                    pressed && { opacity: 0.8 },
                   ]}
                   onPress={() => {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -439,17 +435,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   <Ionicons name="paper-plane-outline" size={14} color="#0284C7" />
                   <Text style={styles.openLinkText}>Open Bot</Text>
                   <Ionicons name="open-outline" size={12} color="#0284C7" />
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               {/* 4. Utility Footer Row */}
               <View style={styles.cardFooterRow}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.footerBtn,
-                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
-                    pressed && { opacity: 0.7 },
-                  ]}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[styles.footerBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border }]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSupportBotName(bot.support_name || '');
@@ -461,13 +454,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="create-outline" size={13} color={isDark ? '#94A3B8' : '#64748B'} />
                   <Text style={[styles.footerBtnText, txt]}>Edit</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
                     styles.footerBtn,
                     { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -480,13 +473,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                     color={isActive ? '#F59E0B' : '#10B981'}
                   />
                   <Text style={[styles.footerBtnText, txt]}>{isActive ? 'Pause' : 'Resume'}</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
                     styles.footerBtn,
                     { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', borderColor: colors.border },
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -505,13 +498,13 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="refresh-outline" size={13} color={isDark ? '#94A3B8' : '#64748B'} />
                   <Text style={[styles.footerBtnText, txt]}>Reset</Text>
-                </Pressable>
+                </TouchableOpacity>
 
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
                     styles.footerBtn,
                     { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2', borderColor: isDark ? 'rgba(239,68,68,0.2)' : '#FECACA' },
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -523,7 +516,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 >
                   <Ionicons name="trash-outline" size={13} color="#EF4444" />
                   <Text style={[styles.footerBtnText, { color: '#EF4444' }]}>Delete</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
           );
@@ -551,9 +544,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.modalHeaderSub}>Review live chats to refine and train your bot</Text>
               </View>
             </View>
-            <Pressable style={styles.closeBtn} onPress={() => setIsChatsDrawerOpen(false)}>
+            <TouchableOpacity activeOpacity={0.7} style={styles.closeBtn} onPress={() => setIsChatsDrawerOpen(false)}>
               <Ionicons name="close" size={20} color={colors.text} />
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           {/* Active Users Horizontal Switcher */}
@@ -569,7 +562,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
               renderItem={({ item: u }) => {
                 const isSelected = activeUser?.telegramUserId === u.telegramUserId;
                 return (
-                  <Pressable
+                  <TouchableOpacity
+                    activeOpacity={0.7}
                     style={[
                       styles.userPill,
                       { backgroundColor: colors.card, borderColor: colors.border },
@@ -587,7 +581,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
                       <Text style={[styles.userPillName, txt, isSelected && { color: '#0284C7' }]}>{u.name || 'User'}</Text>
                       <Text style={styles.userPillId}>ID: {u.telegramUserId}</Text>
                     </View>
-                  </Pressable>
+                  </TouchableOpacity>
                 );
               }}
             />
@@ -600,62 +594,86 @@ export const ChatBotScreen: React.FC<Props> = () => {
               <Text style={styles.chatTargetId}>User ID: {activeUser?.telegramUserId || '---'}</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable style={styles.chatActionBtn} onPress={handleCopyChat}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.chatActionBtn} onPress={handleCopyChat}>
                 <Ionicons name="copy-outline" size={14} color={colors.text} />
                 <Text style={[styles.chatActionText, txt]}>Copy Chat</Text>
-              </Pressable>
-              <Pressable style={styles.chatActionBtnDanger} onPress={handleResetChat}>
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.7} style={styles.chatActionBtnDanger} onPress={handleResetChat}>
                 <Ionicons name="trash-outline" size={14} color="#EF4444" />
                 <Text style={styles.chatActionDangerText}>Reset Chat</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <FlatList
-            style={styles.chatStream}
-            contentContainerStyle={{ padding: 16 }}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            data={activeUser ? (chatMessages[activeUser.telegramUserId] || []) : []}
-            keyExtractor={(msg) => msg.id}
-            renderItem={({ item: msg }) => {
-              if (msg.isError) {
+          {isLoadingChats ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#0284C7" />
+              <Text style={[styles.modalHeaderSub, { marginTop: 10 }]}>Loading live chats...</Text>
+            </View>
+          ) : (
+            <FlatList
+              style={[styles.chatStream, { backgroundColor: isDark ? '#090D16' : '#F8FAFC' }]}
+              contentContainerStyle={{ padding: 16 }}
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              data={activeUser ? (chatMessages[activeUser.telegramUserId] || []) : []}
+              keyExtractor={(msg) => msg.id}
+              renderItem={({ item: msg }) => {
+                if (msg.isError) {
+                  return (
+                    <View style={styles.errorBubble}>
+                      <Text style={styles.errorBubbleText}>{msg.text}</Text>
+                      <Text style={styles.errorBubbleTime}>{msg.time}</Text>
+                    </View>
+                  );
+                }
+
+                const isUser = msg.sender === 'user';
                 return (
-                  <View style={styles.errorBubble}>
-                    <Text style={styles.errorBubbleText}>{msg.text}</Text>
-                    <Text style={styles.errorBubbleTime}>{msg.time}</Text>
+                  <View
+                    style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowBot]}
+                  >
+                    <View
+                      style={[
+                        styles.msgBubble,
+                        isUser
+                          ? styles.msgBubbleUser
+                          : isDark
+                            ? styles.msgBubbleBotDark
+                            : styles.msgBubbleBotLight,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.msgText,
+                          isUser
+                            ? styles.msgTextUser
+                            : [styles.msgTextBot, { color: isDark ? '#F8FAFC' : '#0F172A' }],
+                        ]}
+                      >
+                        {msg.text || '[Empty message]'}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.msgTime,
+                          isUser
+                            ? styles.msgTimeUser
+                            : [styles.msgTimeBot, { color: isDark ? '#94A3B8' : '#64748B' }],
+                        ]}
+                      >
+                        {msg.time}
+                      </Text>
+                    </View>
                   </View>
                 );
-              }
-
-              const isUser = msg.sender === 'user';
-              return (
-                <View
-                  style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowBot]}
-                >
-                  <View
-                    style={[
-                      styles.msgBubble,
-                      isUser
-                        ? styles.msgBubbleUser
-                        : { backgroundColor: colors.card, borderColor: colors.border },
-                    ]}
-                  >
-                    <Text style={[styles.msgText, isUser ? { color: '#FFFFFF' } : txt]}>
-                      {msg.text}
-                    </Text>
-                    <Text style={[styles.msgTime, isUser ? { color: 'rgba(255,255,255,0.7)' } : { color: '#94A3B8' }]}>
-                      {msg.time}
-                    </Text>
-                  </View>
+              }}
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', padding: 30, gap: 8 }}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={32} color="#94A3B8" />
+                  <Text style={styles.modalHeaderSub}>No messages found for this user.</Text>
                 </View>
-              );
-            }}
-            ListEmptyComponent={
-              <View style={{ alignItems: 'center', padding: 20 }}>
-                <Text style={styles.modalHeaderSub}>No active users found.</Text>
-              </View>
-            }
-          />
+              }
+            />
+          )}
 
           {/* Prompt Refine Training Banner */}
           <View style={[styles.refineBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -665,7 +683,8 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 Refine and train this bot based on this user's queries by editing Knowledge Base or Prompts!
               </Text>
             </View>
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.8}
               style={styles.goToPromptBtn}
               onPress={() => {
                 setIsChatsDrawerOpen(false);
@@ -673,7 +692,7 @@ export const ChatBotScreen: React.FC<Props> = () => {
               }}
             >
               <Text style={styles.goToPromptText}>Go to Prompt</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -702,9 +721,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
                 <Text style={styles.connectedBadgeText}>CONNECTED</Text>
               </View>
             </View>
-            <Pressable style={styles.closeBtn} onPress={() => setIsConfigModalOpen(false)}>
+            <TouchableOpacity activeOpacity={0.7} style={styles.closeBtn} onPress={() => setIsConfigModalOpen(false)}>
               <Ionicons name="close" size={20} color={colors.text} />
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, gap: 18 }}>
@@ -747,16 +766,16 @@ export const ChatBotScreen: React.FC<Props> = () => {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <Text style={[styles.fieldLabel, txt, { marginBottom: 0 }]}>KNOWLEDGE BASE</Text>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Pressable onPress={() => setKnowledgeTab('text')}>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => setKnowledgeTab('text')}>
                     <Text style={[styles.tabLink, knowledgeTab === 'text' && styles.tabLinkActive]}>
                       ✦ BOT KNOWLEDGE
                     </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setKnowledgeTab('images')}>
+                  </TouchableOpacity>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => setKnowledgeTab('images')}>
                     <Text style={[styles.tabLink, knowledgeTab === 'images' && styles.tabLinkActive]}>
                       MULTIMEDIA KNOWLEDGE (IMAGES)
                     </Text>
-                  </Pressable>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -779,13 +798,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   </View>
                 </>
               ) : (
-                <Pressable
+                <TouchableOpacity
+                  activeOpacity={0.7}
                   style={[styles.imageRagBox, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => Alert.alert('Upload Image', 'Upload screenshot or product flyer to RAG vector database')}
                 >
                   <Ionicons name="cloud-upload-outline" size={26} color="#64748B" />
                   <Text style={styles.imageRagText}>Add Image to RAG</Text>
-                </Pressable>
+                </TouchableOpacity>
               )}
             </View>
 
@@ -794,15 +814,14 @@ export const ChatBotScreen: React.FC<Props> = () => {
               <Text style={[styles.fieldLabel, txt]}>
                 PDF KNOWLEDGE DOCUMENTS ({pdfDocuments.length} UPLOADED)
               </Text>
-              <Pressable
-                style={
-                  styles.pdfUploadBox
-                }
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.pdfUploadBox}
                 onPress={handlePickPdf}
               >
                 <Ionicons name="cloud-upload-outline" size={24} color="#64748B" />
                 <Text style={styles.pdfUploadText}>Click to add PDF documents</Text>
-              </Pressable>
+              </TouchableOpacity>
 
               <FlatList
                 data={pdfDocuments}
@@ -819,14 +838,15 @@ export const ChatBotScreen: React.FC<Props> = () => {
                       <View style={styles.trainedBadge}>
                         <Text style={styles.trainedBadgeText}>{doc.status}</Text>
                       </View>
-                      <Pressable
+                      <TouchableOpacity
+                        activeOpacity={0.7}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setPdfDocuments((prev) => prev.filter((d) => d.id !== doc.id));
                         }}
                       >
                         <Ionicons name="trash-outline" size={16} color="#94A3B8" />
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 )}
@@ -846,9 +866,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
                   placeholder="sk-proj-..."
                   placeholderTextColor="#94A3B8"
                 />
-                <Pressable onPress={() => setIsApiKeyVisible((v) => !v)}>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => setIsApiKeyVisible((v) => !v)}>
                   <Ionicons name={isApiKeyVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color="#94A3B8" />
-                </Pressable>
+                </TouchableOpacity>
               </View>
               <View style={styles.validKeyBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#0284C7" />
@@ -857,9 +877,9 @@ export const ChatBotScreen: React.FC<Props> = () => {
             </View>
 
             {/* Save Button */}
-            <Pressable style={styles.saveSettingsBtn} onPress={handleSaveConfig}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.saveSettingsBtn} onPress={handleSaveConfig}>
               <Text style={styles.saveSettingsBtnText}>Save Bot Configuration</Text>
-            </Pressable>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </Modal>
@@ -1206,29 +1226,42 @@ const styles = StyleSheet.create({
   chatActionDangerText: { fontSize: 11, fontWeight: '700', color: '#EF4444' },
 
   chatStream: { flex: 1 },
-  msgRow: { flexDirection: 'row', marginBottom: 6 },
+  msgRow: { flexDirection: 'row', marginBottom: 8 },
   msgRowUser: { justifyContent: 'flex-end' },
   msgRowBot: { justifyContent: 'flex-start' },
   msgBubble: {
     maxWidth: '82%',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: 16,
   },
   msgBubbleUser: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#0284C7',
     borderBottomRightRadius: 2,
   },
   msgBubbleBotLight: {
-    backgroundColor: '#F0EEF8',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
     borderBottomLeftRadius: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   msgBubbleBotDark: {
     backgroundColor: '#1E2430',
+    borderColor: '#2A3342',
+    borderWidth: 1,
     borderBottomLeftRadius: 2,
   },
-  msgText: { fontSize: 13, lineHeight: 18 },
+  msgText: { fontSize: 13.5, lineHeight: 19 },
+  msgTextUser: { color: '#FFFFFF', fontWeight: '400' },
+  msgTextBot: { fontWeight: '400' },
   msgTime: { fontSize: 9.5, alignSelf: 'flex-end', marginTop: 4 },
+  msgTimeUser: { color: 'rgba(255, 255, 255, 0.75)' },
+  msgTimeBot: { color: '#64748B' },
 
   errorBubble: {
     backgroundColor: '#FFFBEB',

@@ -11,12 +11,17 @@ export { getColors, AppColors };
 
 const THEME_STORAGE_KEY = '@gap_app_theme_mode';
 
-const defaultIsDark = false;
+const defaultIsDark = (() => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  return Appearance.getColorScheme() === 'dark';
+})();
 
 const defaultColors = getColors(defaultIsDark);
 
 export const ThemeContext = createContext<ThemeContextType>({
-  themeMode: 'light',
+  themeMode: 'system',
   theme: defaultIsDark ? 'dark' : 'light',
   isDark: defaultIsDark,
   tailwindClass: defaultIsDark ? 'dark' : 'light',
@@ -27,8 +32,15 @@ export const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: async () => { },
 });
 
+// Prevent React Native Android NullPointerException in setColorScheme
+if (Platform.OS === 'android') {
+  try {
+    (Appearance as any).setColorScheme = () => {};
+  } catch {}
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [systemScheme, setSystemScheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -125,7 +137,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (Platform.OS === 'android') {
       try {
-        NavigationBar.setStyle(isDark ? 'dark' : 'light');
+        NavigationBar.setStyle(isDark ? 'light' : 'dark');
       } catch (e) {
         // safe fallback
       }
@@ -134,20 +146,29 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Synchronize Appearance and NativeWind
   useEffect(() => {
-    try {
-      if (Appearance && typeof (Appearance as any).setColorScheme === 'function') {
-        // Android AppearanceModule.setColorScheme expects a non-null string ('light' | 'dark')
-        (Appearance as any).setColorScheme(activeTheme);
+    // Note: Do NOT call Appearance.setColorScheme on Android — it is unsupported by React Native Android
+    // and causes native background crashes (java.lang.NullPointerException in setColorScheme).
+    if (Platform.OS === 'ios') {
+      try {
+        if (Appearance && typeof (Appearance as any).setColorScheme === 'function') {
+          const schemeToSet = themeMode === 'system' ? 'auto' : activeTheme;
+          (Appearance as any).setColorScheme(schemeToSet);
+        }
+      } catch (e) {
+        // safe fallback
       }
-    } catch (e) {
-      // safe fallback
     }
-    try {
-      if (setNWColorScheme) {
-        setNWColorScheme(themeMode === 'system' ? 'system' : activeTheme);
+
+    // NativeWind / react-native-css-interop delegates to Appearance.setColorScheme
+    // which throws NullPointerException on Android. Only sync NativeWind on iOS/Web.
+    if (Platform.OS !== 'android') {
+      try {
+        if (setNWColorScheme) {
+          setNWColorScheme(themeMode === 'system' ? 'system' : activeTheme);
+        }
+      } catch (e) {
+        // safe fallback
       }
-    } catch (e) {
-      // safe fallback
     }
   }, [themeMode, activeTheme, setNWColorScheme]);
 

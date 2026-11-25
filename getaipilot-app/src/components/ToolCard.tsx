@@ -1,74 +1,93 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import {
+  Image,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { ArrowRight01Icon } from '@/constants/icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useTheme, getColors } from '@/theme';
+import { soundService } from '../services/soundFeedbackService';
 
-interface ToolCardProps {
+export interface ToolCardProps {
   title: string;
-  category: string;
+  category?: string;
   description: string;
   icon: React.ComponentProps<typeof HugeiconsIcon>['icon'];
+  image?: any;
   iconBg?: string;
+  iconColor?: string;
   badge?: string;
+  badgeBg?: string;
+  badgeColor?: string;
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ToolCard: React.FC<ToolCardProps> = ({
   title,
   description,
   icon,
+  image,
   iconBg,
+  iconColor,
   badge,
+  badgeBg,
+  badgeColor,
   onPress,
+  style,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
+  const resolvedIconColor = iconColor || (isDark ? '#FFFFFF' : '#17171C');
+
   return (
-    <Pressable
-      className="p-4 rounded-[20px] mb-3.5 justify-between active:opacity-85"
-      style={
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={() => {
+        soundService.play('pop');
+        onPress?.();
+      }}
+      style={[
+        styles.card,
         {
           backgroundColor: colors.card,
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.25 : 0.04,
-          shadowRadius: 8,
-        }
-      }
-      onPress={onPress}
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : colors.cardBorder,
+        },
+        style,
+      ]}
     >
-      {/* Card Header: Icon + Badge */}
-      <View className="flex-row items-center justify-between mb-3">
+      {/* 1. Header: Icon Surface Badge + Status Pill */}
+      <View style={styles.header}>
         <View
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: iconBg || colors.accentSoft,
-          }}
+          style={[
+            styles.iconSurface,
+            { backgroundColor: iconBg || colors.accentSoft },
+          ]}
         >
-          <HugeiconsIcon icon={icon} size={21} color={'#000000'} strokeWidth={1.8} />
+          <HugeiconsIcon icon={icon} size={20} color={resolvedIconColor} strokeWidth={1.8} />
         </View>
+
         {badge ? (
           <View
-            style={{
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 8,
-              backgroundColor: colors.accentSoft,
-            }}
+            style={[
+              styles.badgePill,
+              {
+                backgroundColor: badgeBg || (isDark ? 'rgba(255, 255, 255, 0.08)' : colors.accentSoft),
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+              },
+            ]}
           >
             <Text
-              style={{
-                fontSize: 9.5,
-                fontWeight: "600",
-                letterSpacing: 0.8,
-                color: colors.accent,
-              }}
+              style={[
+                styles.badgeText,
+                { color: badgeColor || colors.accent },
+              ]}
             >
               {badge}
             </Text>
@@ -76,62 +95,152 @@ export const ToolCard: React.FC<ToolCardProps> = ({
         ) : null}
       </View>
 
-      {/* Card Body: Category, Title & Description */}
-      <View style={{ gap: 3, marginBottom: 10 }}>
+      {/* 2. Body: Title & Description */}
+      <View style={styles.body}>
         <Text
-          style={{
-            fontSize: 15,
-            fontWeight: "600",
-            letterSpacing: -0.3,
-            color: colors.text,
-          }}
           numberOfLines={1}
+          style={[styles.title, { color: colors.text }]}
         >
           {title}
         </Text>
         <Text
-          style={{
-            fontSize: 13,
-            lineHeight: 19,
-            color: colors.textSecondary,
-          }}
           numberOfLines={2}
+          style={[styles.description, { color: colors.textSecondary }]}
         >
           {description}
         </Text>
       </View>
 
-      {/* Card Footer: Launch CTA */}
+      {/* 3. Bottom Side Stage: Launch CTA + 3D Illustration */}
       <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingTop: 11,
-          borderTopWidth: 0,
-          borderTopColor: isDark
-            ? "rgba(255,255,255,0.06)"
-            : "rgba(0,0,0,0.05)",
-        }}
+        style={[
+          styles.bottomRow,
+          {
+            borderTopColor: isDark
+              ? 'rgba(255, 255, 255, 0.06)'
+              : 'rgba(0, 0, 0, 0.05)',
+          },
+        ]}
       >
-        <Text
-          style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}
-        >
-          Launch Tool
-        </Text>
-        <View
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 11,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: colors.primaryMuted,
-          }}
-        >
-          <HugeiconsIcon icon={ArrowRight01Icon} size={12} color={colors.primary} strokeWidth={2} />
+        <View style={styles.launchGroup}>
+          <Text style={[styles.launchText, { color: colors.primary }]}>
+            Launch
+          </Text>
+          <View
+            style={[
+              styles.arrowCircle,
+              { backgroundColor: colors.primaryMuted },
+            ]}
+          >
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              size={11}
+              color={colors.primary}
+              strokeWidth={2.4}
+            />
+          </View>
         </View>
+
+        {/* 3D Illustration Asset on the Bottom Side */}
+        {image ? (
+          <View style={styles.imageWrapper}>
+            <Image
+              source={image}
+              style={styles.bottomImage}
+              resizeMode="contain"
+            />
+          </View>
+        ) : null}
       </View>
-    </Pressable>
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 13,
+    minHeight: 184,
+    justifyContent: 'space-between',
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  iconSurface: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgePill: {
+    paddingHorizontal: 7.5,
+    paddingVertical: 3,
+    borderRadius: 7,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  body: {
+    gap: 3,
+    flex: 1,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  description: {
+    fontSize: 11.5,
+    lineHeight: 16,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    height: 44,
+  },
+  launchGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  launchText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  arrowCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageWrapper: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomImage: {
+    width: '100%',
+    height: '100%',
+  },
+});

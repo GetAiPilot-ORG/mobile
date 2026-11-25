@@ -4,6 +4,7 @@ import { getDeviceLoginInfo } from "../../lib/device-session";
 import { supabase } from "../../lib/supabase";
 import { apiClient } from "../api/client";
 import { authStorage } from "../storage/authStorage";
+import { getPendingReferralCode, handlePendingReferral } from "../../services/referralService";
 
 const CACHED_USER_KEY = "@gap_cached_user";
 
@@ -77,29 +78,66 @@ export const useAuthStore = create<AuthState>((set, get) => {
     onboardingCompleted: null,
 
     setOnboardingCompleted: (completed: boolean) => {
+      const uid = get().user?.id;
+      if (uid && completed) {
+        AsyncStorage.setItem(`onboarding_completed_${uid}`, "true").catch(() => {});
+      }
+      if (completed) {
+        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+      }
       set({ onboardingCompleted: completed });
     },
 
     checkOnboardingStatus: async (userId?: string) => {
       const uid = userId || get().user?.id;
       if (!uid) {
-        set({ onboardingCompleted: true });
-        return true;
+        set({ onboardingCompleted: false });
+        return false;
       }
+
+      // 1. Instant check from local cache
+      try {
+        const globalCached = await AsyncStorage.getItem("@onboarding_completed_global");
+        if (globalCached === "true") {
+          set({ onboardingCompleted: true });
+          return true;
+        }
+        const cached = await AsyncStorage.getItem(`onboarding_completed_${uid}`);
+        if (cached === "true") {
+          set({ onboardingCompleted: true });
+          return true;
+        }
+      } catch {}
+
+      // 2. Query Supabase profile
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("onboarding_completed")
+          .select("onboarding_completed, account_type, business_name, full_name, first_name")
           .eq("id", uid)
           .maybeSingle();
 
         if (error) {
-          console.warn("[AuthStore] Error checking onboarding status:", error);
+          console.warn("[AuthStore] Notice checking onboarding status:", error.message);
+          // Don't lock out logged-in users on network/RLS error: default to complete
           set({ onboardingCompleted: true });
           return true;
         }
 
-        const isComplete = Boolean(data?.onboarding_completed);
+        const isComplete = Boolean(
+          data?.onboarding_completed ||
+          data?.account_type ||
+          data?.business_name ||
+          data?.full_name ||
+          data?.first_name ||
+          data != null
+        );
+
+        if (isComplete) {
+          await AsyncStorage.setItem(`onboarding_completed_${uid}`, "true").catch(() => {});
+          await AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+        }
+
         set({ onboardingCompleted: isComplete });
         return isComplete;
       } catch (err) {
@@ -175,8 +213,19 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
-          onboardingCompleted: isOnboarded,
+          onboardingCompleted: true,
         });
+        AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+
+        // Auto-link any pending referral code captured on phone
+        getPendingReferralCode().then((code) => {
+          if (code) {
+            handlePendingReferral(code).catch((e) => {
+              console.warn("[AuthStore] Pending referral linking note:", e);
+            });
+          }
+        }).catch(() => {});
       } catch (e) {
         set({ isLoading: false, authStatus: "unauthenticated", onboardingCompleted: null });
         throw e;
@@ -243,8 +292,19 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
-          onboardingCompleted: isOnboarded,
+          onboardingCompleted: true,
         });
+        AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+
+        // Auto-link any pending referral code captured on phone
+        getPendingReferralCode().then((code) => {
+          if (code) {
+            handlePendingReferral(code).catch((e) => {
+              console.warn("[AuthStore] Pending referral linking note:", e);
+            });
+          }
+        }).catch(() => {});
       } catch (e) {
         set({ isLoading: false });
         throw e;
@@ -252,12 +312,40 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     logout: async () => {
+      const currentUser = get().user;
+      const uid = currentUser?.id;
+
       try {
+        if (uid) {
+          // Clear push token from user profile in Supabase so this account stops receiving pushes on this device
+          const cachedToken = await AsyncStorage.getItem('@getaipilot_expo_push_token').catch(() => null);
+          const { error: pushTokenError } = await supabase
+            .from('profiles')
+            .update({ push_token: null })
+            .eq('id', uid);
+          if (pushTokenError) console.warn('[Auth] Could not clear push token:', pushTokenError.message);
+
+          if (cachedToken) {
+            try {
+              await supabase
+                .from('user_push_tokens')
+                .delete()
+                .eq('user_id', uid)
+                .eq('push_token', cachedToken);
+            } catch {
+              // noop
+            }
+          }
+        }
         await apiClient.post("/mobile/v1/auth/logout", {}).catch(() => {});
       } finally {
         await supabase.auth.signOut({ scope: "local" }).catch(() => {});
         await authStorage.clear();
-        await AsyncStorage.removeItem(CACHED_USER_KEY).catch(() => {});
+        await AsyncStorage.multiRemove([
+          CACHED_USER_KEY,
+          "@getaipilot_expo_push_token",
+          "@getaipilot_push_token_synced_user",
+        ]).catch(() => {});
         set({
           user: null,
           tenantMapping: null,
@@ -308,13 +396,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
             () => {},
           );
           const isOnboarded = await get().checkOnboardingStatus(userObj.id);
+          AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+          AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
           set({
             user: userObj,
             tenantMapping: me.tenantMapping,
             isAuthenticated: true,
             isLoading: false,
             authStatus: "authenticated",
-            onboardingCompleted: isOnboarded,
+            onboardingCompleted: true,
           });
           return;
         } catch (apiErr: any) {
@@ -348,13 +438,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
             try {
               const cachedUser = JSON.parse(cachedUserStr);
               const isOnboarded = await get().checkOnboardingStatus(cachedUser.id);
+              AsyncStorage.setItem(`onboarding_completed_${cachedUser.id}`, "true").catch(() => {});
+              AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
               set({
                 user: cachedUser,
                 tenantMapping: null,
                 isAuthenticated: true,
                 isLoading: false,
                 authStatus: "authenticated",
-                onboardingCompleted: isOnboarded,
+                onboardingCompleted: true,
               });
               return;
             } catch {}
@@ -377,13 +469,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
               user_metadata: u.user_metadata,
             };
             const isOnboarded = await get().checkOnboardingStatus(restoredUser.id);
+            AsyncStorage.setItem(`onboarding_completed_${restoredUser.id}`, "true").catch(() => {});
+            AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
             set({
               user: restoredUser,
               tenantMapping: null,
               isAuthenticated: true,
               isLoading: false,
               authStatus: "authenticated",
-              onboardingCompleted: isOnboarded,
+              onboardingCompleted: true,
             });
             return;
           }

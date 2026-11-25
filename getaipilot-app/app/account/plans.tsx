@@ -1,11 +1,13 @@
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { ProductHeading } from "@/components/ProductUI";
-import { getColors, useTheme } from '@/theme';
+import { ProductHeading, ProductButton, ProductEmpty, useProductPalette } from "@/components/ProductUI";
+import { useTheme } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +21,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -35,10 +38,18 @@ import {
 import { usePlatformSubscription } from '../../src/hooks/usePlatformSubscription';
 import {
   ReferralDiscountInfo,
+  captureReferralParam,
   checkAndCompleteReferralReward,
   getActiveReferralDiscount,
   isGapProPlan,
+  savePendingReferralCode,
+  linkReferrerManually,
+  getPendingReferralCode,
+  STORAGE_KEY_REFERRER_CODE,
+  STORAGE_KEY_PENDING_REFERRAL,
 } from '../../src/services/referralService';
+import { ThemedAlert } from '../../src/contexts/ThemedDialogContext';
+import { supabase } from '../../src/lib/supabase';
 
 type MainTab = 'pro' | 'modular';
 
@@ -74,7 +85,19 @@ function getPlanTheme(plan: PricingPlan) {
   }
 
   const cat = (plan.category || '').toLowerCase();
-  if (cat === 'calling' || cat === 'voice' || isAddonPlan(plan)) {
+  const name = (plan.plan_name || '').toLowerCase();
+  const label = (plan.plan_label || '').toLowerCase();
+
+  if (cat === 'crm' || name.includes('crm') || label.includes('crm') || name.includes('extra_user') || label.includes('extra seat')) {
+    return {
+      color: '#F59E0B',
+      lightBg: '#FFFBEB',
+      darkBg: '#451A03',
+      badge: 'SMART CRM',
+      icon: 'people' as keyof typeof Ionicons.glyphMap,
+    };
+  }
+  if (cat === 'calling' || cat === 'voice' || (isAddonPlan(plan) && !name.includes('crm') && !label.includes('crm'))) {
     return {
       color: '#A855F7',
       lightBg: '#FAF5FF',
@@ -101,15 +124,6 @@ function getPlanTheme(plan: PricingPlan) {
       icon: 'paper-plane' as keyof typeof Ionicons.glyphMap,
     };
   }
-  if (cat === 'crm') {
-    return {
-      color: '#F59E0B',
-      lightBg: '#FFFBEB',
-      darkBg: '#451A03',
-      badge: 'SMART CRM',
-      icon: 'people' as keyof typeof Ionicons.glyphMap,
-    };
-  }
   if (cat === 'social') {
     return {
       color: '#EC4899',
@@ -129,15 +143,32 @@ function getPlanTheme(plan: PricingPlan) {
   };
 }
 
+const REFERRAL_DISCOUNT_PERCENT = 5;
+
+function applyReferralDiscount(
+  amountInRupees: number,
+  hasDiscount: boolean,
+): number {
+  if (!hasDiscount) return amountInRupees;
+
+  return Math.max(
+    1,
+    Math.round(
+      amountInRupees * (1 - REFERRAL_DISCOUNT_PERCENT / 100),
+    ),
+  );
+}
+
 export default function OverallPricingScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const reducedMotion = useReducedMotion();
-  const colors = getColors(isDark);
+  const colors = useProductPalette();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
   const { openRazorpayCheckout } = useRazorpay();
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; ref?: string; referral?: string }>();
 
   // Main Segmented Tab: GAP Pro vs Modular Engines
   const [activeTab, setActiveTab] = useState<MainTab>(
@@ -244,16 +275,150 @@ export default function OverallPricingScreen() {
 
   const { user } = useAuth();
 
+  const [referralCodeInput, setReferralCodeInput] = useState<string>('');
+  const [isDiscountApplied, setIsDiscountApplied] = useState<boolean>(false);
+  const [appliedReferralCode, setAppliedReferralCode] = useState<string>('');
+  const [isApplyingReferral, setIsApplyingReferral] = useState<boolean>(false);
+  const [referralApplyError, setReferralApplyError] = useState<string | null>(null);
+
+  const urlRefParam = (params.ref || params.referral || '').trim();
+  const hasUrlReferralParam = Boolean(urlRefParam && urlRefParam.length >= 3);
+
   const { data: referralDiscount, refetch: refetchDiscount } = useQuery<ReferralDiscountInfo>({
     queryKey: ['active-referral-discount', user?.id],
     queryFn: () => getActiveReferralDiscount(user?.id),
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
-  const hasReferralDiscount = Boolean(
-    referralDiscount?.hasDiscount && (referralDiscount.discountPercent || 0) > 0
-  );
-  const discountPercent = referralDiscount?.discountPercent || 0;
+  // Initialize and auto-detect referral code from URL param or storage
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initReferral = async () => {
+      try {
+        const storageCode = await getPendingReferralCode();
+        const savedCode = await AsyncStorage.getItem(
+          STORAGE_KEY_REFERRER_CODE,
+        );
+        const discountActiveFlag = await AsyncStorage.getItem(
+          '@referral_discount_active',
+        );
+
+        const detected = (
+          urlRefParam ||
+          storageCode ||
+          savedCode ||
+          ''
+        )
+          .trim()
+          .toUpperCase();
+
+        // If arrived via URL, preserve pending code and referrer code
+        if (hasUrlReferralParam) {
+          await savePendingReferralCode(urlRefParam);
+          await AsyncStorage.setItem(
+            STORAGE_KEY_REFERRER_CODE,
+            detected,
+          );
+        }
+
+        // Only mark applied if the user has activated it via Apply button or stored flag
+        const shouldBeApplied = Boolean(discountActiveFlag === 'true');
+
+        if (!isMounted) return;
+
+        if (detected) {
+          setReferralCodeInput(detected);
+        }
+
+        if (shouldBeApplied) {
+          setIsDiscountApplied(true);
+          setAppliedReferralCode(detected);
+        }
+      } catch (error) {
+        console.warn('[Pricing] initReferral error:', error);
+      }
+    };
+
+    void initReferral();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    hasUrlReferralParam,
+    urlRefParam,
+    referralDiscount?.hasDiscount,
+    referralDiscount?.discountPercent,
+  ]);
+
+  // Active referral discount is true if applied locally
+  const hasReferralDiscount = isDiscountApplied;
+  const discountPercent = hasReferralDiscount ? 5 : 0;
+
+  const handleApplyReferralDiscount = async () => {
+    const code = referralCodeInput.trim().toUpperCase();
+    if (!code || code.length < 3) {
+      setReferralApplyError('Please enter a valid referral code.');
+      return;
+    }
+    setReferralApplyError(null);
+    setIsApplyingReferral(true);
+    try {
+      await savePendingReferralCode(code);
+      await AsyncStorage.setItem('@referral_discount_active', 'true');
+      await AsyncStorage.setItem(STORAGE_KEY_REFERRER_CODE, code);
+      setAppliedReferralCode(code);
+      setIsDiscountApplied(true);
+
+      if (user?.id) {
+        try {
+          await linkReferrerManually(user.id, code);
+        } catch (e) {
+          console.warn('[Pricing] Manual link error:', e);
+        }
+      }
+
+      await refetchDiscount();
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      Alert.alert('5% Discount Applied!', `Referral code "${code}" applied. You save 5% on all GAP Pro plans!`);
+    } catch (e) {
+      console.warn('[Pricing] Error applying referral code:', e);
+      // Still apply the 5% discount locally for immediate user feedback
+      setIsDiscountApplied(true);
+      setAppliedReferralCode(code);
+    } finally {
+      setIsApplyingReferral(false);
+    }
+  };
+
+  const handleRemoveReferralDiscount = async () => {
+    setIsDiscountApplied(false);
+    setAppliedReferralCode('');
+    try {
+      await AsyncStorage.removeItem('@referral_discount_active');
+      await AsyncStorage.removeItem(STORAGE_KEY_PENDING_REFERRAL);
+      await refetchDiscount();
+    } catch (e) {
+      console.warn('[Pricing] Error removing referral discount:', e);
+    }
+  };
+
+  const copyReferralCode = async (codeToCopy: string) => {
+    if (!codeToCopy) return;
+    try {
+      await Clipboard.setStringAsync(codeToCopy);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      Alert.alert('Code Copied!', `Referral code "${codeToCopy}" has been copied to your clipboard.`);
+    } catch (e) {
+      console.warn('[Pricing] Error copying code:', e);
+    }
+  };
 
   // Query all active plans from DB / BFF
   const {
@@ -284,8 +449,20 @@ export default function OverallPricingScreen() {
     return allPlans
       .filter((p) => {
         if (isGapProPlan(p)) return false;
+        const name = (p.plan_name || '').toLowerCase();
+        const label = (p.plan_label || '').toLowerCase();
+        const isCrmPlan =
+          p.category === 'crm' ||
+          name.includes('crm') ||
+          label.includes('crm') ||
+          name.includes('extra_user') ||
+          label.includes('extra seat');
+
         if (selectedEngine === 'calling') {
-          return p.category === 'calling' || p.category === 'voice' || isAddonPlan(p);
+          return (p.category === 'calling' || p.category === 'voice') && !isCrmPlan;
+        }
+        if (selectedEngine === 'crm') {
+          return isCrmPlan;
         }
         return p.category === selectedEngine;
       })
@@ -327,11 +504,12 @@ export default function OverallPricingScreen() {
 
     const isAddon = isAddonPlan(plan);
     const isVoicePlan =
-      plan.category === 'calling' ||
-      plan.category === 'voice' ||
-      plan.id.startsWith('calling') ||
-      plan.id.startsWith('call_') ||
-      isAddon;
+      (plan.category === 'calling' ||
+        plan.category === 'voice' ||
+        plan.id.startsWith('calling') ||
+        plan.id.startsWith('call_')) &&
+      !plan.plan_name?.toLowerCase().includes('crm') &&
+      !plan.plan_label?.toLowerCase().includes('crm');
 
     const theme = getPlanTheme(plan);
     const isPro = isGapProPlan(plan);
@@ -355,6 +533,11 @@ export default function OverallPricingScreen() {
         billingInterval: gapProInterval,
         description: `${planDisplayName} Subscription · ${proPricing.option.days} Days Quotas`,
         themeColor: theme.color,
+        notes: {
+          referral_code: hasReferralDiscount ? (appliedReferralCode || referralCodeInput || '') : '',
+          discount_percent: hasReferralDiscount ? '5' : '0',
+          discount_amount: hasReferralDiscount ? String(Math.round(proPricing.originalPeriodRupees * 0.05)) : '0',
+        },
         onSuccess: async () => {
           if (Platform.OS !== 'web') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -362,9 +545,38 @@ export default function OverallPricingScreen() {
 
           if (user?.id) {
             try {
+              // 1. Reward flat ₹100 cash to referrer
               await checkAndCompleteReferralReward(user.id, plan.id, amountInRupees);
+
+              // 2. If referral discount was applied, record in both tables:
+              if (hasReferralDiscount) {
+                const codeToSave = (appliedReferralCode || referralCodeInput || '').trim().toUpperCase();
+                const savedRupees = Math.round(proPricing.originalPeriodRupees * 0.05);
+
+                // Table 1: app_user_subscriptions (active user subscription profile)
+                await supabase
+                  .from('app_user_subscriptions')
+                  .update({
+                    referral_code: codeToSave,
+                    discount_percent: 5,
+                    has_referral_discount: true,
+                  })
+                  .eq('user_id', user.id);
+
+                // Table 2: app_subscription_payments (latest payment transaction record)
+                await supabase
+                  .from('app_subscription_payments')
+                  .update({
+                    referral_code: codeToSave,
+                    discount_percent: 5,
+                    discount_amount: savedRupees,
+                  })
+                  .eq('user_id', user.id)
+                  .order('charged_at', { ascending: false })
+                  .limit(1);
+              }
             } catch (refErr) {
-              console.warn('[Pricing] Referral reward completion notice:', refErr);
+              console.warn('[Pricing] Referral reward and table update notice:', refErr);
             }
           }
 
@@ -388,10 +600,22 @@ export default function OverallPricingScreen() {
       return;
     }
 
-    // Standard modular plan checkout
     const baseAmountInRupees = Math.round(plan.amount / 100);
-    const amountInRupees = baseAmountInRupees;
+
+    const amountInRupees = applyReferralDiscount(
+      baseAmountInRupees,
+      hasReferralDiscount,
+    );
+
     const planDisplayName = plan.plan_label || plan.plan_name;
+
+
+
+    // Standard modular plan checkout=
+
+    // const amountInRupees = baseAmountInRupees;
+    // const planDisplayName = plan.plan_label || plan.plan_name;
+
 
     const dur = (plan.duration || '').toLowerCase();
     const billingInterval: 'month' | 'quarterly' | 'six_months' | 'year' =
@@ -412,9 +636,45 @@ export default function OverallPricingScreen() {
       billingInterval,
       description: plan.description || `${planDisplayName} Subscription`,
       themeColor: theme.color,
+      notes: {
+        referral_code: hasReferralDiscount ? (appliedReferralCode || referralCodeInput || '') : '',
+        discount_percent: hasReferralDiscount ? '5' : '0',
+        discount_amount: hasReferralDiscount ? String(Math.round(baseAmountInRupees * 0.05)) : '0',
+      },
       onSuccess: async () => {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+
+        if (user?.id && hasReferralDiscount) {
+          try {
+            const codeToSave = (appliedReferralCode || referralCodeInput || '').trim().toUpperCase();
+            const savedRupees = Math.round(baseAmountInRupees * 0.05);
+
+            // Table 1: app_user_subscriptions (active user subscription profile)
+            await supabase
+              .from('app_user_subscriptions')
+              .update({
+                referral_code: codeToSave,
+                discount_percent: 5,
+                has_referral_discount: true,
+              })
+              .eq('user_id', user.id);
+
+            // Table 2: app_subscription_payments (latest payment transaction record)
+            await supabase
+              .from('app_subscription_payments')
+              .update({
+                referral_code: codeToSave,
+                discount_percent: 5,
+                discount_amount: savedRupees,
+              })
+              .eq('user_id', user.id)
+              .order('charged_at', { ascending: false })
+              .limit(1);
+          } catch (refErr) {
+            console.warn('[Pricing] Modular subscription referral update notice:', refErr);
+          }
         }
 
         Alert.alert(
@@ -455,122 +715,122 @@ export default function OverallPricingScreen() {
           />
         }
       >
-        {/* Title Header matching Screenshot 1 & 2 */}
-        <ProductHeading title="Choose your plan" />
-        <View className="items-center px-4 pt-2 pb-1">
-          <Text
-            className="text-2xl font-black tracking-tight text-center"
-            style={{ color: colors.text }}
-          >
-            Our Packages
-          </Text>
-          <Text
-            className="text-xs text-center mt-1.5 leading-4 px-4"
-            style={{ color: colors.textMuted }}
-          >
-            Select the optimal tier for your team and proceed directly with Razorpay checkout.
-          </Text>
-        </View>
+        {/* Title Header matching ProductUI */}
+        <ProductHeading
+          title={"Simple, transparent\npricing."}
+          description="Choose the perfect plan for your business. Upgrade or switch engines anytime."
+        />
 
         {/* Active Subscription Banner if user already has an active subscription */}
         {isSubActive && (
           <View
-            className="mx-1 my-2 p-3.5 rounded-2xl border flex-row items-center justify-between shadow-sm"
             style={{
-              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5',
-              borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : '#A7F3D0',
+              backgroundColor: colors.mint,
+              borderRadius: 24,
+              padding: 18,
+              marginBottom: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
             }}
           >
-            <View className="flex-row items-center gap-2.5 flex-1 mr-2">
-              <View className="w-8 h-8 rounded-full items-center justify-center bg-emerald-500/20">
-                <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+              <View
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 21,
+                  backgroundColor: colors.card,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="shield-checkmark" size={22} color="#10B981" />
               </View>
-              <View className="flex-1">
-                <Text
-                  className="text-xs font-black tracking-tight"
-                  style={{ color: isDark ? '#F8FAFC' : '#065F46' }}
-                >
-                  Active Subscription: {planLabel || 'GAP Pro'}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                  Current Plan
+                </Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 2 }}>
+                  {planLabel || 'GAP Pro'}
                 </Text>
               </View>
             </View>
-            <View className="px-2.5 py-1 rounded-full bg-emerald-500">
-              <Text className="text-[10px] font-black text-white tracking-wider">
-                ACTIVE
-              </Text>
+            <View style={{ backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 }}>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.6 }}>ACTIVE</Text>
             </View>
           </View>
         )}
 
         {/* Top Segmented Switcher */}
-        <View className="items-center my-3">
-          <View
-            className="flex-row p-1 rounded-full border shadow-sm"
+        <View
+          style={{
+            flexDirection: 'row',
+            backgroundColor: colors.card,
+            borderRadius: 30,
+            padding: 4,
+            marginBottom: 16,
+          }}
+        >
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setActiveTab('pro');
+            }}
             style={{
-              backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-              borderColor: isDark ? '#334155' : '#E2E8F0',
-              width: Math.min(width - 32, 340),
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 26,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: activeTab === 'pro' ? colors.buttonPrimary : 'transparent',
             }}
           >
-            <Pressable
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('pro');
-              }}
-              className="flex-1 py-2.5 rounded-full items-center justify-center"
+            <Text
               style={{
-                backgroundColor: activeTab === 'pro' ? colors.accentSoft : 'transparent',
-                shadowColor: activeTab === 'pro' ? '#8B5CF6' : 'transparent',
-                shadowOpacity: 0,
-                shadowRadius: 6,
-                elevation: activeTab === 'pro' ? 3 : 0,
+                fontSize: 13,
+                fontWeight: activeTab === 'pro' ? '600' : '500',
+                color: activeTab === 'pro' ? colors.buttonPrimaryForeground : colors.textSecondary,
               }}
             >
-              <Text
-                className="text-xs font-medium"
-                style={{
-                  color: activeTab === 'pro' ? colors.accent : colors.textMuted,
-                }}
-              >
-                ALL-IN-ONE PRO
-              </Text>
-            </Pressable>
+              All-in-One Pro
+            </Text>
+          </Pressable>
 
-            <Pressable
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setActiveTab('modular');
-              }}
-              className="flex-1 py-2.5 rounded-full items-center justify-center"
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setActiveTab('modular');
+            }}
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: 26,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: activeTab === 'modular' ? colors.buttonPrimary : 'transparent',
+            }}
+          >
+            <Text
               style={{
-                backgroundColor: activeTab === 'modular' ? colors.accentSoft : 'transparent',
-                shadowColor: activeTab === 'modular' ? currentTabThemeColor : 'transparent',
-                shadowOpacity: 0,
-                shadowRadius: 6,
-                elevation: activeTab === 'modular' ? 3 : 0,
+                fontSize: 13,
+                fontWeight: activeTab === 'modular' ? '600' : '500',
+                color: activeTab === 'modular' ? colors.buttonPrimaryForeground : colors.textSecondary,
               }}
             >
-              <Text
-                className="text-xs font-medium"
-                style={{
-                  color: activeTab === 'modular' ? colors.accent : colors.textMuted,
-                }}
-              >
-                SINGLE ENGINES
-              </Text>
-            </Pressable>
-          </View>
+              Single Engines
+            </Text>
+          </Pressable>
         </View>
 
         {/* Sub-Filters: Interval Cadence for Pro, or Engine Chips for Modular */}
         {activeTab === 'pro' ? (
-          <View className="mb-2 px-1">
-            <View
-              className="flex-row p-1 rounded-2xl border"
-              style={{
-                backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                borderColor: isDark ? '#334155' : '#E2E8F0',
-              }}
+          <View style={{ marginBottom: 16 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
             >
               {GAP_PRO_INTERVALS.map((inv) => {
                 const isSelected = gapProInterval === inv.key;
@@ -581,40 +841,56 @@ export default function OverallPricingScreen() {
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setGapProInterval(inv.key);
                     }}
-                    className="flex-1 py-2 px-1 rounded-xl items-center justify-center"
                     style={{
-                      backgroundColor: isSelected
-                        ? isDark
-                          ? '#334155'
-                          : '#F1F5F9'
-                        : 'transparent',
+                      paddingHorizontal: 16,
+                      paddingVertical: 9,
+                      borderRadius: 20,
+                      backgroundColor: isSelected ? colors.lavender : colors.card,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
                     }}
                   >
                     <Text
-                      className="text-[11px]"
                       style={{
-                        fontWeight: isSelected ? '900' : '600',
-                        color: isSelected ? (isDark ? '#F8FAFC' : '#0F172A') : colors.textMuted,
+                        fontSize: 13,
+                        fontWeight: isSelected ? '600' : '500',
+                        color: isSelected ? colors.accent : colors.textSecondary,
                       }}
                     >
                       {inv.label}
                     </Text>
                     {Boolean(inv.badge) && (
-                      <Text className="text-[8.5px] font-medium text-purple-500 mt-0.5">
-                        {inv.badge}
-                      </Text>
+                      <View
+                        style={{
+                          backgroundColor: isSelected ? colors.accent : (isDark ? '#334155' : '#E2E8F0'),
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 9,
+                            fontWeight: '700',
+                            color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                          }}
+                        >
+                          {inv.badge}
+                        </Text>
+                      </View>
                     )}
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
         ) : (
-          <View className="mb-2">
+          <View style={{ marginBottom: 16 }}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+              contentContainerStyle={{ gap: 8 }}
             >
               {MODULAR_ENGINES.map((eng) => {
                 const isSelected = selectedEngine === eng.key;
@@ -625,30 +901,26 @@ export default function OverallPricingScreen() {
                       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setSelectedEngine(eng.key);
                     }}
-                    className="flex-row items-center gap-1.5 px-3.5 py-2 rounded-full border shadow-sm"
                     style={{
-                      backgroundColor: isSelected
-                        ? eng.color
-                        : isDark
-                          ? '#1E293B'
-                          : '#FFFFFF',
-                      borderColor: isSelected
-                        ? eng.color
-                        : isDark
-                          ? '#334155'
-                          : '#E2E8F0',
+                      paddingHorizontal: 16,
+                      paddingVertical: 9,
+                      borderRadius: 20,
+                      backgroundColor: isSelected ? colors.lavender : colors.card,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 7,
                     }}
                   >
                     <Ionicons
                       name={eng.icon}
-                      size={13}
-                      color={isSelected ? '#FFFFFF' : isDark ? '#94A3B8' : '#64748B'}
+                      size={15}
+                      color={isSelected ? colors.accent : colors.textSecondary}
                     />
                     <Text
-                      className="text-xs"
                       style={{
-                        fontWeight: isSelected ? '900' : '600',
-                        color: isSelected ? '#FFFFFF' : colors.text,
+                        fontSize: 13,
+                        fontWeight: isSelected ? '600' : '500',
+                        color: isSelected ? colors.accent : colors.textSecondary,
                       }}
                     >
                       {eng.label}
@@ -660,49 +932,21 @@ export default function OverallPricingScreen() {
           </View>
         )}
 
-        {/* Active Referral Perk Notice */}
-        {hasReferralDiscount && (
-          <View
-            className="flex-row items-center gap-2.5 p-3 rounded-2xl mb-2 border"
-            style={{
-              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5',
-              borderColor: isDark ? 'rgba(16, 185, 129, 0.25)' : '#A7F3D0',
-            }}
-          >
-            <Ionicons name="gift" size={16} color="#10B981" />
-            <Text
-              className="text-xs font-bold flex-1"
-              style={{ color: isDark ? '#34D399' : '#065F46' }}
-            >
-              {discountPercent}% Referral Perk applied automatically at checkout!
-            </Text>
-          </View>
-        )}
-
         {/* LOADING STATE */}
         {isLoading ? (
           <View className="py-16 items-center gap-3">
-            <ActivityIndicator size="large" color={currentTabThemeColor} />
-            <Text className="text-xs font-semibold" style={{ color: colors.textMuted }}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
               Loading verified packages...
             </Text>
           </View>
         ) : displayedPlans.length === 0 ? (
-          <View
-            className="p-8 rounded-2xl items-center justify-center gap-2 border my-4"
-            style={{
-              backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-              borderColor: isDark ? '#334155' : '#E2E8F0',
-            }}
-          >
-            <Ionicons name="cube-outline" size={32} color={currentTabThemeColor} />
-            <Text className="text-sm font-bold" style={{ color: colors.text }}>
-              No plans available
-            </Text>
-            <Text className="text-xs text-center" style={{ color: colors.textMuted }}>
-              Switch tabs or refresh to load verified plans.
-            </Text>
-          </View>
+          <ProductEmpty
+            title="No plans available"
+            description="Switch tabs or refresh to load verified plans."
+            action="Refresh"
+            onAction={onRefresh}
+          />
         ) : (
           /* PLAN CARDS LIST */
           <View className="gap-3.5 my-1">
@@ -723,6 +967,7 @@ export default function OverallPricingScreen() {
                 : null;
 
               const baseAmountInRupees = Math.round(plan.amount / 100);
+              //  const isEligibleForDiscount = hasReferralDiscount;
               const isEligibleForDiscount = hasReferralDiscount && isPro;
               const discountedPriceRupees = isEligibleForDiscount
                 ? Math.max(1, Math.round(baseAmountInRupees * (1 - discountPercent / 100)))
@@ -731,12 +976,24 @@ export default function OverallPricingScreen() {
               const formattedPrice =
                 isPro && proPricing
                   ? PricingService.formatPrice(proPricing.baseMonthlyRupees * 100, plan.currency)
-                  : PricingService.formatPrice(plan.amount, plan.currency);
+                  : PricingService.formatPrice(
+                    applyReferralDiscount(
+                      Math.round(plan.amount / 100),
+                      hasReferralDiscount,
+                    ) * 100,
+                    plan.currency,
+                  )
 
               const formattedDiscountedPrice =
                 isPro && proPricing
                   ? PricingService.formatPrice(proPricing.finalMonthlyRupees * 100, plan.currency)
-                  : PricingService.formatPrice(discountedPriceRupees * 100, plan.currency);
+                  : PricingService.formatPrice(
+                    applyReferralDiscount(
+                      Math.round(plan.amount / 100),
+                      hasReferralDiscount,
+                    ) * 100,
+                    plan.currency,
+                  )
 
               const formattedDuration = isPro
                 ? '/mo'
@@ -1063,7 +1320,13 @@ export default function OverallPricingScreen() {
                       ).totalChargedRupees * 100,
                       selectedPlan.currency
                     )
-                    : PricingService.formatPrice(selectedPlan.amount, selectedPlan.currency)
+                    : PricingService.formatPrice(
+                      applyReferralDiscount(
+                        Math.round(selectedPlan.amount / 100),
+                        hasReferralDiscount,
+                      ) * 100,
+                      selectedPlan.currency,
+                    )
                   }`
                   : 'Continue to Purchase'}
               </Text>

@@ -27,7 +27,7 @@ const CHANNEL_CONFIG: Record<
   },
   instagram: {
     icon: InstagramIcon,
-    label: 'Instagram',
+    label: 'InstaPilot',
     bg: 'rgba(236, 72, 153, 0.12)',
     color: '#db2777',
   },

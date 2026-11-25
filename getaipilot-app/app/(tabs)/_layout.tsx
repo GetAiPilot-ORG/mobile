@@ -2,6 +2,9 @@ import { Tabs } from "expo-router";
 import { FloatingTabBar } from "../../src/components/FloatingTabBar";
 import { useTheme, getColors } from "@/theme";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+export const unstable_settings = {
+  anchor: "index",
+};
 
 export default function TabLayout() {
   const { isDark } = useTheme();
@@ -10,15 +13,11 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      backBehavior="history"
+      backBehavior="initialRoute"
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        animation: reducedMotion ? "none" : "shift",
-        transitionSpec: {
-          animation: "timing",
-          config: { duration: 220 },
-        },
+        animation: "none",
         sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: {
           position: "absolute",
@@ -37,7 +36,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="products"
         options={{
-          href: null, // Hidden from bottom bar
+          title: "Products",
         }}
       />
       <Tabs.Screen
@@ -61,13 +60,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="account"
         options={{
-          href: null, // Hidden from bottom bar
+          title: "Account",
         }}
       />
       <Tabs.Screen
         name="fleet"
         options={{
-          href: null, // Hidden from bottom bar
+          title: "Fleet",
         }}
       />
     </Tabs>

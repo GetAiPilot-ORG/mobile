@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Easing,
   Modal,
   Platform,
@@ -10,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -30,7 +32,7 @@ import {
   User,
   X,
 } from 'lucide-react-native';
-import { useTheme, getColors } from '@/theme';
+import { useTheme } from '@/theme';
 
 export type ThemedDialogType =
   | 'logout'
@@ -133,7 +135,7 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
   icon,
   showIcon = true,
   dismissable = true,
-  showCloseButton = false,
+  showCloseButton = true,
   buttonLayout = 'auto',
   buttonAlign = 'stretch',
   alignRight = false,
@@ -166,8 +168,34 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
   cancelBgColor,
   cancelBorderColor,
 }) => {
-  const { isDark } = useTheme();
-  const colors = getColors(isDark);
+  const { colors } = useTheme();
+  const palette = colors as typeof colors & Partial<
+    Record<
+      | 'primary'
+      | 'primaryForeground'
+      | 'primaryMuted'
+      | 'accent'
+      | 'accentSoft'
+      | 'background'
+      | 'canvas'
+      | 'surface'
+      | 'surfaceGrouped'
+      | 'surfaceElevated'
+      | 'foreground'
+      | 'card'
+      | 'cardBorder'
+      | 'border'
+      | 'destructive'
+      | 'destructiveSoft'
+      | 'success'
+      | 'successSoft'
+      | 'warning'
+      | 'warningSoft'
+      | 'muted'
+      | 'mutedForeground',
+      string
+    >
+  >;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   const [copiedCode, setCopiedCode] = useState(false);
@@ -244,6 +272,22 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
     onClose();
   };
 
+  // Listen for hardware back press on Android when dialog is visible
+  useEffect(() => {
+    if (!visible) return;
+
+    const onBackPress = () => {
+      if (dismissable) {
+        handleDismiss();
+        return true;
+      }
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [visible, dismissable]);
+
   const handleCopyCode = async () => {
     if (!referralCode) return;
     try {
@@ -300,8 +344,8 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
     switch (type) {
       case 'logout':
         return {
-          badgeBg: isDark ? 'rgba(239, 68, 68, 0.14)' : 'rgba(239, 68, 68, 0.10)',
-          badgeBorder: isDark ? 'rgba(239, 68, 68, 0.28)' : 'rgba(239, 68, 68, 0.20)',
+          badgeBg: palette.destructiveSoft || 'rgba(239, 68, 68, 0.12)',
+          badgeBorder: palette.destructive || 'rgba(239, 68, 68, 0.24)',
           iconColor: '#EF4444',
           defaultIcon: <LogOut size={24} color="#EF4444" strokeWidth={2.2} />,
           accentColor: '#EF4444',
@@ -309,8 +353,8 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
         };
       case 'destructive':
         return {
-          badgeBg: isDark ? 'rgba(239, 68, 68, 0.14)' : 'rgba(239, 68, 68, 0.10)',
-          badgeBorder: isDark ? 'rgba(239, 68, 68, 0.28)' : 'rgba(239, 68, 68, 0.20)',
+          badgeBg: palette.destructiveSoft || 'rgba(239, 68, 68, 0.12)',
+          badgeBorder: palette.destructive || 'rgba(239, 68, 68, 0.24)',
           iconColor: '#EF4444',
           defaultIcon: <AlertTriangle size={24} color="#EF4444" strokeWidth={2.2} />,
           accentColor: '#EF4444',
@@ -318,39 +362,39 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
         };
       case 'referral':
         return {
-          badgeBg: isDark ? 'rgba(185, 168, 255, 0.16)' : 'rgba(108, 85, 197, 0.12)',
-          badgeBorder: isDark ? 'rgba(185, 168, 255, 0.32)' : 'rgba(108, 85, 197, 0.22)',
-          iconColor: isDark ? '#B9A8FF' : '#6C55C5',
-          defaultIcon: <Gift size={24} color={isDark ? '#B9A8FF' : '#6C55C5'} strokeWidth={2.2} />,
-          accentColor: isDark ? '#B9A8FF' : '#6C55C5',
+          badgeBg: palette.accentSoft || 'rgba(108, 85, 197, 0.12)',
+          badgeBorder: palette.accent || 'rgba(108, 85, 197, 0.22)',
+          iconColor: palette.primary || colors.buttonPrimary,
+          defaultIcon: <Gift size={24} color={palette.primary || colors.buttonPrimary} strokeWidth={2.2} />,
+          accentColor: palette.primary || colors.buttonPrimary,
           defaultPrimaryVariant: 'primary' as const,
         };
       case 'success':
         return {
-          badgeBg: isDark ? 'rgba(48, 209, 88, 0.15)' : 'rgba(22, 163, 74, 0.12)',
-          badgeBorder: isDark ? 'rgba(48, 209, 88, 0.30)' : 'rgba(22, 163, 74, 0.20)',
-          iconColor: isDark ? '#30D158' : '#16A34A',
-          defaultIcon: <CheckCircle2 size={24} color={isDark ? '#30D158' : '#16A34A'} strokeWidth={2.2} />,
-          accentColor: isDark ? '#30D158' : '#16A34A',
+          badgeBg: palette.successSoft || 'rgba(22, 163, 74, 0.12)',
+          badgeBorder: palette.success || 'rgba(22, 163, 74, 0.20)',
+          iconColor: palette.success || '#16A34A',
+          defaultIcon: <CheckCircle2 size={24} color={palette.success || '#16A34A'} strokeWidth={2.2} />,
+          accentColor: palette.success || '#16A34A',
           defaultPrimaryVariant: 'primary' as const,
         };
       case 'warning':
         return {
-          badgeBg: isDark ? 'rgba(255, 159, 10, 0.15)' : 'rgba(182, 68, 0, 0.10)',
-          badgeBorder: isDark ? 'rgba(255, 159, 10, 0.30)' : 'rgba(182, 68, 0, 0.20)',
-          iconColor: isDark ? '#FF9F0A' : '#B64400',
-          defaultIcon: <AlertTriangle size={24} color={isDark ? '#FF9F0A' : '#B64400'} strokeWidth={2.2} />,
-          accentColor: isDark ? '#FF9F0A' : '#B64400',
+          badgeBg: palette.warningSoft || 'rgba(182, 68, 0, 0.10)',
+          badgeBorder: palette.warning || 'rgba(182, 68, 0, 0.20)',
+          iconColor: palette.warning || '#B64400',
+          defaultIcon: <AlertTriangle size={24} color={palette.warning || '#B64400'} strokeWidth={2.2} />,
+          accentColor: palette.warning || '#B64400',
           defaultPrimaryVariant: 'primary' as const,
         };
       case 'info':
       default:
         return {
-          badgeBg: isDark ? 'rgba(185, 168, 255, 0.14)' : 'rgba(108, 85, 197, 0.10)',
-          badgeBorder: isDark ? 'rgba(185, 168, 255, 0.28)' : 'rgba(108, 85, 197, 0.18)',
-          iconColor: isDark ? '#B9A8FF' : '#6C55C5',
-          defaultIcon: <Info size={24} color={isDark ? '#B9A8FF' : '#6C55C5'} strokeWidth={2.2} />,
-          accentColor: isDark ? '#B9A8FF' : '#6C55C5',
+          badgeBg: palette.accentSoft || 'rgba(108, 85, 197, 0.10)',
+          badgeBorder: palette.accent || 'rgba(108, 85, 197, 0.18)',
+          iconColor: palette.primary || colors.buttonPrimary,
+          defaultIcon: <Info size={24} color={palette.primary || colors.buttonPrimary} strokeWidth={2.2} />,
+          accentColor: palette.primary || colors.buttonPrimary,
           defaultPrimaryVariant: 'primary' as const,
         };
     }
@@ -519,9 +563,9 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
         lowerText.includes('log out') ||
         type === 'logout';
 
-      btnBg = isDark ? 'rgba(239, 68, 68, 0.16)' : '#FEE2E2';
-      btnTextColor = isDark ? '#EF4444' : '#DC2626';
-      btnBorderColor = isDark ? 'rgba(239, 68, 68, 0.32)' : 'rgba(220, 38, 38, 0.22)';
+      btnBg = palette.destructiveSoft || '#FEE2E2';
+      btnTextColor = palette.destructive || '#DC2626';
+      btnBorderColor = palette.destructive || 'rgba(220, 38, 38, 0.22)';
       btnShadow = {};
 
       defaultIcon = isSignOut ? (
@@ -533,14 +577,14 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
       );
     } else if (isReferral) {
       // Referral task: Share, Invite, Copy code
-      btnBg = isDark ? '#8B5CF6' : '#7C3AED';
+      btnBg = palette.accent || colors.buttonPrimary;
       btnTextColor = '#FFFFFF';
-      btnBorderColor = isDark ? 'rgba(185, 168, 255, 0.35)' : 'transparent';
+      btnBorderColor = palette.accent || 'transparent';
       btnShadow = Platform.select({
         ios: {
           shadowColor: '#7C3AED',
           shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: isDark ? 0.4 : 0.25,
+          shadowOpacity: 0.25,
           shadowRadius: 5,
         },
         android: { elevation: 3 },
@@ -548,14 +592,14 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
       defaultIcon = <Share2 size={15} color="#FFFFFF" strokeWidth={2.2} />;
     } else if (isSuccess) {
       // Success task: Save, Done, Confirm
-      btnBg = isDark ? '#30D158' : '#16A34A';
+      btnBg = palette.success || '#16A34A';
       btnTextColor = '#FFFFFF';
       btnBorderColor = 'transparent';
       btnShadow = Platform.select({
         ios: {
           shadowColor: '#16A34A',
           shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: isDark ? 0.35 : 0.25,
+          shadowOpacity: 0.25,
           shadowRadius: 5,
         },
         android: { elevation: 3 },
@@ -563,21 +607,21 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
       defaultIcon = <Check size={15} color="#FFFFFF" strokeWidth={2.4} />;
     } else if (isSecondary) {
       // Passive/Dismiss task: Cancel, Back, Later
-      btnBg = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
-      btnTextColor = isDark ? '#CBD5E1' : '#475569';
-      btnBorderColor = isDark ? 'rgba(255, 255, 255, 0.14)' : '#E2E8F0';
+      btnBg = palette.surfaceGrouped || '#F1F5F9';
+      btnTextColor = palette.mutedForeground || colors.mutedText;
+      btnBorderColor = palette.border || '#E2E8F0';
     } else if (isGhost) {
       btnBg = 'transparent';
       btnTextColor = colors.mutedText;
     } else {
       // Standard Primary task
-      btnBg = isDark ? '#B9A8FF' : '#17171C';
-      btnTextColor = isDark ? '#17171C' : '#FFFFFF';
+      btnBg = palette.primary || colors.buttonPrimary;
+      btnTextColor = palette.primaryForeground || colors.buttonPrimaryForeground;
       btnShadow = Platform.select({
         ios: {
-          shadowColor: isDark ? '#B9A8FF' : '#000000',
+          shadowColor: palette.primary || colors.buttonPrimary,
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.25 : 0.15,
+          shadowOpacity: 0.2,
           shadowRadius: 4,
         },
         android: { elevation: 2 },
@@ -598,9 +642,9 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
     const isRightAligned = buttonAlign === 'right' || alignRight === true;
 
     return (
-      <Pressable
+      <TouchableOpacity
         key={btnId}
-        style={({ pressed }) => [
+        style={[
           styles.buttonBase,
           isRowLayout && !isRightAligned && styles.buttonFlex,
           isRowLayout && isRightAligned && { minWidth: 92, paddingHorizontal: 16 },
@@ -615,8 +659,6 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
                 Boolean(finalBorderColor && finalBorderColor !== 'transparent')
                 ? 1
                 : 0,
-            opacity: btn.disabled ? 0.45 : pressed ? 0.88 : 1,
-            transform: [{ scale: pressed && !btn.disabled && !isLoading ? 0.98 : 1 }],
           },
           btnShadow,
         ]}
@@ -645,7 +687,7 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
             </Text>
           </View>
         )}
-      </Pressable>
+      </TouchableOpacity>
     );
   };
 
@@ -663,12 +705,12 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundColor: isDark ? 'rgba(10, 9, 14, 0.72)' : 'rgba(15, 23, 42, 0.45)',
+              backgroundColor: 'rgba(15, 23, 42, 0.48)',
               opacity: backdropAnim,
             },
           ]}
         >
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleDismiss} />
         </Animated.View>
 
         {/* Dialog Card */}
@@ -677,8 +719,8 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
             styles.cardContainer,
             {
               maxWidth: Math.min(windowWidth - 40, 360),
-              backgroundColor: backgroundColor || (isDark ? '#1C1A25' : '#FFFFFF'),
-              borderColor: borderColor || (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+              backgroundColor: backgroundColor || (palette.card || palette.surface || '#FFFFFF'),
+              borderColor: borderColor || (palette.cardBorder || palette.border || 'rgba(0, 0, 0, 0.06)'),
               transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
               opacity: backdropAnim,
             },
@@ -686,21 +728,19 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
         >
           {/* Top Right Close Button (Optional) */}
           {dismissable && showCloseButton && (
-            <Pressable
-              style={({ pressed }) => [
+            <TouchableOpacity
+              style={[
                 styles.closeButton,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                  opacity: pressed ? 0.7 : 1,
+                  backgroundColor: palette.surfaceGrouped || 'rgba(0, 0, 0, 0.04)',
+
                 },
               ]}
               onPress={handleDismiss}
-              hitSlop={12}
-              accessibilityRole="button"
               accessibilityLabel="Close dialog"
             >
-              <X size={16} color={isDark ? '#ACA6BB' : '#696575'} strokeWidth={2.4} />
-            </Pressable>
+              <X size={16} color={palette.mutedForeground || colors.mutedText} strokeWidth={2.4} />
+            </TouchableOpacity>
           )}
 
           {/* Centered Icon Badge */}
@@ -756,8 +796,8 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
                 style={[
                   styles.promptInput,
                   {
-                    backgroundColor: isDark ? '#14131B' : '#F5F3FB',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)',
+                    backgroundColor: palette.surfaceGrouped || '#F5F3FB',
+                    borderColor: palette.border || 'rgba(0, 0, 0, 0.10)',
                     color: colors.text,
                   },
                 ]}
@@ -779,17 +819,14 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
           {type === 'referral' && referralCode && (
             <View style={styles.referralSection}>
               {/* Tap to copy code box */}
-              <Pressable
-                style={({ pressed }) => [
+              <TouchableOpacity
+                style={[
                   styles.referralCodeBox,
                   {
-                    backgroundColor: isDark ? '#14131B' : '#F5F3FB',
+                    backgroundColor: palette.surfaceGrouped || '#F5F3FB',
                     borderColor: copiedCode
                       ? typeConfig.accentColor
-                      : isDark
-                        ? 'rgba(185, 168, 255, 0.25)'
-                        : 'rgba(108, 85, 197, 0.20)',
-                    opacity: pressed ? 0.85 : 1,
+                      : palette.accent || 'rgba(108, 85, 197, 0.20)',
                   },
                 ]}
                 onPress={handleCopyCode}
@@ -810,19 +847,15 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
                     styles.copyPill,
                     {
                       backgroundColor: copiedCode
-                        ? isDark
-                          ? 'rgba(48, 209, 88, 0.20)'
-                          : 'rgba(22, 163, 74, 0.12)'
-                        : isDark
-                          ? 'rgba(185, 168, 255, 0.18)'
-                          : 'rgba(108, 85, 197, 0.12)',
+                        ? palette.successSoft || 'rgba(22, 163, 74, 0.12)'
+                        : palette.accentSoft || 'rgba(108, 85, 197, 0.12)',
                     },
                   ]}
                 >
                   {copiedCode ? (
                     <>
-                      <Check size={13} color={isDark ? '#30D158' : '#16A34A'} strokeWidth={2.4} />
-                      <Text style={[styles.copyPillText, { color: isDark ? '#30D158' : '#16A34A' }]}>
+                      <Check size={13} color={palette.success || '#16A34A'} strokeWidth={2.4} />
+                      <Text style={[styles.copyPillText, { color: palette.success || '#16A34A' }]}>
                         Copied!
                       </Text>
                     </>
@@ -835,20 +868,20 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
                     </>
                   )}
                 </View>
-              </Pressable>
+              </TouchableOpacity>
 
               {/* Reward perk badge */}
               <View
                 style={[
                   styles.rewardBadge,
                   {
-                    backgroundColor: isDark ? 'rgba(185, 168, 255, 0.08)' : 'rgba(108, 85, 197, 0.06)',
+                    backgroundColor: palette.accentSoft || 'rgba(108, 85, 197, 0.06)',
                   },
                 ]}
               >
                 <Sparkles size={15} color={typeConfig.accentColor} strokeWidth={2} />
                 <Text style={[styles.rewardText, { color: colors.text }]}>
-                  {referralReward || 'Earn 20% recurring commission on every friend who subscribes.'}
+                  {referralReward || 'Earn flat ₹100 cash reward on every friend who joins.'}
                 </Text>
               </View>
             </View>
@@ -860,8 +893,8 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
               style={[
                 styles.accountBadgeContainer,
                 {
-                  backgroundColor: isDark ? '#14131B' : '#F5F3FB',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
+                  backgroundColor: palette.surfaceGrouped || '#F5F3FB',
+                  borderColor: palette.cardBorder || 'rgba(0, 0, 0, 0.05)',
                 },
               ]}
             >
@@ -869,7 +902,7 @@ export const ThemedDialog: React.FC<ThemedDialogProps> = ({
                 style={[
                   styles.accountAvatarCircle,
                   {
-                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.10)',
+                    backgroundColor: palette.destructiveSoft || 'rgba(239, 68, 68, 0.10)',
                   },
                 ]}
               >
@@ -963,14 +996,14 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 20,
   },
   iconBadge: {
     width: 56,

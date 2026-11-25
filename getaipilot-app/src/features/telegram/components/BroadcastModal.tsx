@@ -139,16 +139,18 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 </Text>
 
                 {/* Connected Telegram User ID Pill */}
-                <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
-                  <Ionicons name="hardware-chip-outline" size={16} color="#0284C7" />
-                  <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
-                    Connected Telegram ID: {' '}
-                    <Text style={styles.idValue}>
-                      {status?.telegramUserId ? status.telegramUserId : '8891953778'}
+                {Boolean(status?.telegramUserId && /^\d{5,16}$/.test(String(status.telegramUserId).trim())) && (
+                  <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
+                    <Ionicons name="hardware-chip-outline" size={16} color="#0284C7" />
+                    <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
+                      Connected Telegram ID: {' '}
+                      <Text style={styles.idValue}>
+                        {status?.telegramUserId}
+                      </Text>
                     </Text>
-                  </Text>
-                  <View style={styles.activeDot} />
-                </View>
+                    <View style={styles.activeDot} />
+                  </View>
+                )}
 
                 {/* Big Vibrant CTA Action Button */}
                 <Pressable cssInterop={false}

@@ -1,10 +1,12 @@
 import React from 'react';
-import { Alert, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ProductHeading, ProductMetrics, ProductSection, ProductActions, ProductRow, ProductButton, ProductEmpty, useProductPalette } from '@/components/ProductUI';
+import { useTheme } from '@/theme';
 import { SocialScreenSkeleton } from '@/components/skeletonScreen';
 import { openSocialHandoff } from '../utils/socialHandoff';
+import { filterAndNormalizeChannels } from './activity/socialActivityHelpers';
 
 interface SocialOverviewTabProps {
   overviewLoading: boolean;
@@ -29,18 +31,184 @@ interface SocialOverviewTabProps {
   onOpenAccountsModal: () => void;
   onOpenConnectModal: () => void;
   onNavigateToTab: (tab: 'overview' | 'trends' | 'inbox' | 'activity') => void;
+  onSelectPost?: (post: any) => void;
   isLocked?: boolean;
 }
 
+const getProviderMeta = (provider: string) => {
+  const p = (provider || '').toLowerCase();
+  if (p.includes('instagram')) return { icon: 'logo-instagram' as const, color: '#EC4899', label: 'Instagram' };
+  if (p.includes('threads')) return { icon: 'at-circle' as const, color: '#1C1A25', label: 'Threads' };
+  if (p.includes('youtube')) return { icon: 'logo-youtube' as const, color: '#EF4444', label: 'YouTube' };
+  if (p.includes('facebook')) return { icon: 'logo-facebook' as const, color: '#1877F2', label: 'Facebook' };
+  if (p.includes('twitter') || p.includes('x')) return { icon: 'logo-twitter' as const, color: '#1DA1F2', label: 'X' };
+  if (p.includes('linkedin')) return { icon: 'logo-linkedin' as const, color: '#0A66C2', label: 'LinkedIn' };
+  if (p.includes('pinterest')) return { icon: 'logo-pinterest' as const, color: '#E60023', label: 'Pinterest' };
+  if (p.includes('reddit')) return { icon: 'logo-reddit' as const, color: '#FF4500', label: 'Reddit' };
+  return { icon: 'share-social-outline' as const, color: '#6366F1', label: provider || 'Channel' };
+};
+
+const ChannelAvatar: React.FC<{ account: any; isDark: boolean }> = ({ account, isDark }) => {
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const avatarUri = account.avatar || account.profilePicture || account.profile_picture_url || account.thumbnailUrl;
+  const meta = getProviderMeta(account.provider || account.platform);
+
+  return (
+    <View
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)',
+      }}
+    >
+      {avatarUri && !imgFailed ? (
+        <Image
+          source={{ uri: avatarUri }}
+          onError={() => setImgFailed(true)}
+          style={{ width: 38, height: 38, borderRadius: 19 }}
+          resizeMode="cover"
+        />
+      ) : (
+        <Ionicons
+          name={meta.icon}
+          size={21}
+          color={isDark && meta.icon === 'at-circle' ? '#F3F4F6' : meta.color}
+        />
+      )}
+    </View>
+  );
+};
+
+const ChannelCard: React.FC<{
+  account: any;
+  toneBg: string;
+  isDark: boolean;
+  textColor: string;
+  textSecondaryColor: string;
+  width?: number | string;
+  flex?: number;
+  onPress: () => void;
+}> = ({ account, toneBg, isDark, textColor, textSecondaryColor, width, flex, onPress }) => {
+  const meta = getProviderMeta(account.provider || account.platform);
+  const displayName = account.name || account.username || meta.label;
+  const displayPlatform = account.provider || account.platform || meta.label;
+
+  return (
+    <Pressable
+      cssInterop={false}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${displayName}, ${displayPlatform}`}
+      style={({ pressed }) => ({
+        flex: flex,
+        width: width,
+        minWidth: 0,
+        opacity: pressed ? 0.82 : 1,
+        transform: [{ scale: pressed ? 0.98 : 1 }],
+      })}
+    >
+      <View
+        style={{
+          width: '100%',
+          minHeight: 128,
+          backgroundColor: toneBg,
+          borderRadius: 22,
+          padding: 14,
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <ChannelAvatar account={account} isDark={isDark} />
+        <View style={{ gap: 2 }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: textColor,
+              letterSpacing: -0.2,
+            }}
+          >
+            {displayName}
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 11,
+              color: textSecondaryColor,
+              textTransform: 'capitalize',
+            }}
+          >
+            {displayPlatform}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+};
+
+const ConnectCard: React.FC<{
+  onPress: () => void;
+  cardBg: string;
+  borderSubtle: string;
+  textSecondary: string;
+  accentColor: string;
+  width?: number | string;
+  flex?: number;
+}> = ({ onPress, cardBg, borderSubtle, textSecondary, accentColor, width, flex }) => {
+  return (
+    <Pressable
+      cssInterop={false}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Connect another account"
+      style={({ pressed }) => ({
+        flex: flex,
+        width: width,
+        minWidth: 0,
+        opacity: pressed ? 0.82 : 1,
+        transform: [{ scale: pressed ? 0.98 : 1 }],
+      })}
+    >
+      <View
+        style={{
+          width: '100%',
+          minHeight: 128,
+          backgroundColor: cardBg,
+          borderRadius: 22,
+          borderWidth: 1,
+          borderColor: borderSubtle,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: 14,
+        }}
+      >
+        <Ionicons name="add" size={24} color={accentColor} />
+        <Text style={{ color: textSecondary, fontSize: 12, fontWeight: '500' }}>Connect</Text>
+      </View>
+    </Pressable>
+  );
+};
 
 export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   overviewLoading, overviewError, onRetryOverview, overviewData, entitlementsData,
   connectedList, postsList, queueList, totalSentCount, totalScheduledCount,
   computedSuccessRate, selectedRange, onChangeRange, onOpenCreateModal,
-  onOpenAccountsModal, onNavigateToTab, isLocked = false,
+  onOpenAccountsModal, onNavigateToTab, onSelectPost, isLocked = false,
 }) => {
+  const { isDark } = useTheme();
   const colors = useProductPalette();
+  const { width, fontScale } = useWindowDimensions();
   const router = useRouter();
+  const tones = [colors.pink, colors.lavender, colors.mint, colors.peach];
+  const isCompact = connectedList.length <= 3 && width >= 340 && fontScale <= 1.2;
   const plan = entitlementsData?.plan?.name || 'Free';
   const limits = entitlementsData?.limits || {};
   const channelLimit = limits.social_accounts ?? entitlementsData?.maxChannels ?? 3;
@@ -69,19 +237,73 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
   return <View>
     <ProductHeading title={"Your content,\nyour next chapter."} action="Create a post" isLocked={isLocked} onAction={onOpenCreateModal} />
     <ProductSection title="Your channels" action="Manage" onAction={onOpenAccountsModal}>
-      {!connectedList.length ? <ProductEmpty title="Bring your channels together" description="Connect a social account to start publishing." action="Connect account" onAction={connect} /> :
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 4 }}>
-          {connectedList.map((account, index) => <Pressable key={account.id || index} onPress={onOpenAccountsModal} accessibilityRole="button" accessibilityLabel={account.name || account.username || account.provider}
-            style={{ width: 128, minHeight: 132, backgroundColor: index % 2 ? colors.lavender : colors.pink, borderRadius: 24, padding: 16, justifyContent: 'space-between', gap: 12 }}>
-            {account.avatar ? <Image source={{ uri: account.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} /> : <Ionicons name={iconFor(account.provider || account.platform)} size={28} color={colors.text} />}
-            <View style={{ gap: 4 }}><Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '500', color: colors.text }}>{account.name || account.username || account.provider}</Text><Text style={{ fontSize: 12, color: colors.textSecondary }}>{account.provider || account.platform}</Text></View>
-          </Pressable>)}
-          <Pressable onPress={connect} accessibilityRole="button" accessibilityLabel="Connect another account" style={{ width: 90, backgroundColor: colors.card, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 12 }}><Ionicons name="add" size={26} color={colors.accent} /><Text style={{ color: colors.textSecondary, fontSize: 12 }}>Connect</Text></Pressable>
-        </ScrollView>}
+      {!connectedList.length ? (
+        <ProductEmpty
+          title="Bring your channels together"
+          description="Connect a social account to start publishing."
+          action="Connect account"
+          onAction={connect}
+        />
+      ) : isCompact ? (
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {connectedList.map((account, index) => (
+            <ChannelCard
+              key={account.id || index}
+              account={account}
+              toneBg={tones[index % tones.length]}
+              isDark={isDark}
+              textColor={colors.text}
+              textSecondaryColor={colors.textSecondary}
+              flex={1}
+              onPress={onOpenAccountsModal}
+            />
+          ))}
+          {connectedList.length === 1 && connectedList.length < channelLimit && (
+            <ConnectCard
+              onPress={connect}
+              cardBg={colors.card}
+              borderSubtle={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+              textSecondary={colors.textSecondary}
+              accentColor={colors.accent}
+              flex={1}
+            />
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: -20 }}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 10, paddingBottom: 4 }}
+        >
+          {connectedList.map((account, index) => (
+            <ChannelCard
+              key={account.id || index}
+              account={account}
+              toneBg={tones[index % tones.length]}
+              isDark={isDark}
+              textColor={colors.text}
+              textSecondaryColor={colors.textSecondary}
+              width={136}
+              onPress={onOpenAccountsModal}
+            />
+          ))}
+          {connectedList.length < channelLimit && (
+            <ConnectCard
+              onPress={connect}
+              cardBg={colors.card}
+              borderSubtle={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+              textSecondary={colors.textSecondary}
+              accentColor={colors.accent}
+              width={90}
+            />
+          )}
+        </ScrollView>
+      )}
     </ProductSection>
     <ProductSection title="At a glance">
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 16 }}>
-        {[7, 30, 90].map((days) => <Pressable key={days} onPress={() => {
+        {[7, 30, 90].map((days) => <Pressable cssInterop={false} key={days} onPress={() => {
           if (days > historyLimit) { Alert.alert('More history with an upgrade', 'Your current plan includes ' + historyLimit + ' days of history.', [{ text: 'Cancel', style: 'cancel' }, { text: 'View plans', onPress: () => router.push('/products/social/plans' as any) }]); return; }
           onChangeRange(days);
         }} accessibilityRole="button" accessibilityState={{ selected: days === selectedRange }} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 24, backgroundColor: days === selectedRange ? colors.lavender : colors.card }}><Text style={{ fontSize: 13, color: days === selectedRange ? colors.accent : colors.textSecondary }}>{days} days</Text></Pressable>)}
@@ -103,8 +325,211 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
       {instagram.map((account) => <ProductRow key={account.id} title={account.username || account.name || 'Instagram'} detail={(account.followers ?? growth?.summary?.totalFollowers ?? 0).toLocaleString() + ' followers'} icon="logo-instagram" tone="pink" onPress={onOpenAccountsModal} />)}
       {(growth?.accounts || []).flatMap((account: any) => account.topMedia || []).slice(0, 3).map((media: any, index: number) => <ProductRow key={media.id || index} title={media.caption || 'Instagram post'} detail={(media.likes ?? 0) + ' likes · ' + (media.comments ?? 0) + ' comments'} icon="image-outline" tone="pink" onPress={media.permalink ? () => Linking.openURL(media.permalink) : undefined} />)}
     </ProductSection>}
-    <ProductSection title="Recent activity" onAction={() => onNavigateToTab('activity')}>
-      {activity.length ? activity.map((post: any, index: number) => <ProductRow key={post.id || index} title={post.title || post.caption || post.content || 'Social post'} detail={post.status || 'View details'} icon="document-text-outline" onPress={() => onNavigateToTab('activity')} />) : <ProductEmpty title="A fresh page" description="Your published posts will appear here." />}
+    {/* SECTION: Recent Activity (Redesigned with Minimal Pastel Palette & Rich Post Cards) */}
+    <ProductSection title="Recent activity" action="See all" onAction={() => onNavigateToTab('activity')}>
+      {!activity.length ? (
+        <ProductEmpty
+          title="A fresh page"
+          description="Your published posts and queued broadcasts will appear here."
+          action="Create first post"
+          onAction={onOpenCreateModal}
+        />
+      ) : (
+        <View style={{ gap: 10 }}>
+          {activity.map((post: any, index: number) => {
+            const rawStatus = (post.status || 'published').toLowerCase();
+            const isFailed = rawStatus === 'failed';
+            const isScheduled = rawStatus === 'scheduled' || rawStatus === 'queued' || rawStatus === 'pending';
+            const isSuccess = rawStatus === 'sent' || rawStatus === 'published' || rawStatus === 'completed' || rawStatus === 'success';
+
+            // Minimal pastel tone for the card & badge
+            const statusLabel = isSuccess ? 'Published' : isScheduled ? 'Scheduled' : isFailed ? 'Failed' : 'Pending';
+            const statusBg = isSuccess
+              ? colors.mint
+              : isScheduled
+              ? colors.lavender
+              : isFailed
+              ? '#FDE8E8'
+              : colors.peach;
+            const statusTextColor = isSuccess
+              ? '#0F766E'
+              : isScheduled
+              ? colors.accent
+              : isFailed
+              ? '#DC2626'
+              : '#B45309';
+
+            const channels: string[] = filterAndNormalizeChannels(
+              post.selected_channels?.length
+                ? post.selected_channels
+                : post.channels?.length
+                ? post.channels
+                : post.platform
+                ? [post.platform]
+                : []
+            );
+
+            const mediaThumb =
+              post.thumbnail_url ||
+              post.thumbnailUrl ||
+              post.media_urls?.[0] ||
+              post.mediaUrls?.[0] ||
+              (post.media_type === 'image' ? post.media_url : null) ||
+              post.media_url ||
+              post.mediaUrl;
+
+            const timeStr = post.scheduled_for || post.scheduledAt || post.posted_at || post.postedAt || post.created_at || post.createdAt;
+            const formattedTime = timeStr
+              ? new Date(timeStr).toLocaleString([], {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : null;
+
+            return (
+              <Pressable
+                cssInterop={false}
+                key={post.id || index}
+                onPress={() => {
+                  if (onSelectPost) {
+                    onSelectPost(post);
+                  } else {
+                    onNavigateToTab('activity');
+                  }
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={post.caption || post.title || 'Social post'}
+                style={({ pressed }) => ({
+                  backgroundColor: colors.card,
+                  borderRadius: 22,
+                  padding: 16,
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  opacity: pressed ? 0.8 : 1,
+                  transform: [{ scale: pressed ? 0.99 : 1 }],
+                })}
+              >
+                {/* Header: Platform Icons on Left, Status Pill on Right */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {channels.length > 0 ? (
+                      channels.slice(0, 3).map((ch, chIdx) => {
+                        const cleanCh = (ch || '').toLowerCase();
+                        return (
+                          <View
+                            key={chIdx}
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 14,
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name={iconFor(cleanCh)} size={15} color={colors.text} />
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <View
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 14,
+                          backgroundColor: colors.lavender,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons name="share-social-outline" size={15} color={colors.accent} />
+                      </View>
+                    )}
+                    {channels.length > 3 && (
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary }}>
+                        +{channels.length - 3}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Status Pill */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      backgroundColor: statusBg,
+                      paddingHorizontal: 9,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 2.5,
+                        backgroundColor: statusTextColor,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: statusTextColor,
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {statusLabel}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Body: Caption + Media Preview */}
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  {mediaThumb ? (
+                    <Image
+                      source={{ uri: mediaThumb }}
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 14,
+                        backgroundColor: isDark ? '#201E2B' : '#F1EFF8',
+                      }}
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text
+                      numberOfLines={2}
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 20,
+                        fontWeight: '500',
+                        color: colors.text,
+                      }}
+                    >
+                      {post.caption || post.title || post.content || 'Untitled broadcast'}
+                    </Text>
+                    {formattedTime && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                          {formattedTime}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.iconSecondary} />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </ProductSection>
     <View style={{ backgroundColor: colors.pink, borderRadius: 26, padding: 22, gap: 16, marginBottom: 26 }}>
       <Text style={{ color: colors.text, fontSize: 21, fontWeight: '500' }}>{plan} workspace</Text>

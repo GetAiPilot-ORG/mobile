@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+  <defs>
+    <!-- Warm Nordic Birch & Cream Linen Gradient -->
+    <linearGradient id="cr-birch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdfcf9"/>
+      <stop offset="45%" stop-color="#f7f2ea"/>
+      <stop offset="100%" stop-color="#eee2d2"/>
+    </linearGradient>
+
+    <!-- Polished Cafe Brass Clamp Gradient -->
+    <linearGradient id="cr-brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4af37"/>
+      <stop offset="35%" stop-color="#fde68a"/>
+      <stop offset="70%" stop-color="#c29b38"/>
+      <stop offset="100%" stop-color="#7c5b16"/>
+    </linearGradient>
+
+    <!-- Ceramic Cup Gradient -->
+    <linearGradient id="cr-cup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0e4d7"/>
+    </linearGradient>
+
+    <!-- Espresso Foam Gradient -->
+    <linearGradient id="cr-foam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c89d76"/>
+      <stop offset="50%" stop-color="#e9dacb"/>
+      <stop offset="100%" stop-color="#8c5a35"/>
+    </linearGradient>
+
+    <!-- Light Birch Foot Stand Gradient -->
+    <linearGradient id="cr-woodfoot" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#dfceba"/>
+      <stop offset="50%" stop-color="#f5ede2"/>
+      <stop offset="100%" stop-color="#dfceba"/>
+    </linearGradient>
+
+    <filter id="cr-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#705030" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Clean Warm Ambient Background -->
+  <rect width="400" height="500" fill="#f4ece2"/>
+
+  <!-- Cathedral Arch Nordic Cafe Cloche Standee -->
+  <g filter="url(#cr-shadow)">
+    <!-- Main Cathedral Arch Body (Full Half-Circle Semicircular Dome Top) -->
+    <path d="M 46 150 C 46 55, 110 18, 200 18 C 290 18, 354 55, 354 150 L 354 444 C 354 454, 344 462, 332 462 L 68 462 C 56 462, 46 454, 46 444 Z"
+          fill="url(#cr-birch)" stroke="#cbb399" stroke-width="2.5"/>
+
+    <!-- Inner Dashed Barista Stitch Frame -->
+    <path d="M 56 152 C 56 65, 116 28, 200 28 C 284 28, 344 65, 344 152 L 344 434 C 344 442, 336 450, 326 450 L 74 450 C 64 450, 56 442, 56 434 Z"
+          fill="none" stroke="#cbb399" stroke-width="1.2" stroke-dasharray="6,4" opacity="0.75"/>
+  </g>
+
+  <!-- Top Hanging Eyelet Ring & Antique Brass Bracket Clamp -->
+  <g>
+    <!-- Brass Suspension Loop -->
+    <circle cx="200" cy="18" r="9" fill="none" stroke="url(#cr-brass)" stroke-width="2.5"/>
+    <circle cx="200" cy="18" r="5" fill="#f4ece2"/>
+    <!-- Clamp Plate -->
+    <rect x="160" y="22" width="80" height="13" rx="3.5" fill="url(#cr-brass)" stroke="#7c5b16" stroke-width="0.8"/>
+    <circle cx="172" cy="28.5" r="2.2" fill="#3a2505"/>
+    <circle cx="172" cy="28.5" r="1.2" fill="#fde68a"/>
+    <circle cx="228" cy="28.5" r="2.2" fill="#3a2505"/>
+    <circle cx="228" cy="28.5" r="1.2" fill="#fde68a"/>
+    <line x1="184" y1="28.5" x2="216" y2="28.5" stroke="#4a300a" stroke-width="1" opacity="0.6"/>
+  </g>
+
+  <!-- Steaming Ceramic Coffee Cup with Latte Art Rosette -->
+  <g transform="translate(200, 84)">
+    <!-- Steam Wisps -->
+    <path d="M -10 -28 Q -6 -36 -12 -44" stroke="#b89372" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.75"/>
+    <path d="M 0 -28 Q 4 -38 -2 -47" stroke="#8c6542" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.9"/>
+    <path d="M 10 -28 Q 14 -36 8 -44" stroke="#b89372" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.75"/>
+
+    <!-- Saucer -->
+    <ellipse cx="0" cy="18" rx="36" ry="8" fill="#1c120a" opacity="0.15"/>
+    <ellipse cx="0" cy="16" rx="34" ry="7" fill="url(#cr-cup)" stroke="#a8886d" stroke-width="1.2"/>
+
+    <!-- Cup Handle -->
+    <path d="M 23 -4 C 34 -4, 34 11, 21 11" fill="none" stroke="url(#cr-cup)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 23 -4 C 34 -4, 34 11, 21 11" fill="none" stroke="#a8886d" stroke-width="1" stroke-linecap="round"/>
+
+    <!-- Cup Body -->
+    <ellipse cx="0" cy="4" rx="24" ry="15" fill="url(#cr-cup)" stroke="#a8886d" stroke-width="1.4"/>
+
+    <!-- Espresso Foam Surface -->
+    <ellipse cx="0" cy="0" rx="21" ry="11" fill="url(#cr-foam)"/>
+
+    <!-- Latte Art Rosette / Fern Leaf -->
+    <path d="M 0 -8 C -5 -4, -6 3, 0 8 C 6 3, 5 -4, 0 -8 Z" fill="#ffffff" opacity="0.95"/>
+    <path d="M 0 -6 L 0 6" stroke="#5a3a22" stroke-width="1" stroke-linecap="round"/>
+    <circle cx="0" cy="-9" r="1.5" fill="#ffffff"/>
+  </g>
+
+  <!-- Roastery Title -->
+  <text x="200" y="128" fill="#2b170e" font-family="Georgia, serif" font-size="14.5" font-weight="900" text-anchor="middle" letter-spacing="2">TIMBER &amp; BEAN ROASTERS</text>
+
+  <!-- Terracotta Single-Origin Roast Stamp Badge -->
+  <rect x="120" y="136" width="160" height="17" rx="8.5" fill="#fbebe3" stroke="#d97757" stroke-width="1.2"/>
+  <text x="200" y="148" fill="#a84323" font-family="system-ui, sans-serif" font-size="7.5" font-weight="900" text-anchor="middle" letter-spacing="1">★ SINGLE ORIGIN • ETHIOPIA GUJI ★</text>
+
+  <!-- QR Frame Section (Soft Cream Backing with Espresso QR) -->
+  <g>
+    <!-- Background Card -->
+    <rect x="124" y="162" width="152" height="152" rx="16" fill="#ffffff" stroke="#cbb399" stroke-width="2" filter="url(#cr-shadow)"/>
+    <rect x="130" y="168" width="140" height="140" rx="12" fill="none" stroke="#e6d5c3" stroke-width="0.8"/>
+
+    <!-- Simulated QR Finder Patterns (Espresso Roasted Tone) -->
+    <rect x="138" y="176" width="28" height="28" fill="#2b170e" rx="5"/>
+    <rect x="142" y="180" width="20" height="20" fill="#ffffff" rx="3"/>
+    <rect x="146" y="184" width="12" height="12" fill="#2b170e" rx="2"/>
+
+    <rect x="234" y="176" width="28" height="28" fill="#2b170e" rx="5"/>
+    <rect x="238" y="180" width="20" height="20" fill="#ffffff" rx="3"/>
+    <rect x="242" y="184" width="12" height="12" fill="#2b170e" rx="2"/>
+
+    <rect x="138" y="272" width="28" height="28" fill="#2b170e" rx="5"/>
+    <rect x="142" y="276" width="20" height="20" fill="#ffffff" rx="3"/>
+    <rect x="146" y="280" width="12" height="12" fill="#2b170e" rx="2"/>
+
+    <!-- Matrix Elements -->
+    <rect x="178" y="178" width="6" height="14" fill="#2b170e" rx="1"/>
+    <rect x="192" y="182" width="14" height="6" fill="#2b170e" rx="1"/>
+    <rect x="174" y="202" width="10" height="10" fill="#2b170e" rx="1"/>
+    <rect x="214" y="202" width="8" height="8" fill="#2b170e" rx="1"/>
+    <rect x="190" y="264" width="14" height="6" fill="#2b170e" rx="1"/>
+    <rect x="218" y="258" width="8" height="16" fill="#2b170e" rx="1"/>
+    <rect x="240" y="234" width="16" height="6" fill="#2b170e" rx="1"/>
+    <rect x="144" y="234" width="12" height="6" fill="#2b170e" rx="1"/>
+
+    <!-- Center GetAiPilot Logo Badge -->
+    <circle cx="200" cy="238" r="16" fill="#dfceba" stroke="#ffffff" stroke-width="2.5"/>
+    <circle cx="200" cy="238" r="12" fill="#2b170e"/>
+    <text x="200" y="243" fill="#fde68a" font-family="system-ui, sans-serif" font-size="11" font-weight="900" text-anchor="middle">@</text>
+  </g>
+
+  <!-- CTA Banner -->
+  <text x="200" y="336" fill="#2b170e" font-family="system-ui, sans-serif" font-size="9.5" font-weight="900" text-anchor="middle" letter-spacing="1">SCAN FOR SPECIALTY BREW MENU</text>
+
+  <!-- Barista Flavour Tasting Notes Chips -->
+  <g transform="translate(68, 346)">
+    <!-- Pill 1: Jasmine -->
+    <rect x="0" y="0" width="60" height="17" rx="8.5" fill="#fff" stroke="#cbb399" stroke-width="1"/>
+    <text x="30" y="11.5" fill="#5a3a22" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">🌸 Jasmine</text>
+
+    <!-- Pill 2: Blueberry -->
+    <rect x="66" y="0" width="62" height="17" rx="8.5" fill="#fff" stroke="#cbb399" stroke-width="1"/>
+    <text x="97" y="11.5" fill="#5a3a22" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">🫐 Blueberry</text>
+
+    <!-- Pill 3: Honeycomb -->
+    <rect x="134" y="0" width="66" height="17" rx="8.5" fill="#fff" stroke="#cbb399" stroke-width="1"/>
+    <text x="167" y="11.5" fill="#5a3a22" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">🍯 Honeycomb</text>
+
+    <!-- Pill 4: Citrus -->
+    <rect x="206" y="0" width="58" height="17" rx="8.5" fill="#fff" stroke="#cbb399" stroke-width="1"/>
+    <text x="235" y="11.5" fill="#5a3a22" font-family="system-ui, sans-serif" font-size="7" font-weight="800" text-anchor="middle">🍊 Citrus</text>
+  </g>
+
+  <!-- Visual Barista Stamp Punchcard -->
+  <g transform="translate(74, 372)">
+    <rect x="0" y="0" width="252" height="24" rx="12" fill="#fff" stroke="#cbb399" stroke-width="1" opacity="0.95"/>
+    <text x="14" y="15" fill="#7c4d29" font-family="system-ui, sans-serif" font-size="7" font-weight="900" letter-spacing="0.8">PUNCH CARD</text>
+    
+    <!-- 5 Stamped Cups + 1 Star Prize -->
+    <circle cx="110" cy="12" r="7" fill="#fbebe3" stroke="#d97757" stroke-width="0.8"/>
+    <text x="110" y="15" font-size="8" text-anchor="middle">☕</text>
+    <circle cx="132" cy="12" r="7" fill="#fbebe3" stroke="#d97757" stroke-width="0.8"/>
+    <text x="132" y="15" font-size="8" text-anchor="middle">☕</text>
+    <circle cx="154" cy="12" r="7" fill="#fbebe3" stroke="#d97757" stroke-width="0.8"/>
+    <text x="154" y="15" font-size="8" text-anchor="middle">☕</text>
+    <circle cx="176" cy="12" r="7" fill="#fbebe3" stroke="#d97757" stroke-width="0.8"/>
+    <text x="176" y="15" font-size="8" text-anchor="middle">☕</text>
+    <circle cx="198" cy="12" r="7" fill="#fbebe3" stroke="#d97757" stroke-width="0.8"/>
+    <text x="198" y="15" font-size="8" text-anchor="middle">☕</text>
+    
+    <circle cx="226" cy="12" r="8" fill="#d97757" stroke="#a84323" stroke-width="1"/>
+    <text x="226" y="15.5" fill="#fff" font-size="8" font-weight="900" text-anchor="middle">★</text>
+  </g>
+
+  <!-- Loyalty Footer & Wi-Fi Tag -->
+  <line x1="64" y1="410" x2="336" y2="410" stroke="#cbb399" stroke-width="1" stroke-dasharray="4,4" opacity="0.8"/>
+  <text x="200" y="424" fill="#7c4d29" font-family="system-ui, sans-serif" font-size="8" font-weight="800" text-anchor="middle" letter-spacing="1">☕ 10TH CUP FREE • GUEST WI-FI CONNECTED</text>
+  <text x="200" y="436" fill="#9c7a5c" font-family="system-ui, sans-serif" font-size="6.8" font-weight="700" text-anchor="middle">SPECIALTY COFFEE ROASTERS • HANDCRAFTED</text>
+
+  <!-- Light Scandinavian Birch Wood Base Stand with Brass Pins -->
+  <rect x="100" y="456" width="200" height="15" rx="4" fill="url(#cr-woodfoot)" stroke="#cbb399" stroke-width="1"/>
+  <circle cx="116" cy="463.5" r="2.5" fill="url(#cr-brass)" stroke="#7c5b16" stroke-width="0.5"/>
+  <circle cx="284" cy="463.5" r="2.5" fill="url(#cr-brass)" stroke="#7c5b16" stroke-width="0.5"/>
+  <ellipse cx="200" cy="474" rx="95" ry="5" fill="#705030" opacity="0.2"/>
+</svg>

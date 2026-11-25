@@ -1,21 +1,12 @@
 import { HomeSkeleton } from "@/components/skeletonScreen/HomeSkeletonScreen";
 import { NetworkStatusScreen } from "@/components/StatusScreen";
 import { getColors, useTheme } from "@/theme";
-import { Ionicons } from "@expo/vector-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowRight01Icon,
-  BrowserIcon,
-  Layout01Icon,
-  File01Icon,
-  Link01Icon,
-  ShieldCheckIcon,
-  GiftIcon,
-} from "@/constants/icons";
+import { ArrowRight01Icon } from "@/constants/icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Image,
   Platform,
@@ -26,25 +17,22 @@ import {
   Text,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
-// Preserved for future use:
-// import { AnimatedHeroBanner } from "../../src/components/home/AnimatedHeroBanner";
-import { AnimatedEngineItem } from "../../src/components/home/AnimatedEngineItem";
+import { ModernHeroBanner } from "../../src/components/home/ModernHeroBanner";
+import { FiveProductsSection } from "../../src/components/home/FiveProductsSection";
+import { AnimatedWorkspaceCards } from "../../src/components/home/AnimatedWorkspaceCards";
 import { AnimatedCreateSection } from "../../src/components/home/AnimatedCreateSection";
-// Preserved for future use:
-// import { AnimatedPlanBanner } from "../../src/components/home/AnimatedPlanBanner";
-// Preserved for future use:
-// import { AnimatedSecurityCard } from "../../src/components/home/AnimatedSecurityCard";
-// import { AnimatedReferralCard } from "../../src/components/home/AnimatedReferralCard";
+import { HomeSecurityAndInviteCards } from "../../src/components/home/HomeSecurityAndInviteCards";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useNetwork } from "../../src/contexts/NetworkContext";
+import { useNotifications } from "../../src/contexts/NotificationContext";
+import { isExpoGo } from "../../src/services/notificationService";
 import { apiClient } from "../../src/core/api/client";
 import { usePlatformSubscription } from "../../src/hooks/usePlatformSubscription";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { supabase } from "../../src/lib/supabase";
-import { TestNotificationButton } from "@/components/TestNotification";
-
+import { HOME_SPACING, HOME_RADIUS } from "@/theme/homeTokens";
 
 interface LoginDevice {
   sessionId: string;
@@ -65,6 +53,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
   const color = getColors(isDark);
+  const reducedMotion = useReducedMotion();
 
   const { user } = useAuth();
   const {
@@ -78,57 +67,108 @@ export default function HomeScreen() {
   } = usePlatformSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { isOnline, networkChecked, refresh, isChecking } = useNetwork();
-  const [engineCycleTick, setEngineCycleTick] = useState(0);
+  const { expoPushToken, requestPermissions } = useNotifications();
 
   useEffect(() => {
-    const initialTimer = setTimeout(() => {
-      setEngineCycleTick((t) => t + 1);
-    }, 1200);
-
-    const intervalTimer = setInterval(() => {
-      setEngineCycleTick((t) => t + 1);
-    }, 9000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(intervalTimer);
-    };
-  }, []);
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        const token =
+          expoPushToken || (requestPermissions ? await requestPermissions() : null);
+        console.log(
+          '[HomeScreen] Push Token:',
+          token
+            ? 'Active'
+            : isExpoGo
+              ? 'Disabled in Expo Go (Active in Release Builds)'
+              : 'Unregistered'
+        );
+      } catch (err) {
+        console.log('[HomeScreen] Push token notice:', err);
+      }
+    })();
+  }, [expoPushToken]);
 
   // Real Workspace Telemetry from Supabase
-  const { data: telemetry, refetch: refetchTelemetry } = useQuery({
+  const { data: telemetry, isLoading: isLoadingTelemetry, refetch: refetchTelemetry } = useQuery({
     queryKey: ["workspace-telemetry-ios", user?.id],
     queryFn: async () => {
-      if (!user?.id)
+      let currentUserId = user?.id;
+      if (!currentUserId) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        currentUserId = sessionData?.session?.user?.id;
+      }
+
+      if (!currentUserId)
         return {
+          pagesCount: 0,
           landingPagesCount: 0,
           quickFormsCount: 0,
           shortLinksCount: 0,
-          botsCount: 0,
+          botsCount: 5,
         };
+
       try {
-        const [pagesRes, formsRes, linksRes] = await Promise.all([
+        const [
+          bioRes,
+          landingTemplateRes,
+          landingPagesRes,
+          tgLandingRes,
+          formsRes,
+          linksRes,
+        ] = await Promise.allSettled([
+          supabase
+            .from("free_template_submissions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId)
+            .neq("niche", "earn_storefront"),
+          supabase
+            .from("landing_template_submissions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
           supabase
             .from("landing_pages")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id),
+            .eq("user_id", currentUserId),
+          supabase
+            .from("tg_landing_pages")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", currentUserId),
           supabase
             .from("quick_forms")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id),
+            .eq("user_id", currentUserId),
           supabase
             .from("short_links")
             .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id),
+            .eq("user_id", currentUserId),
         ]);
+
+        const getCount = (settled: PromiseSettledResult<any>) =>
+          settled.status === "fulfilled" && !settled.value?.error
+            ? settled.value?.count || 0
+            : 0;
+
+        const bioCount = getCount(bioRes);
+        const landingTemplateCount = getCount(landingTemplateRes);
+        const legacyLandingCount = getCount(landingPagesRes);
+        const tgLandingCount = getCount(tgLandingRes);
+
+        const totalPages =
+          bioCount + landingTemplateCount + legacyLandingCount + tgLandingCount;
+        const formsCount = getCount(formsRes);
+        const linksCount = getCount(linksRes);
+
         return {
-          landingPagesCount: pagesRes.count || 0,
-          quickFormsCount: formsRes.count || 0,
-          shortLinksCount: linksRes.count || 0,
+          pagesCount: totalPages,
+          landingPagesCount: totalPages,
+          quickFormsCount: formsCount,
+          shortLinksCount: linksCount,
           botsCount: 5,
         };
       } catch {
         return {
+          pagesCount: 0,
           landingPagesCount: 0,
           quickFormsCount: 0,
           shortLinksCount: 0,
@@ -182,6 +222,7 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setIsRefreshing(true);
+    triggerHaptic();
     refreshSub();
     await Promise.all([refetchTelemetry(), refetchDeviceSessions()]);
     setIsRefreshing(false);
@@ -196,65 +237,32 @@ export default function HomeScreen() {
     prevOnlineRef.current = isOnline;
   }, [isOnline, refetchDeviceSessions, refetchTelemetry]);
 
-  const triggerHaptic = () => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  useFocusEffect(
+    useCallback(() => {
+      refetchTelemetry();
+    }, [refetchTelemetry])
+  );
+
+  const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
+    if (Platform.OS !== "web") Haptics.impactAsync(style);
   };
 
-  // Primary Automation Engines (Bundled Native Logos)
-  const ENGINES = [
-    {
-      id: "telegram",
-      name: "Telegram",
-      desc: "Auto-forward feeds, bots & reactions",
-      logo: require("../../assets/images/products/telegram.png"),
-      iconBg: color.products.telegram,
-      route: "/products/telegram",
-      status: hasTelegram ? "Active" : "Pro",
-      isLive: hasTelegram,
-    },
-    {
-      id: "whatsapp",
-      name: "WhatsApp",
-      desc: "Broadcasts & 24/7 Meta API triggers",
-      logo: require("../../assets/images/products/whatsapp.png"),
-      iconBg: color.products.whatsapp,
-      route: "/products/whatsapp",
-      status: hasWhatsApp ? "Active" : "Pro",
-      isLive: hasWhatsApp,
-    },
-    {
-      id: "voice",
-      name: "Voice AI",
-      desc: "AI Voice calling agents & speech streaming",
-      logo: require("../../assets/images/products/voice.png"),
-      iconBg: color.products.voice,
-      route: "/products/voice",
-      status: hasVoice ? "Active" : "Pro",
-      isLive: hasVoice,
-    },
-    {
-      id: "crm",
-      name: "Smart CRM",
-      desc: "Pipelines, deals & lead contact automation",
-      logo: require("../../assets/images/products/crm.png"),
-      iconBg: color.products.crm,
-      route: "/products/crm",
-      status: hasCRM ? "Active" : "Pro",
-      isLive: hasCRM,
-    },
-    {
-      id: "social",
-      name: "Social Pilot",
-      desc: "Cross-platform auto-poster & queue",
-      logo: require("../../assets/images/products/social.png"),
-      iconBg: color.products.social,
-      route: "/products/social",
-      status: hasSocial ? "Active" : "Growth",
-      isLive: hasSocial,
-    },
-  ];
+  const open = (route: string) => {
+    triggerHaptic();
+    router.push(route as any);
+  };
 
-
+  const section = (title: string, route: string) => {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <Text style={{ fontSize: 18, lineHeight: 24, fontWeight: "700", letterSpacing: -0.3, color: color.text }}>{title}</Text>
+        <Pressable onPress={() => open(route)} accessibilityRole="button" accessibilityLabel={`View all ${title.toLowerCase()}`} hitSlop={6} style={{ minHeight: 36, flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: color.link }}>View all</Text>
+          <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={color.link} strokeWidth={2.2} />
+        </Pressable>
+      </View>
+    );
+  };
 
   if (!networkChecked) {
     return (
@@ -267,115 +275,126 @@ export default function HomeScreen() {
   if (!isOnline) {
     return <NetworkStatusScreen onRetry={refresh} isChecking={isChecking} />;
   }
-  const pastel = isDark
-    ? ["#263D3D", "#303B32", "#39304A", "#49372D", "#46303C"]
-    : ["#D8F0F0", "#E0F1E6", "#E7DEFA", "#F9E5D4", "#F7DFE9"];
-
-  const open = (route: string) => {
-    triggerHaptic();
-    router.push(route as any);
-  };
-  const section = (title: string, route: string) => (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-      <Text style={{ fontSize: 18, lineHeight: 24, fontWeight: "600", letterSpacing: -0.3, color: color.text }}>{title}</Text>
-      <Pressable onPress={() => open(route)} accessibilityRole="button" accessibilityLabel={`View all ${title.toLowerCase()}`} hitSlop={6} style={{ minHeight: 36, flexDirection: "row", alignItems: "center", gap: 4 }}>
-        <Text style={{ fontSize: 13, fontWeight: "500", color: color.link }}>View all</Text>
-        <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={color.link} strokeWidth={2} />
-      </Pressable>
-    </View>
-  );
 
   return (
-    <AppScreen safeArea={false}>
-      <AppTopBar showPlanBadge />
-      {/* <TestNotificationButton /> */}
+    <AppScreen safeArea={false} backgroundColor={color.background}>
+      {/* Pinned Top Bar with Core Plan chip, Settings Gear, and Bell */}
+      <AppTopBar showPlanBadge showSettingsIcon />
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 128, gap: 26 }}
+        style={{ flex: 1, backgroundColor: color.background }}
+        contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 12, paddingBottom: 132 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={color.accent} />}
         showsVerticalScrollIndicator={false}
       >
-        <View>
-          <Text
-            style={{
-              maxWidth: 310,
-              fontSize: 32,
-              lineHeight: 38,
-              fontWeight: "600",
-              letterSpacing: -0.85,
-              color: color.text,
-            }}
-          >
-            Your work,{"\n"}made effortless.
-          </Text>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
-            {ENGINES.map((item, index) => (
-              <AnimatedEngineItem
-                key={item.id}
-                item={item}
-                index={index}
-                bgColor={pastel[index]}
-                textColor={color.text}
-                onPress={() => open(item.route)}
-                cycleTick={engineCycleTick}
-              />
-            ))}
-          </View>
-        </View>
-
-        <View>
-          {section("Your workspace", "/(tabs)/products")}
-          <View style={{ backgroundColor: color.card, borderRadius: 24, padding: 20, flexDirection: "row", gap: 10 }}>
-            {[
-              { label: "Pages", value: telemetry?.landingPagesCount ?? 0, route: "/tools/landing-templates", icon: Layout01Icon },
-              { label: "Forms", value: telemetry?.quickFormsCount ?? 0, route: "/tools/quick-forms", icon: File01Icon },
-              { label: "Links", value: telemetry?.shortLinksCount ?? 0, route: "/tools/link-shortener", icon: Link01Icon },
-            ].map((item, index) => (
-              <Pressable cssInterop={false} key={item.label} onPress={() => open(item.route)} accessibilityRole="button" accessibilityLabel={`${item.value} ${item.label}`} style={{ flex: 1, alignItems: "center", gap: 7 }}>
-                <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: pastel[(index + 2) % pastel.length] }}>
-                  <HugeiconsIcon icon={item.icon} size={19} color={color.text} strokeWidth={1.8} />
-                </View>
-                <Text style={{ fontSize: 25, lineHeight: 30, fontWeight: "600", color: color.text, textAlign: "center" }}>{item.value}</Text>
-                <Text style={{ fontSize: 12, color: color.textSecondary, textAlign: "center" }}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <AnimatedCreateSection
+        {/* 1. Top: Hero Banner in 3D Card Styling (Normalized 16px margin, 24px bottom gap) */}
+        <ModernHeroBanner
           isDark={isDark}
-          onOpen={open}
-          sectionHeader={section("Create something", "/(tabs)/tools")}
+          onExplorePress={() => open("/(tabs)/tools")}
         />
 
-        <Pressable cssInterop={false} onPress={() => open("/account/plans")} accessibilityRole="button" accessibilityLabel="View plans"
-          style={({ pressed }) => ({ backgroundColor: isDark ? "#383044" : "#E5DCF9", borderRadius: 24, padding: 22, opacity: pressed ? 0.78 : 1, transform: [{ scale: pressed ? 0.992 : 1 }] })}>
+        {/* 2. All 5 AI Products in 3D Card Styling (Telegram, WhatsApp, Social, Voice AI, CRM) */}
+        <FiveProductsSection
+          isDark={isDark}
+          onOpen={open}
+          sectionHeader={section("AI Products", "/(tabs)/products")}
+          activeSubscriptions={{
+            telegram: hasTelegram,
+            whatsapp: hasWhatsApp,
+            voice: hasVoice,
+            crm: hasCRM,
+            social: hasSocial,
+          }}
+        />
+
+        {/* 3. 3D Workspace Telemetry Cards: Pages, Forms, Links (Normalized 16px padding, 24px bottom gap) */}
+        <View style={{ paddingHorizontal: HOME_SPACING.md, marginBottom: HOME_SPACING.lg }}>
+          <AnimatedWorkspaceCards
+            isDark={isDark}
+            color={color}
+            telemetry={telemetry}
+            onOpen={open}
+          />
+        </View>
+
+        {/* 4. "Create something" Free Tools Carousel with 3D cards, snap peek & pagination dots */}
+        <View style={{ marginBottom: HOME_SPACING.lg }}>
+          <AnimatedCreateSection
+            isDark={isDark}
+            onOpen={open}
+            sectionHeader={section("Create something", "/(tabs)/tools")}
+          />
+        </View>
+
+        {/* 5. "Room to grow" Plans Banner with 3D Crown & gold coins (Normalized 16px margin, 24px bottom gap) */}
+        <Pressable
+          cssInterop={false}
+          onPress={() => open("/account/plans")}
+          accessibilityRole="button"
+          accessibilityLabel={`View plans. Currently on ${planLabel || "Free"} plan`}
+          style={({ pressed }) => ({
+            backgroundColor: isDark ? "#2C2042" : "#EDE7FA",
+            borderRadius: HOME_RADIUS.large,
+            padding: 18,
+            borderWidth: 1.2,
+            borderColor: isDark ? "rgba(167, 139, 250, 0.28)" : "rgba(147, 51, 234, 0.18)",
+            opacity: pressed ? 0.9 : 1,
+            transform: [{ scale: pressed && !reducedMotion ? 0.97 : 1 }],
+            position: "relative",
+            overflow: "hidden",
+            shadowColor: "#8B5CF6",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: isDark ? 0.35 : 0.1,
+            shadowRadius: 12,
+            elevation: 4,
+            marginHorizontal: HOME_SPACING.md,
+            marginBottom: HOME_SPACING.lg,
+          })}
+        >
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <View style={{ flex: 1, gap: 6 }}>
-              <Text style={{ fontSize: 22, lineHeight: 28, fontWeight: "600", letterSpacing: -0.35, color: color.text }}>Room to grow</Text>
-              <Text style={{ fontSize: 13, color: color.textSecondary }}>{planLabel || "Free"} plan</Text>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <Image
+                source={require("../../assets/images/plans-crown.png")}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="contain"
+              />
             </View>
-            <View style={{ backgroundColor: color.buttonPrimary, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 24 }}>
-              <Text style={{ fontSize: 12, fontWeight: "500", color: color.buttonPrimaryForeground }}>View plans</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 19, lineHeight: 24, fontWeight: "800", letterSpacing: -0.35, color: isDark ? "#FFFFFF" : "#1A1726" }}>
+                Room to grow
+              </Text>
+              <Text style={{ fontSize: 12, color: isDark ? "#C4BEDB" : "#4A4658", marginTop: 2, fontWeight: "500" }}>
+                {planLabel || "Free"} plan • Scale without limits
+              </Text>
+            </View>
+            <View style={{ backgroundColor: color.buttonPrimary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginLeft: 8 }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: color.buttonPrimaryForeground }}>View plans</Text>
             </View>
           </View>
         </Pressable>
 
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          {[
-            { title: "Security", detail: isLoadingDevices ? "Checking devices…" : `${deviceSessions?.activeDeviceCount ?? 1} signed-in device${(deviceSessions?.activeDeviceCount ?? 1) === 1 ? "" : "s"}`, icon: ShieldCheckIcon, route: "/(tabs)/account" },
-            { title: "Invite friends", detail: "Your referrals", icon: GiftIcon, route: "/Referral" },
-          ].map((item) => (
-            <Pressable cssInterop={false} key={item.title} onPress={() => item.title === "Security" ? router.push({ pathname: "/(tabs)/account", params: { tab: "security" } } as any) : open(item.route)}
-              accessibilityRole="button" accessibilityLabel={item.title}
-              style={({ pressed }) => ({ flex: 1, minHeight: 142, backgroundColor: color.card, borderRadius: 22, padding: 17, gap: 10, opacity: pressed ? 0.72 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-              <View style={{ width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: color.accentSoft }}>
-                <HugeiconsIcon icon={item.icon} size={20} color={color.accent} strokeWidth={1.8} />
-              </View>
-              <Text style={{ fontSize: 15, fontWeight: "600", color: color.text }}>{item.title}</Text>
-              <Text style={{ fontSize: 12, lineHeight: 18, color: color.textSecondary }}>{item.detail}</Text>
-            </Pressable>
-          ))}
+        {/* 6. Security 256-bit AES & Invite Friends ₹100 Standout 3D Cards */}
+        <View style={{ marginBottom: HOME_SPACING.lg }}>
+          <HomeSecurityAndInviteCards
+            isDark={isDark}
+            activeDeviceCount={deviceSessions?.activeDeviceCount ?? 1}
+            isLoadingDevices={isLoadingDevices}
+            onOpenSecurity={() =>
+              router.push({
+                pathname: "/(tabs)/account",
+                params: { tab: "security" },
+              } as any)
+            }
+            onOpenReferral={() => open("/Referral")}
+          />
         </View>
       </ScrollView>
     </AppScreen>

@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -251,9 +252,9 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
               Attach an AI Assistant to your Telegram Bot
             </Text>
           </View>
-          <Pressable style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
+          <TouchableOpacity style={[styles.closeBtn, isDark ? styles.closeBtnDark : styles.closeBtnLight]} onPress={onClose}>
             <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -266,7 +267,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
             <Text style={styles.headerDescription}>
               Map business details, upload documents, and link API keys to create automated support agents.
             </Text>
-            <Pressable
+            <TouchableOpacity
               style={styles.connectMainBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -276,7 +277,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
             >
               <Ionicons name="add" size={16} color="#FFFFFF" />
               <Text style={styles.connectMainBtnText}>Connect Telegram Bot</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
 
           {/* Connected Bot Cards List */}
@@ -291,12 +292,12 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
               <Text style={styles.emptySubtitle}>
                 Connect a Telegram bot and link your OpenAI key to start automated customer support.
               </Text>
-              <Pressable
+              <TouchableOpacity
                 style={styles.emptyAddBtn}
                 onPress={() => setIsConnectOpen(true)}
               >
                 <Text style={styles.emptyAddBtnText}>+ Connect Telegram Bot</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.botCardsList}>
@@ -367,18 +368,18 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                         </Text>
                       </View>
 
-                      <Pressable
+                      <TouchableOpacity
                         style={styles.openBotBtn}
                         onPress={() => handleOpenBotLink(bot.bot_username)}
                       >
                         <Ionicons name="open-outline" size={14} color="#0284C7" />
                         <Text style={styles.openBotText}>Open Bot Link</Text>
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
 
                     {/* Action Buttons Row 1: Chats & Reset History */}
                     <View style={styles.actionRowPrimary}>
-                      <Pressable
+                      <TouchableOpacity
                         style={[styles.actionBtnPrimary, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -389,9 +390,9 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                         <Text style={[styles.actionBtnPrimaryText, { color: '#6366F1' }]}>
                           Chats ({bot.chats_count || 0})
                         </Text>
-                      </Pressable>
+                      </TouchableOpacity>
 
-                      <Pressable
+                      <TouchableOpacity
                         style={[styles.actionBtnPrimary, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => handleResetHistoryConfirm(bot.bot_id, bot.bot_name)}
                       >
@@ -399,21 +400,21 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                         <Text style={[styles.actionBtnPrimaryText, { color: '#F59E0B' }]}>
                           Reset History
                         </Text>
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
 
                     {/* Action Buttons Row 2: Edit, Pause, Delete */}
                     <View style={styles.actionRowSecondary}>
-                      <Pressable
+                      <TouchableOpacity
                         style={[styles.smallActionBtn, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => handleEditPress(bot)}
                       >
                         <Text style={[styles.smallActionText, isDark ? styles.textDark : styles.textLight]}>
                           Edit
                         </Text>
-                      </Pressable>
+                      </TouchableOpacity>
 
-                      <Pressable
+                      <TouchableOpacity
                         style={[styles.smallActionBtn, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -426,16 +427,16 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                         <Text style={[styles.smallActionText, isDark ? styles.textDark : styles.textLight]}>
                           {isListening ? 'Pause' : 'Resume'}
                         </Text>
-                      </Pressable>
+                      </TouchableOpacity>
 
-                      <Pressable
+                      <TouchableOpacity
                         style={[styles.smallActionBtn, isDark ? styles.btnDark : styles.btnLight]}
                         onPress={() => handleDeleteConfirm(bot.id, bot.bot_name)}
                       >
                         <Text style={[styles.smallActionText, { color: '#EF4444' }]}>
                           Delete
                         </Text>
-                      </Pressable>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 );
@@ -452,9 +453,9 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                   Connect Telegram AI Bot
                 </Text>
-                <Pressable onPress={() => setIsConnectOpen(false)}>
+                <TouchableOpacity onPress={() => setIsConnectOpen(false)}>
                   <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
@@ -528,7 +529,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 </View>
               </ScrollView>
 
-              <Pressable
+              <TouchableOpacity
                 style={[styles.submitModalBtn, isConnecting && styles.btnDisabled]}
                 onPress={handleConnectSubmit}
                 disabled={isConnecting}
@@ -538,7 +539,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 ) : (
                   <Text style={styles.submitModalBtnText}>Connect & Activate AI</Text>
                 )}
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -551,9 +552,9 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 <Text style={[styles.modalTitle, isDark ? styles.textDark : styles.textLight]}>
                   Edit {editingChatbot?.bot_name}
                 </Text>
-                <Pressable onPress={() => setEditingChatbot(null)}>
+                <TouchableOpacity onPress={() => setEditingChatbot(null)}>
                   <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
@@ -607,7 +608,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 </View>
               </ScrollView>
 
-              <Pressable
+              <TouchableOpacity
                 style={[styles.submitModalBtn, isUpdating && styles.btnDisabled]}
                 onPress={handleUpdateSubmit}
                 disabled={isUpdating}
@@ -617,7 +618,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 ) : (
                   <Text style={styles.submitModalBtnText}>Save Changes</Text>
                 )}
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -633,9 +634,9 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   </Text>
                   <Text style={styles.subtitle}>Tap a contact to read full conversation thread</Text>
                 </View>
-                <Pressable onPress={() => setActiveSessionBot(null)}>
+                <TouchableOpacity onPress={() => setActiveSessionBot(null)}>
                   <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               {isLoadingSessions ? (
@@ -652,7 +653,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                 <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
                   <View style={{ gap: 8 }}>
                     {(sessions || []).map((session: ChatBotSession) => (
-                      <Pressable
+                      <TouchableOpacity
                         key={session.id}
                         style={[styles.sessionRow, isDark ? styles.metaRowDark : styles.metaRowLight]}
                         onPress={() => handleOpenUserThread(session)}
@@ -683,7 +684,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                             <Ionicons name="chevron-forward" size={14} color="#0284C7" />
                           </View>
                         </View>
-                      </Pressable>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 </ScrollView>
@@ -698,7 +699,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
             <View style={[styles.threadCard, isDark ? styles.cardDark : styles.cardLight]}>
               {/* Thread Header */}
               <View style={[styles.threadHeader, isDark ? styles.borderDark : styles.borderLight]}>
-                <Pressable
+                <TouchableOpacity
                   style={styles.backBtn}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -706,7 +707,7 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   }}
                 >
                   <Ionicons name="arrow-back" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
-                </Pressable>
+                </TouchableOpacity>
 
                 <View style={styles.threadHeaderInfo}>
                   <Text style={[styles.threadUserName, isDark ? styles.textDark : styles.textLight]} numberOfLines={1}>
@@ -717,9 +718,9 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                   </Text>
                 </View>
 
-                <Pressable onPress={() => setActiveUserThread(null)}>
+                <TouchableOpacity onPress={() => setActiveUserThread(null)}>
                   <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#1C1A25'} />
-                </Pressable>
+                </TouchableOpacity>
               </View>
 
               {/* Lead Memory Insights Box (if available) */}
@@ -781,8 +782,8 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                             isUser
                               ? styles.bubbleUser
                               : isDark
-                              ? styles.bubbleAssistantDark
-                              : styles.bubbleAssistantLight,
+                                ? styles.bubbleAssistantDark
+                                : styles.bubbleAssistantLight,
                           ]}
                         >
                           <Text
@@ -791,8 +792,8 @@ export const ChatBotModal: React.FC<ChatBotModalProps> = ({ visible, onClose }) 
                               isUser
                                 ? styles.textUserMessage
                                 : isDark
-                                ? styles.textDark
-                                : styles.textLight,
+                                  ? styles.textDark
+                                  : styles.textLight,
                             ]}
                           >
                             {msg.content}
@@ -836,7 +837,7 @@ const styles = StyleSheet.create({
   borderLight: { borderBottomColor: '#E9E6F2' },
   borderDark: { borderBottomColor: '#27272A' },
   headerLeft: { flex: 1 },
-  title: { fontSize: 28, fontWeight: '500', lineHeight: 36 , letterSpacing: -0.5 },
+  title: { fontSize: 28, fontWeight: '500', lineHeight: 36, letterSpacing: -0.5 },
   textLight: { color: '#1C1A25' },
   textDark: { color: '#F5F3FB' },
   subtitle: { color: '#716B7C', fontSize: 13, marginTop: 2 },
@@ -868,19 +869,21 @@ const styles = StyleSheet.create({
   connectMainBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13.5 },
 
   // Bot Cards List
-  botCardsList: { gap: 14 , borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+  botCardsList: { gap: 14, borderRadius: 24, borderWidth: 0, shadowOpacity: 0 },
   botCard: {
     padding: 16,
     borderRadius: 24,
     borderWidth: 0,
-    gap: 12, shadowOpacity: 0 },
+    gap: 12, shadowOpacity: 0
+  },
   cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E9E6F2' },
   cardDark: { backgroundColor: '#121212', borderColor: '#27272A' },
 
   botCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12, borderRadius: 24 , borderWidth: 0 , shadowOpacity: 0 },
+    gap: 12, borderRadius: 24, borderWidth: 0, shadowOpacity: 0
+  },
   avatarWrap: {
     width: 44,
     height: 44,
@@ -933,7 +936,8 @@ const styles = StyleSheet.create({
   openBotBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, borderRadius: 28 , backgroundColor: '#17171C' , minHeight: 44 , shadowOpacity: 0 },
+    gap: 4, borderRadius: 28, backgroundColor: '#17171C', minHeight: 44, shadowOpacity: 0
+  },
   openBotText: { fontSize: 12, color: '#0284C7', fontWeight: '700' },
 
   // Primary Actions
@@ -971,7 +975,8 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     alignItems: 'center',
     gap: 8,
-    marginVertical: 20, shadowOpacity: 0 },
+    marginVertical: 20, shadowOpacity: 0
+  },
   emptyTitle: { fontSize: 15, fontWeight: '700' },
   emptySubtitle: { fontSize: 13, color: '#716B7C', textAlign: 'center', lineHeight: 17 },
   emptyAddBtn: {
@@ -979,7 +984,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#17171C',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 28, minHeight: 44 , shadowOpacity: 0 },
+    borderRadius: 28, minHeight: 44, shadowOpacity: 0
+  },
   emptyAddBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12.5 },
 
   // Modals
@@ -995,20 +1001,23 @@ const styles = StyleSheet.create({
     maxWidth: 440,
     borderRadius: 24,
     borderWidth: 0,
-    padding: 18, shadowOpacity: 0 },
+    padding: 18, shadowOpacity: 0
+  },
   sessionsCard: {
     width: '100%',
     maxWidth: 460,
     borderRadius: 24,
     borderWidth: 0,
-    padding: 18, shadowOpacity: 0 },
+    padding: 18, shadowOpacity: 0
+  },
   threadCard: {
     width: '100%',
     maxWidth: 480,
     maxHeight: '90%',
     borderRadius: 24,
     borderWidth: 0,
-    padding: 16, shadowOpacity: 0 },
+    padding: 16, shadowOpacity: 0
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1025,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   inputLight: { backgroundColor: '#FFFFFF', borderColor: '#CBD5E1' },
   inputDark: { backgroundColor: '#1F2430', borderColor: '#334155' },
-  input: { fontSize: 12.5, padding: 0 , borderRadius: 22 , borderWidth: 0 , minHeight: 48 },
+  input: { fontSize: 12.5, padding: 0, borderRadius: 22, borderWidth: 0, minHeight: 48 },
   inputTextLight: { color: '#1C1A25' },
   inputTextDark: { color: '#FFFFFF' },
   submitModalBtn: {

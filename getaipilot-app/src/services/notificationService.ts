@@ -1,9 +1,7 @@
-// Conditional import of expo-notifications to avoid errors in Expo Go
+// Import of expo-notifications
 let Notifications: typeof import('expo-notifications') | undefined;
 try {
-  if (require('expo-constants').default.appOwnership !== 'expo') {
-    Notifications = require('expo-notifications');
-  }
+  Notifications = require('expo-notifications');
 } catch {
   Notifications = undefined;
 }
@@ -13,23 +11,17 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../core/api/client';
 import { supabase } from '../lib/supabase';
+import { getDeviceLoginInfo } from '../lib/device-session';
 
 export const PUSH_TOKEN_STORAGE_KEY = '@getaipilot_expo_push_token';
 export const LAST_SYNCED_USER_KEY = '@getaipilot_push_token_synced_user';
 
-// Configure how notifications appear when app is in foreground
-// Guarded so it does not crash when expo-notifications is unavailable (Expo Go)
-if (Notifications) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-}
+export const isExpoGo =
+  (Constants as any).appOwnership === 'expo' ||
+  (Constants as any).executionEnvironment === 'storeClient';
+
+// Ensure backgroundNotificationHandler (setNotificationHandler & background task) is loaded
+import './backgroundNotificationHandler';
 
 export interface NotificationRegistrationResult {
   token: string | null;
@@ -45,6 +37,10 @@ export class NotificationService {
   static async setupChannels(): Promise<void> {
     if (!Notifications) return;
     if (Platform.OS === 'android') {
+      // In Expo Go on Android SDK 53+, notification channel management is not supported and throws NullPointerException
+      if (isExpoGo) {
+        return;
+      }
       try {
         // 1. Default general alerts
         await Notifications.setNotificationChannelAsync('default', {
@@ -54,6 +50,8 @@ export class NotificationService {
           lightColor: '#10B981',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 2. New incoming leads & CRM prospects
@@ -64,6 +62,8 @@ export class NotificationService {
           lightColor: '#10B981',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 3. Customer messages & chats (WhatsApp / Telegram / Web)
@@ -74,26 +74,32 @@ export class NotificationService {
           lightColor: '#3B82F6',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 4. Urgent billing, credit depletion & subscription events
         await Notifications.setNotificationChannelAsync('billing', {
           name: 'Billing & Plan Quotas',
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 150, 150, 150],
           lightColor: '#8B5CF6',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 5. Marketing broadcasts & campaigns completion
         await Notifications.setNotificationChannelAsync('campaigns', {
           name: 'Campaigns & Broadcasts',
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 200, 200, 200],
           lightColor: '#F59E0B',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 6. Voice AI Agent & phone calls
@@ -104,16 +110,20 @@ export class NotificationService {
           lightColor: '#EC4899',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 7. System status & Bot infrastructure updates
         await Notifications.setNotificationChannelAsync('system', {
           name: 'System & Bot Updates',
-          importance: Notifications.AndroidImportance.HIGH,
+          importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 150, 150, 150],
           lightColor: '#6366F1',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
 
         // 8. Admin console alerts & security activities
@@ -124,9 +134,26 @@ export class NotificationService {
           lightColor: '#EF4444',
           enableVibrate: true,
           showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
         });
-      } catch (err) {
-        console.warn('[NotificationService] Error setting up Android channels:', err);
+
+        // 9. Page clicks, views, and visitor analytics
+        await Notifications.setNotificationChannelAsync('analytics', {
+          name: 'Page Clicks & Views Alerts',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 200, 150, 200],
+          lightColor: '#06B6D4',
+          enableVibrate: true,
+          showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
+        });
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        if (!msg.includes('NullPointerException') && !msg.includes('Expo Go')) {
+          console.warn('[NotificationService] Error setting up Android channels:', msg);
+        }
       }
     }
   }
@@ -140,6 +167,15 @@ export class NotificationService {
 
     if (Platform.OS === 'web') {
       return { token: null, status: 'unsupported' };
+    }
+
+    if (isExpoGo && Platform.OS === 'android') {
+      console.log('ℹ️ [NotificationService] Remote push notifications are disabled in Expo Go on Android (SDK 53+). They work in development builds (npx expo run:android) and release APKs/AABs.');
+      return {
+        token: null,
+        status: 'unsupported',
+        error: 'Push notifications are not supported in Expo Go on Android. Use a development build.',
+      };
     }
 
     if (!Device.isDevice) {
@@ -169,17 +205,71 @@ export class NotificationService {
         return { token: null, status: finalStatus };
       }
 
-      // 3. Obtain Expo Push Token using EAS project ID
+      // 3. Obtain Expo Push Token using EAS project ID (with retry for network/Google Play Services initialization)
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId ??
         'b20e09aa-b2a4-483d-ba57-6b1b70f6d988';
 
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
+      let token: string | null = null;
+      let lastFetchError: any = null;
 
-      const token = tokenData.data;
+      // On Android, ensure native FCM device token is active
+      let nativeDeviceToken: any = undefined;
+      if (Platform.OS === 'android') {
+        try {
+          const deviceToken = await Notifications.getDevicePushTokenAsync();
+          if (deviceToken?.data) {
+            nativeDeviceToken = deviceToken;
+            console.log('📱 [NotificationService] Native FCM Device Token acquired:', typeof deviceToken.data === 'string' ? `${deviceToken.data.substring(0, 25)}...` : 'active');
+          }
+        } catch (dtErr: any) {
+          const msg = dtErr?.message || String(dtErr);
+          if (msg.includes('removed from Expo Go') || msg.includes('Expo Go')) {
+            console.log('ℹ️ [NotificationService] Remote notifications are unavailable in Expo Go on Android. Use a development build for push testing.');
+            return {
+              token: null,
+              status: 'unsupported',
+              error: 'Push notifications are not supported in Expo Go on Android.',
+            };
+          }
+          console.log('ℹ️ [NotificationService] Native device push token info:', msg);
+        }
+      }
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            console.log(`🔄 [NotificationService] Retrying push token fetch (attempt ${attempt}/3)...`);
+            await new Promise((res) => setTimeout(res, 2000 * attempt));
+          }
+          const tokenData = await Notifications.getExpoPushTokenAsync({
+            projectId,
+            ...(nativeDeviceToken ? { devicePushToken: nativeDeviceToken } : {}),
+          });
+          if (tokenData?.data) {
+            token = tokenData.data;
+            break;
+          }
+        } catch (fetchErr: any) {
+          lastFetchError = fetchErr;
+          const msg = fetchErr?.message || String(fetchErr);
+          if (msg.includes('removed from Expo Go') || msg.includes('Expo Go')) {
+            console.log('ℹ️ [NotificationService] Remote push notifications are disabled in Expo Go on Android (SDK 53+).');
+            return {
+              token: null,
+              status: 'unsupported',
+              error: 'Push notifications are not supported in Expo Go on Android.',
+            };
+          }
+          console.warn(`⚠️ [NotificationService] Token fetch attempt ${attempt} notice:`, msg);
+        }
+      }
+
+      if (!token && lastFetchError) {
+        throw lastFetchError;
+      }
+
       if (token) {
         console.log('==============================================');
         console.log('🔥 [NotificationService] EXPO PUSH TOKEN:');
@@ -190,7 +280,7 @@ export class NotificationService {
 
       return {
         token,
-        status: 'granted',
+        status: token ? 'granted' : 'denied',
       };
     } catch (error: any) {
       console.warn('❌ [NotificationService] Failed to obtain Expo push token:', error?.message || error);
@@ -203,6 +293,27 @@ export class NotificationService {
   }
 
   /**
+   * Force refresh push token from scratch by clearing AsyncStorage cache and re-registering
+   */
+  static async forceRefreshToken(userId?: string): Promise<string | null> {
+    try {
+      console.log('🔄 [NotificationService] Forcing fresh push token acquisition...');
+      await AsyncStorage.removeItem(PUSH_TOKEN_STORAGE_KEY);
+      await AsyncStorage.removeItem(LAST_SYNCED_USER_KEY);
+
+      const result = await this.registerForPushNotificationsAsync();
+      if (result.token && userId) {
+        console.log('📡 [NotificationService] Syncing fresh token with backend for user:', userId);
+        await this.syncPushTokenWithBackend(result.token, userId);
+      }
+      return result.token;
+    } catch (err: any) {
+      console.warn('❌ [NotificationService] Error force refreshing token:', err?.message || err);
+      return null;
+    }
+  }
+
+  /**
    * Send / Sync token with BFF and Supabase for the authenticated user
    */
   static async syncPushTokenWithBackend(token: string, userId: string): Promise<boolean> {
@@ -210,16 +321,16 @@ export class NotificationService {
     console.log(`📡 [NotificationService] Syncing push token for user ${userId}...`);
 
     try {
-      const lastSyncedUser = await AsyncStorage.getItem(LAST_SYNCED_USER_KEY);
-      const lastToken = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
-
-      // Skip redundant sync if already synced for this user with identical token
-      if (lastSyncedUser === userId && lastToken === token) {
-        return true;
-      }
+      let installationId = 'unknown';
+      try {
+        const deviceInfo = await getDeviceLoginInfo();
+        installationId = deviceInfo.installationId;
+      } catch {}
 
       const payload = {
+        user_id: userId,
         push_token: token,
+        installation_id: installationId,
         platform: Platform.OS,
         device_name: Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android Device'),
         app_version: Constants?.expoConfig?.version || '1.0.0',
@@ -229,36 +340,73 @@ export class NotificationService {
       // 1. Try BFF endpoint
       let bffSuccess = false;
       try {
-        await apiClient.post('/mobile/v1/user/push-token', payload);
+        const result = await apiClient.post<{ success: boolean }>('/mobile/v1/user/push-token', payload, { skipAuth: true });
+        if (!result?.success) throw new Error('Backend did not confirm token registration');
         bffSuccess = true;
+        console.log('✅ [NotificationService] Successfully synced push token to BFF for user:', userId);
       } catch (bffErr) {
-        // BFF might be offline or route being established
-        console.warn('[NotificationService] BFF push token sync notice, trying Supabase direct:', bffErr);
+        console.log('[NotificationService] BFF offline or unreachable for push token sync.');
       }
 
-      // 2. Fallback / Direct sync to Supabase profiles metadata
+      // 2. Direct sync to Supabase (user_push_tokens table & backward-compatible profiles table)
+      let supabaseSuccess = false;
       try {
-        const { error: profileError } = await supabase
+        // Upsert to user_push_tokens (handles multi-device and reassignments cleanly)
+        if (installationId && installationId !== 'unknown') {
+          const { error: deviceTokenError } = await supabase
+            .from('user_push_tokens')
+            .upsert(
+              {
+                user_id: userId,
+                installation_id: installationId,
+                push_token: token,
+                platform: Platform.OS,
+                device_name: Device.modelName || (Platform.OS === 'ios' ? 'iPhone' : 'Android Device'),
+                app_version: Constants?.expoConfig?.version || '1.0.0',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'installation_id' }
+            );
+          if (deviceTokenError) {
+            console.warn('[NotificationService] user_push_tokens upsert notice:', deviceTokenError.message);
+          }
+        }
+
+        // Release this device token from any other profiles on this physical hardware
+        await supabase
+          .from('profiles')
+          .update({ push_token: null })
+          .eq('push_token', token)
+          .neq('id', userId);
+
+        const { data: savedProfile, error: profileError } = await supabase
           .from('profiles')
           .update({
             push_token: token,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', userId);
+          .eq('id', userId)
+          .select('id')
+          .maybeSingle();
 
         if (profileError) {
-          // If profiles table doesn't have a push_token column, log quietly without breaking
           console.warn('⚠️ [NotificationService] Supabase profile push_token update notice:', profileError.message);
-        } else {
+        } else if (savedProfile) {
+          supabaseSuccess = true;
           console.log('✅ [NotificationService] Successfully updated push_token in profiles table for user:', userId);
+        } else {
+          console.warn('[NotificationService] Profile token update matched no accessible row.');
         }
       } catch (sbErr) {
-        console.warn('[NotificationService] Supabase fallback error:', sbErr);
+        console.warn('[NotificationService] Supabase sync error:', sbErr);
       }
 
-      await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
-      await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
-      return bffSuccess;
+      if (bffSuccess || supabaseSuccess) {
+        await AsyncStorage.setItem(LAST_SYNCED_USER_KEY, userId);
+        await AsyncStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token);
+        return true;
+      }
+      return false;
     } catch (err) {
       console.warn('[NotificationService] Sync token error:', err);
       return false;
@@ -266,27 +414,48 @@ export class NotificationService {
   }
 
   /**
-   * Trigger an instant local push notification for verification / preview
+   * Trigger an instant or delayed local push notification for verification / preview
    */
   static async scheduleLocalNotification(options: {
     title: string;
     body: string;
     data?: Record<string, any>;
     channelId?: string;
+    imageUrl?: string;
+    delaySeconds?: number;
   }): Promise<string> {
     if (!Notifications) return '';
-    await this.setupChannels();
+
+    const channelId = options.channelId || 'default';
+    const delay = options.delaySeconds && options.delaySeconds > 0 ? options.delaySeconds : null;
+
+    let trigger: any = null;
+    if (delay) {
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: delay,
+        repeats: false,
+        channelId,
+      };
+    } else if (Platform.OS === 'android') {
+      trigger = { channelId };
+    }
+
+    const data = {
+      ...(options.data || {}),
+      ...(options.imageUrl ? { imageUrl: options.imageUrl } : {}),
+    };
 
     return await Notifications.scheduleNotificationAsync({
       content: {
         title: options.title,
         body: options.body,
-        data: options.data || {},
+        data,
         sound: true,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
+        priority: Notifications.AndroidNotificationPriority.MAX,
         color: '#10B981',
       },
-      trigger: null, // Send immediately
+      trigger,
     });
   }
 

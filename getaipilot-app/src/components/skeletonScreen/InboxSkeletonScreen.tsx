@@ -78,12 +78,16 @@ export function ConversationSkeleton() {
   const colors = getColors(isDark);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: isDark ? colors.background : '#FFFFFF' }]}>
       {/* Chat Top Header */}
       <View
         style={[
           styles.chatHeader,
-          { backgroundColor: colors.surface },
+          {
+            backgroundColor: isDark ? colors.surface : '#FFFFFF',
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
+          },
         ]}
       >
         <Skeleton width={24} height={24} borderRadius={12} style={{ marginRight: 12 }} />
@@ -244,6 +248,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
     marginBottom: 0,
+    borderWidth: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   inputBar: {
     flexDirection: "row",

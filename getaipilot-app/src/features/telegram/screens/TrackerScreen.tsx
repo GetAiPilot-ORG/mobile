@@ -14,8 +14,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { StatCard } from '../components/ui/StatCard';
-import { ProductHeading } from "@/components/ProductUI";
+import { ProductHeading, ProductMetrics } from "@/components/ProductUI";
 import { TelegramToolKey } from '../types';
 
 type TrackerSection = 'joins' | 'connect' | 'links';
@@ -107,78 +106,80 @@ export const TrackerScreen: React.FC<TrackerScreenProps> = ({ botsList, trackerD
   return (
     <>
       {/* HERO: Command Center (Responsive Header with Telegram Graphic) */}
-      <ProductHeading title="Join tracker" action="Manage tracker" onAction={() => onOpenModal('tracker')} />
+      <ProductHeading
+        title="Join tracker"
+        action="Manage tracker"
+        onAction={() => onOpenModal('tracker')}
+      />
 
-      {/* 6 KPI Cards in Responsive Rows */}
-      <View
-        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E9E6F2' }}
+      {/* Metrics */}
+      <ProductMetrics
+        items={[
+          {
+            label: "Total joins",
+            value: kpis.totalJoins,
+            onPress: () => setTrackerSection("joins"),
+          },
+          {
+            label: "Today's joins",
+            value: `+${kpis.todaysJoins}`,
+            onPress: () => setTrackerSection("joins"),
+          },
+          {
+            label: "Conversion",
+            value: `${kpis.conversionRate}%`,
+            onPress: () => setTrackerSection("links"),
+          },
+        ]}
+      />
+
+      {/* Category Filter Pill Bar */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
       >
-        {kpiRows.map((row, rowIndex) => (
-          <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
-            {row.map((m, colIndex) => (
-              <View key={colIndex} className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                <StatCard
-                  label={m.label}
-                  value={m.value}
-                  icon={m.icon}
-                  color={m.color}
-                  bg={m.bg}
-                  sub={m.sub}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setTrackerSection(m.tab as TrackerSection);
-                  }}
-                />
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
-
-      {/* Category Filter Tabs (Overview Screen Style) */}
-      <View className="mb-3.5 p-2.5 rounded-xl" style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-medium mb-2.5" style={{ color: colors.text }}>
-          Tracker Controls & Modules ({TRACKER_CATEGORIES.length})
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-        >
-          {TRACKER_CATEGORIES.map((cat) => {
-            const isSelected = trackerSection === cat.key;
-            return (
-              <Pressable
-                key={cat.key}
-                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#E7DEFA] border-transparent'
-                  : isDark
-                    ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F5F3FB] border-[#E9E6F2]'
-                  }`}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setTrackerSection(cat.key);
+        {TRACKER_CATEGORIES.map((cat) => {
+          const isSelected = trackerSection === cat.key;
+          return (
+            <Pressable
+              key={cat.key}
+              onPress={() => {
+                if (Platform.OS !== "web")
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setTrackerSection(cat.key);
+              }}
+              style={{
+                borderRadius: 24,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                backgroundColor: isSelected ? colors.primary : colors.card,
+              }}
+            >
+              <Ionicons
+                name={cat.icon}
+                size={14}
+                color={isSelected ? "#FFFFFF" : colors.textSecondary}
+              />
+              <Text
+                style={{
+                  color: isSelected ? "#FFFFFF" : colors.textSecondary,
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? "700" : "500",
                 }}
               >
-                <Ionicons
-                  name={cat.icon}
-                  size={13}
-                  color={isSelected ? '#6C55C5' : isDark ? '#94A3B8' : '#64748B'}
-                />
-                <Text
-                  className={`text-xs ${isSelected ? 'text-[#6C55C5] font-medium' : 'font-semibold'}`}
-                  style={isSelected ? undefined : { color: colors.text }}
-                >
-                  {cat.label}
-                  {cat.count !== undefined && cat.count !== null ? ` (${cat.count})` : ''}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+                {cat.label}
+                {cat.count !== undefined && cat.count !== null
+                  ? ` (${cat.count})`
+                  : ""}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {/* SECTION 1: ANALYTICS & EVENTS */}
       {trackerSection === 'joins' && (

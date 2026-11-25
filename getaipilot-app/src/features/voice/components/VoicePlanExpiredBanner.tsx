@@ -39,17 +39,15 @@ export const VoicePlanExpiredBanner: React.FC<VoicePlanExpiredBannerProps> = ({
 
   return (
     <View
-      className={`rounded-[24px] p-4 gap-3  ${
-        isDark ? "bg-stone-900/90" : "bg-amber-50"
-      }`}
+      className={`rounded-[24px] p-4 gap-3  ${isDark ? "bg-stone-900/90" : "bg-amber-50"
+        }`}
       style={style}
     >
       {/* Header */}
       <View className="flex-row items-start gap-3">
         <View
-          className={`w-9 h-9 rounded-xl items-center justify-center shrink-0 ${
-            isDark ? "bg-amber-500/15" : "bg-amber-100/80"
-          }`}
+          className={`w-9 h-9 rounded-xl items-center justify-center shrink-0 ${isDark ? "bg-amber-200/15" : "bg-amber-100/80"
+            }`}
         >
           <Ionicons name="information-circle-outline" size={22} color="#D97706" />
         </View>
@@ -72,9 +70,8 @@ export const VoicePlanExpiredBanner: React.FC<VoicePlanExpiredBannerProps> = ({
 
       {/* Footer */}
       <View
-        className={`flex-row items-center justify-between pt-2.5  ${
-          isDark ? "border-amber-500/10" : "border-amber-200/50"
-        } gap-2`}
+        className={`flex-row items-center justify-between pt-2.5  ${isDark ? "border-amber-500/10" : "border-amber-200/50"
+          } gap-2`}
       >
         {onNavigateToLines && expiredNumbersCount ? (
           <Pressable

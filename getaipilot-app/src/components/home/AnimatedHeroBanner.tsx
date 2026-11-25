@@ -35,7 +35,7 @@ const CHANNELS: ChannelItem[] = [
   {
     id: 'crm',
     name: 'Smart CRM',
-    image: require('../../../assets/images/products/crm.png'),
+    image: require('../../../assets/images/products/crm.webp'),
     prefix: 'made',
     highlight: 'effortless.',
     color: '#F472B6', // Neon Rose Pink
@@ -45,7 +45,7 @@ const CHANNELS: ChannelItem[] = [
   {
     id: 'whatsapp',
     name: 'WhatsApp AI',
-    image: require('../../../assets/images/products/whatsapp.png'),
+    image: require('../../../assets/images/products/whatsapp.webp'),
     prefix: 'on full',
     highlight: 'autopilot.',
     color: '#34D399', // Emerald Green
@@ -55,7 +55,7 @@ const CHANNELS: ChannelItem[] = [
   {
     id: 'voice',
     name: 'Voice AI',
-    image: require('../../../assets/images/products/voice.png'),
+    image: require('../../../assets/images/products/voice.webp'),
     prefix: 'powered by',
     highlight: 'smart AI.',
     color: '#C084FC', // Bright Violet
@@ -65,7 +65,7 @@ const CHANNELS: ChannelItem[] = [
   {
     id: 'social',
     name: 'Social Pilot',
-    image: require('../../../assets/images/products/social.png'),
+    image: require('../../../assets/images/products/social.webp'),
     prefix: 'always',
     highlight: 'connected.',
     color: '#FB7185', // Coral Rose
@@ -75,7 +75,7 @@ const CHANNELS: ChannelItem[] = [
   {
     id: 'telegram',
     name: 'Telegram Pilot',
-    image: require('../../../assets/images/products/telegram.png'),
+    image: require('../../../assets/images/products/telegram.webp'),
     prefix: 'lightning',
     highlight: 'fast.',
     color: '#38BDF8', // Cyan Sky
@@ -327,7 +327,7 @@ export function AnimatedHeroBanner({
             <View style={styles.brandRow}>
               <View style={styles.whiteLogoCircle}>
                 <Image
-                  source={require('../../../assets/images/logo-sm.png')}
+                  source={require('../../../assets/images/logo-sm.webp')}
                   style={styles.logoBadgeImage}
                   resizeMode="contain"
                 />

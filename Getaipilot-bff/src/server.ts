@@ -25,6 +25,7 @@ const app = Fastify({
   logger: {
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
+  bodyLimit: 50 * 1024 * 1024, // 50MB for media upload payloads
 });
 
 async function main() {
@@ -127,6 +128,9 @@ async function main() {
 
     // Initialize Realtime DB notifications bridge (captures bot-dashboard Admin Broadcasts, Attendance, etc.)
     NotificationService.initRealtimeDbListener();
+
+    // Initialize page clicks & views monitor for Landing and Bio pages (alerts page owner)
+    NotificationService.initPageClickMonitor(30000);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

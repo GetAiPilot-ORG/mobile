@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "222172245547",
+    "project_id": "getaipilot-95c3d",
+    "storage_bucket": "getaipilot-95c3d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:222172245547:android:8899b9d7181c294666046e",
+        "android_client_info": {
+          "package_name": "com.getaipilot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbSY9oHLztR1285r61I9d-dZ1d9TFZ-iw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

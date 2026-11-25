@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { apiClient } from "../../../core/api/client";
 import { useTheme, getColors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { soundService } from '../../../services/soundFeedbackService';
 
 export const ToolsScreen: React.FC = () => {
   const router = useRouter();
@@ -153,7 +154,10 @@ export const ToolsScreen: React.FC = () => {
                 isDark ? styles.cardDark : styles.cardLight,
                 pressed && styles.cardPressed,
               ]}
-              onPress={() => router.push(tool.route as any)}
+              onPress={() => {
+                soundService.play('pop');
+                router.push(tool.route as any);
+              }}
             >
               <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF' }]}>
                 <Ionicons name={tool.icon} size={20} color="#6366f1" />
@@ -180,7 +184,10 @@ export const ToolsScreen: React.FC = () => {
                 pressed && styles.cardPressed,
               ]}
               disabled={openingTool === builder.id}
-              onPress={() => handleOpenBuilder(builder.id)}
+              onPress={() => {
+                soundService.play('pop');
+                handleOpenBuilder(builder.id);
+              }}
             >
               <View style={[styles.builderIconBox, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF' }]}>
                 <Ionicons name={builder.icon} size={22} color="#6366f1" />

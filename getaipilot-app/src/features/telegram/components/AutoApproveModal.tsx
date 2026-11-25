@@ -144,16 +144,18 @@ export const AutoApproveModal: React.FC<AutoApproveModalProps> = ({
                 </Text>
 
                 {/* Connected Telegram ID Pill */}
-                <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
-                  <Ionicons name="shield-checkmark-outline" size={16} color="#0284C7" />
-                  <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
-                    Connected Telegram ID: {' '}
-                    <Text style={styles.idValue}>
-                      {status?.telegramUserId ? status.telegramUserId : '1032153257'}
+                {Boolean(status?.telegramUserId && /^\d{5,16}$/.test(String(status.telegramUserId).trim())) && (
+                  <View style={[styles.idCard, isDark ? styles.idCardDark : styles.idCardLight]}>
+                    <Ionicons name="shield-checkmark-outline" size={16} color="#0284C7" />
+                    <Text style={[styles.idLabel, isDark ? styles.textDark : styles.textLight]}>
+                      Connected Telegram ID: {' '}
+                      <Text style={styles.idValue}>
+                        {status?.telegramUserId}
+                      </Text>
                     </Text>
-                  </Text>
-                  <View style={styles.activeDot} />
-                </View>
+                    <View style={styles.activeDot} />
+                  </View>
+                )}
 
                 {/* Action CTA Button */}
                 <Pressable cssInterop={false}

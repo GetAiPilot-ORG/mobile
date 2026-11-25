@@ -115,6 +115,7 @@ export interface ThemedDialogContextType {
   showReferral: (options: ReferralDialogOptions) => void;
   showAlert: (options: SimpleAlertOptions) => void;
   confirm: (options: ConfirmDialogOptions) => void;
+  confirmDialog: (options: ConfirmDialogOptions) => void;
   prompt: (
     optionsOrTitle: PromptDialogOptions | string,
     messageOrOnConfirm?: string | ((value: string) => void | Promise<void>),
@@ -182,6 +183,7 @@ export const ThemedAlert = {
       buttonAlign?: DialogButtonAlign;
       alignRight?: boolean;
       textAlign?: 'left' | 'center' | 'right';
+      showCloseButton?: boolean;
     }
   ) {
     if (!themedAlertManager.isReady()) {
@@ -312,6 +314,7 @@ export const ThemedAlert = {
       alignRight: options?.alignRight,
       textAlign: options?.textAlign,
       dismissable: options?.cancelable ?? true,
+      showCloseButton: options?.showCloseButton ?? true,
       buttonLayout: dialogButtons.length === 2 ? 'row' : 'auto',
       onClose: () => {
         options?.onDismiss?.();
@@ -512,8 +515,8 @@ export const ThemedDialogProvider: React.FC<{ children: React.ReactNode }> = ({ 
       referralCode,
       referralLink,
       referralReward,
-      title = 'Invite & Earn Rewards',
-      description = 'Share your referral code with your colleagues and earn recurring credits.',
+      title = 'Invite & Earn ₹100 Cash',
+      description = 'Share your referral code with friends and earn ₹100 cash for every referral.',
       backgroundColor,
       borderColor,
       onShare,
@@ -761,6 +764,7 @@ export const ThemedDialogProvider: React.FC<{ children: React.ReactNode }> = ({ 
       showReferral,
       showAlert,
       confirm,
+      confirmDialog: confirm,
       prompt,
     }),
     [showDialog, hideDialog, confirmLogout, showReferral, showAlert, confirm, prompt]

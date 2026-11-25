@@ -15,7 +15,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getChannelMeta, getStatusMeta } from './socialActivityHelpers';
+import { filterAndNormalizeChannels, formatUserFriendlyError, getChannelMeta, getStatusMeta } from './socialActivityHelpers';
 import { openSocialHandoff } from '../../utils/socialHandoff';
 import { useTheme, getColors } from '@/theme';
 
@@ -267,7 +267,7 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
       ) : (
         <View style={styles.queueList}>
           {filteredQueueList.map((item: any) => {
-            const channels = item.selected_channels?.length ? item.selected_channels : ['social'];
+            const channels = filterAndNormalizeChannels(item.selected_channels);
             const statusMeta = getStatusMeta(item.status);
             const mediaUri =
               item.thumbnail_url ||
@@ -314,13 +314,15 @@ export const ActivityQueueSubTab: React.FC<ActivityQueueSubTabProps> = ({
               item.facebook_url ||
               item.x_url;
 
-            const failureReason =
+            const rawFailureReason =
               item.last_error ||
               item.youtube_error ||
               item.instagram_error ||
               item.facebook_error ||
               item.x_error ||
               item.error_message;
+
+            const failureReason = formatUserFriendlyError(rawFailureReason);
 
             return (
               <Pressable

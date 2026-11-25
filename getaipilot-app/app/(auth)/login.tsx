@@ -33,7 +33,7 @@ import { isValidEmail } from "../../src/lib/validators";
 
 const REMEMBER_ME_KEY = "@gap_remember_me";
 const SAVE_LOGIN_KEY = "@gap_saved_identifier";
-const brandLogo = require("../../assets/images/icon.png");
+const brandLogo = require("../../assets/images/icon.webp");
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -121,12 +121,7 @@ export default function LoginScreen() {
 
       try {
         await login(cleanIdentifier, password);
-        const isOnboarded = useAuthStore.getState().onboardingCompleted;
-        if (isOnboarded === false) {
-          router.replace("/onboarding" as any);
-        } else {
-          router.replace("/(tabs)");
-        }
+        router.replace("/(tabs)");
       } catch (err: any) {
         triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
         setFeedback({

@@ -21,18 +21,18 @@ interface AnimatedEngineItemProps {
   item: EngineItemData;
   index: number;
   bgColor: string;
-  textColor: string;
+  // textColor: string;
   onPress: () => void;
-  cycleTick: number;
+  cycleTick?: number;
 }
 
 export function AnimatedEngineItem({
   item,
   index,
   bgColor,
-  textColor,
+  // textColor,
   onPress,
-  cycleTick,
+  cycleTick = 0,
 }: AnimatedEngineItemProps) {
   // Main icon transforms (subtle, calm & elegant)
   const translateX = useRef(new Animated.Value(0)).current;
@@ -288,14 +288,7 @@ export function AnimatedEngineItem({
       </View>
 
       {/* Label */}
-      <Text
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.8}
-        style={[styles.label, { color: textColor }]}
-      >
-        {item.name.replace('Smart ', '').replace(' Pilot', '')}
-      </Text>
+
     </Pressable>
   );
 }

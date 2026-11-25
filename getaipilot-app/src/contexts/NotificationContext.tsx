@@ -1,26 +1,50 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import type {
   Notification,
   EventSubscription,
   NotificationResponse,
 } from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { Platform } from 'react-native';
-import { NotificationService } from '../services/notificationService';
+import { AppState, Platform } from 'react-native';
+import { NotificationService, PUSH_TOKEN_STORAGE_KEY, isExpoGo } from '../services/notificationService';
 import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 
 type NotificationsModule = typeof import('expo-notifications');
 
 let Notifications: NotificationsModule | null = null;
 try {
-  if (Constants.appOwnership !== 'expo') {
-    Notifications = require('expo-notifications');
-  }
+  Notifications = require('expo-notifications');
 } catch {
   Notifications = null;
 }
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  imageUrl?: string;
+  createdAt: string;
+  isRead: boolean;
+  type?:
+  | 'lead'
+  | 'message'
+  | 'billing'
+  | 'system'
+  | 'general'
+  | 'info'
+  | 'admin'
+  | 'announcement'
+  | 'page_click'
+  | 'page_view'
+  | 'analytics';
+}
+
+export const NOTIFICATIONS_STORAGE_KEY = '@getaipilot_notifications_history';
 
 export interface NotificationContextType {
   expoPushToken: string | null;
@@ -30,20 +54,32 @@ export interface NotificationContextType {
   isDevice: boolean;
   isRegistering: boolean;
   requestPermissions: () => Promise<string | null>;
+  forceRefreshToken: () => Promise<string | null>;
   sendTestNotification: (
     title?: string,
     body?: string,
     channelId?: string,
-    route?: string
+    route?: string,
+    imageUrl?: string,
+    delaySeconds?: number
   ) => Promise<void>;
+  notificationsList: AppNotification[];
+  unreadCount: number;
+  markAsRead: (id: string) => Promise<void>;
+  toggleReadStatus: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  addNotification: (
+    item: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'> & { id?: string }
+  ) => Promise<void>;
+  refreshNotifications: () => Promise<void>;
+  syncPageClickNotifications: () => Promise<void>;
+  isRefreshing: boolean;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-/**
- * No-op context used when running in Expo Go (notifications unavailable).
- * All hooks in NotificationProvider still run; consumers simply receive inert values.
- */
 const NOOP_CONTEXT: NotificationContextType = {
   expoPushToken: null,
   notification: null,
@@ -52,38 +88,162 @@ const NOOP_CONTEXT: NotificationContextType = {
   isDevice: false,
   isRegistering: false,
   requestPermissions: async () => null,
+  forceRefreshToken: async () => null,
   sendTestNotification: async () => { },
+  notificationsList: [],
+  unreadCount: 0,
+  markAsRead: async () => { },
+  toggleReadStatus: async () => { },
+  markAllAsRead: async () => { },
+  deleteNotification: async () => { },
+  clearAllNotifications: async () => { },
+  addNotification: async () => { },
+  refreshNotifications: async () => { },
+  syncPageClickNotifications: async () => { },
+  isRefreshing: false,
 };
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  // IMPORTANT: All hooks must be called unconditionally, before any early return.
-  const canUseNotifications = Constants.appOwnership !== 'expo';
+  const canUseNotifications = Boolean(Notifications);
 
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, onboardingComplete } = useAuth();
 
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [notificationsList, setNotificationsList] = useState<AppNotification[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const currentUserId = useRef(user?.id);
+  currentUserId.current = user?.id;
+  const registrationInFlight = useRef<Promise<string | null> | null>(null);
 
-  const notificationListener = useRef<EventSubscription | null>(null);
-  const responseListener = useRef<EventSubscription | null>(null);
-  const lastHandledNotificationId = useRef<string | null>(null);
+  const appIsActiveRef = useRef<boolean>(AppState.currentState === 'active');
 
-  const clearNotification = () => {
-    setNotification(null);
-  };
+  const getStorageKey = useCallback((uid?: string) => {
+    return uid
+      ? `@getaipilot_notifications_${uid}_v2`
+      : '@getaipilot_notifications_guest_v2';
+  }, []);
 
-  /**
-   * Helper to map notification data payload to an app route
-   */
-  const resolveRoute = (data?: Record<string, any>): string | null => {
+  const getDismissedKey = useCallback((uid?: string) => {
+    return uid
+      ? `@getaipilot_dismissed_notifications_${uid}`
+      : '@getaipilot_dismissed_notifications_guest';
+  }, []);
+
+  const getClearedAtKey = useCallback((uid?: string) => {
+    return uid
+      ? `@getaipilot_notifications_cleared_at_${uid}`
+      : '@getaipilot_notifications_cleared_at_guest';
+  }, []);
+
+  const dismissedIdsRef = useRef<Set<string>>(new Set());
+  const clearedAtRef = useRef<number>(0);
+
+  // ------------------------------------------------------------------
+  // ONE canonical dedupe namespace, keyed by row id or content.
+  // ------------------------------------------------------------------
+  const processedKeys = useRef<Set<string>>(new Set());
+
+  const isDuplicate = useCallback((key: string, ttlMs = 5 * 60_000): boolean => {
+    if (processedKeys.current.has(key)) return true;
+    processedKeys.current.add(key);
+    setTimeout(() => processedKeys.current.delete(key), ttlMs);
+    return false;
+  }, []);
+
+  const notifKey = (id: string) => `notif:${id}`;
+  const contentKey = (title: string, body: string) =>
+    `content:${(title || '').trim().toLowerCase()}:${(body || '').trim().toLowerCase()}`;
+
+  // ------------------------------------------------------------------
+  // Persistence
+  // ------------------------------------------------------------------
+  const persist = useCallback(
+    async (items: AppNotification[], uid?: string) => {
+      setNotificationsList(items);
+      try {
+        await AsyncStorage.setItem(getStorageKey(uid ?? user?.id), JSON.stringify(items));
+      } catch (e) {
+        console.warn('Failed to save notifications history:', e);
+      }
+    },
+    [getStorageKey, user?.id]
+  );
+
+  const saveNotifications = useCallback(
+    async (items: AppNotification[]) => {
+      await persist(items, user?.id);
+    },
+    [persist, user?.id]
+  );
+
+  // Load dismissed set and clearedAt threshold on startup
+  useEffect(() => {
+    (async () => {
+      try {
+        const [dismissedJson, clearedAtVal] = await Promise.all([
+          AsyncStorage.getItem(getDismissedKey(user?.id)),
+          AsyncStorage.getItem(getClearedAtKey(user?.id)),
+        ]);
+        if (dismissedJson) {
+          const ids: string[] = JSON.parse(dismissedJson);
+          if (Array.isArray(ids)) {
+            dismissedIdsRef.current = new Set(ids);
+          }
+        } else {
+          dismissedIdsRef.current = new Set();
+        }
+        if (clearedAtVal) {
+          clearedAtRef.current = Number(clearedAtVal) || 0;
+        } else {
+          clearedAtRef.current = 0;
+        }
+      } catch {
+        /* noop */
+      }
+    })();
+  }, [user?.id, getDismissedKey, getClearedAtKey]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const key = getStorageKey(user?.id);
+        const stored = await AsyncStorage.getItem(key);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            // Deduplicate immediately upon reading cache
+            const seen = new Set<string>();
+            const deduped = parsed.filter((item: AppNotification) => {
+              const key = item.id && item.id.length > 8 && !item.id.includes(':')
+                ? `id:${item.id}`
+                : `content:${(item.title || '').trim().toLowerCase()}:::${(item.body || '').trim().toLowerCase()}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            setNotificationsList(deduped);
+            return;
+          }
+        }
+        setNotificationsList([]);
+      } catch (e) {
+        console.warn('Failed to load notifications history:', e);
+      }
+    })();
+  }, [user?.id, getStorageKey]);
+
+  // ------------------------------------------------------------------
+  // Route resolution
+  // ------------------------------------------------------------------
+  const resolveRoute = useCallback((data?: Record<string, any>): string | null => {
     if (!data) return null;
     if (data.route && typeof data.route === 'string') return data.route;
     if (data.url && typeof data.url === 'string') return data.url;
 
-    // By event/type fallback
     const type = data.type || data.category;
     if (type === 'lead') return '/crm/contacts';
     if (type === 'deal') return '/crm/deals';
@@ -98,159 +258,679 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (type === 'billing' || type === 'quota') return '/account/plans';
     if (type === 'campaign') return '/fleet';
     if (type === 'call') return '/(tabs)/activity';
-
-    // Admin & system broadcast updates for regular mobile users
     if (type === 'broadcast' || type === 'announcement') return '/(tabs)';
     if (type === 'maintenance') return '/(tabs)';
     if (type === 'feature' || type === 'tools') return '/tools';
     if (type === 'offer' || type === 'pricing') return '/pricing';
-
+    if (
+      type === 'page_click' ||
+      type === 'page_view' ||
+      type === 'analytics' ||
+      type === 'landing' ||
+      type === 'bio'
+    ) {
+      return '/tools/my-designs';
+    }
     return null;
+  }, []);
+
+  // ------------------------------------------------------------------
+  // Upsert into list, keyed by AppNotification.id or content match.
+  // ------------------------------------------------------------------
+  const upsertNotification = useCallback(
+    (item: AppNotification, uid?: string) => {
+      setNotificationsList((prev) => {
+        // Match by exact id OR by matching title + body (robust cross-channel dedupe)
+        const itemTitle = (item.title || '').trim().toLowerCase();
+        const itemBody = (item.body || '').trim().toLowerCase();
+        const idx = prev.findIndex((p) => {
+          if (p.id === item.id) return true;
+          const pTitle = (p.title || '').trim().toLowerCase();
+          const pBody = (p.body || '').trim().toLowerCase();
+          if (pTitle === itemTitle && pBody === itemBody) {
+            return true;
+          }
+          return false;
+        });
+
+        let next: AppNotification[];
+        if (idx >= 0) {
+          const existing = prev[idx];
+          const preferredId =
+            existing.id && !existing.id.includes(':') && existing.id.length > 8
+              ? existing.id
+              : item.id;
+
+          const merged: AppNotification = {
+            ...existing,
+            ...item,
+            id: preferredId,
+            isRead: existing.isRead || item.isRead,
+          };
+          next = [merged, ...prev.filter((_, i) => i !== idx)];
+        } else {
+          next = [item, ...prev];
+        }
+        AsyncStorage.setItem(getStorageKey(uid ?? user?.id), JSON.stringify(next)).catch(() => { });
+        return next;
+      });
+    },
+    [getStorageKey, user?.id]
+  );
+
+  // ------------------------------------------------------------------
+  // Fetch from Supabase — pure list-refresh. No local scheduling.
+  // ------------------------------------------------------------------
+  const fetchSupabaseNotifications = useCallback(
+    async (userId?: string) => {
+      const uid = userId || user?.id;
+      if (!uid) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .or(`user_id.eq.${uid},user_id.is.null`)
+          .order('created_at', { ascending: false })
+          .limit(60);
+
+        if (error) {
+          console.warn('⚠️ [NotificationContext] Supabase fetch notice:', error.message);
+          return;
+        }
+        if (!Array.isArray(data)) return;
+
+        const remoteItems: AppNotification[] = data
+          .filter((row: any) => {
+            const rowId = String(row.id);
+            if (dismissedIdsRef.current.has(rowId)) return false;
+            if (clearedAtRef.current > 0 && row.created_at) {
+              const rowTime = new Date(row.created_at).getTime();
+              if (rowTime <= clearedAtRef.current) return false;
+            }
+            return true;
+          })
+          .map((row: any) => ({
+            id: String(row.id),
+            title: row.title || 'Notification',
+            body: row.description || '',
+            data: {
+              type: row.type,
+              userId: row.user_id,
+              route: resolveRoute({ type: row.type }),
+              id: row.id,
+            },
+            createdAt: row.created_at || new Date().toISOString(),
+            isRead: Boolean(row.is_read),
+            type: (row.type as any) || 'general',
+          }));
+
+        setNotificationsList((prev) => {
+          const prevById = new Map(prev.map((p) => [p.id, p]));
+          const merged: AppNotification[] = [];
+
+          for (const r of remoteItems) {
+            const existing = prevById.get(r.id);
+            merged.push(
+              existing ? { ...existing, ...r, isRead: existing.isRead || r.isRead } : r
+            );
+            prevById.delete(r.id);
+          }
+
+          for (const leftover of prevById.values()) {
+            if (dismissedIdsRef.current.has(leftover.id)) continue;
+            const targetUid = leftover.data?.userId || leftover.data?.user_id;
+            if (targetUid && targetUid !== uid) continue;
+            // Purge any stored duplicate cards that match a remote notification by title + body
+            const isDup = remoteItems.some(
+              (r) =>
+                r.title.trim().toLowerCase() === leftover.title.trim().toLowerCase() &&
+                r.body.trim().toLowerCase() === leftover.body.trim().toLowerCase()
+            );
+            if (isDup) continue;
+            merged.push(leftover);
+          }
+
+          merged.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(merged)).catch(() => { });
+          return merged;
+        });
+      } catch (fetchErr) {
+        console.warn('[NotificationContext] Error fetching remote notifications:', fetchErr);
+      }
+    },
+    [user?.id, resolveRoute, getStorageKey]
+  );
+
+  // ------------------------------------------------------------------
+  // Client no longer detects milestones or schedules pushes.
+  // It just refreshes the list — server is the single source of truth.
+  // ------------------------------------------------------------------
+  const syncPageClickNotifications = useCallback(
+    async (userId?: string) => {
+      await fetchSupabaseNotifications(userId);
+    },
+    [fetchSupabaseNotifications]
+  );
+
+  const refreshNotifications = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([fetchSupabaseNotifications(), syncPageClickNotifications()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchSupabaseNotifications, syncPageClickNotifications]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    setNotificationsList((prev) => {
+      const cleaned = prev.filter((p) => {
+        const targetUid = p.data?.userId || p.data?.user_id;
+        return !targetUid || targetUid === user.id;
+      });
+      if (cleaned.length !== prev.length) {
+        AsyncStorage.setItem(getStorageKey(user.id), JSON.stringify(cleaned)).catch(() => { });
+      }
+      return cleaned;
+    });
+
+    fetchSupabaseNotifications(user.id);
+    syncPageClickNotifications(user.id);
+  }, [user?.id, fetchSupabaseNotifications, syncPageClickNotifications, getStorageKey]);
+
+  // ------------------------------------------------------------------
+  // Realtime: INSERT → update list only (NO scheduleLocalNotification).
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const uid = user.id;
+
+    const channel = supabase
+      .channel(`user-notifications-${uid}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload) => {
+          const newRow = payload.new as any;
+          if (!newRow) return;
+          if (newRow.user_id && newRow.user_id !== uid) return;
+
+          const id = String(newRow.id);
+          const title = newRow.title || 'Notification';
+          const body = newRow.description || '';
+          if (isDuplicate(notifKey(id)) || isDuplicate(contentKey(title, body))) return;
+
+          const item: AppNotification = {
+            id,
+            title,
+            body,
+            data: {
+              type: newRow.type,
+              userId: newRow.user_id,
+              route: resolveRoute({ type: newRow.type }),
+              id: newRow.id,
+            },
+            createdAt: newRow.created_at || new Date().toISOString(),
+            isRead: Boolean(newRow.is_read),
+            type: (newRow.type as any) || 'general',
+          };
+
+          // NOTE: Do NOT call NotificationService.scheduleLocalNotification here.
+          // The backend push is what produces the OS banner. Adding a local
+          // schedule here was the source of the duplicate banners.
+          upsertNotification(item, uid);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'notifications' },
+        (payload) => {
+          const updatedRow = payload.new as any;
+          if (!updatedRow) return;
+          if (updatedRow.user_id && updatedRow.user_id !== uid) return;
+
+          setNotificationsList((prev) => {
+            const next = prev.map((n) =>
+              n.id === updatedRow.id
+                ? {
+                  ...n,
+                  isRead: Boolean(updatedRow.is_read),
+                  title: updatedRow.title || n.title,
+                  body: updatedRow.description || n.body,
+                }
+                : n
+            );
+            AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => { });
+            return next;
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'notifications' },
+        (payload) => {
+          const oldRow = payload.old as any;
+          if (!oldRow?.id) return;
+          setNotificationsList((prev) => {
+            const next = prev.filter((n) => n.id !== oldRow.id);
+            AsyncStorage.setItem(getStorageKey(uid), JSON.stringify(next)).catch(() => { });
+            return next;
+          });
+        }
+      )
+      // Page-metric tables only drive the list refresh (server owns milestone inserts)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'landing_template_submissions',
+          filter: `user_id=eq.${uid}`,
+        },
+        () => fetchSupabaseNotifications(uid)
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'free_template_submissions',
+          filter: `user_id=eq.${uid}`,
+        },
+        () => fetchSupabaseNotifications(uid)
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tg_landing_pages',
+          filter: `user_id=eq.${uid}`,
+        },
+        () => fetchSupabaseNotifications(uid)
+      )
+      .subscribe();
+
+
+
+    const appStateSub = AppState.addEventListener('change', (nextState) => {
+      appIsActiveRef.current = nextState === 'active';
+      if (nextState === 'active') {
+        fetchSupabaseNotifications(uid);
+        if (channel.state === 'closed' || channel.state === 'errored') {
+          channel.subscribe();
+        }
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+      appStateSub.remove();
+    };
+  }, [
+    user?.id,
+    fetchSupabaseNotifications,
+    resolveRoute,
+    isDuplicate,
+    upsertNotification,
+    getStorageKey,
+  ]);
+
+  // ------------------------------------------------------------------
+  // List mutations
+  // ------------------------------------------------------------------
+  const addNotification = async (
+    item: Omit<AppNotification, 'id' | 'createdAt' | 'isRead'> & { id?: string }
+  ) => {
+    const newItem: AppNotification = {
+      id: item.id || Date.now().toString() + Math.random().toString(36).substring(2, 6),
+      title: item.title,
+      body: item.body,
+      data: item.data,
+      imageUrl: item.imageUrl || item.data?.imageUrl || item.data?.image,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      type: item.type || 'general',
+    };
+    if (isDuplicate(notifKey(newItem.id))) return;
+    upsertNotification(newItem, user?.id);
   };
 
-  /**
-   * Core handler for user tapping a notification (Kill, Background, or Foreground mode)
-   */
+  const markAsRead = async (id: string) => {
+    const updated = notificationsList.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+    await saveNotifications(updated);
+    if (user?.id) {
+      try {
+        await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+      } catch (e) {
+        console.warn('[NotificationContext] Failed to sync markAsRead:', e);
+      }
+    }
+  };
+
+  const toggleReadStatus = async (id: string) => {
+    const target = notificationsList.find((n) => n.id === id);
+    const newStatus = target ? !target.isRead : true;
+    const updated = notificationsList.map((n) => (n.id === id ? { ...n, isRead: newStatus } : n));
+    await saveNotifications(updated);
+    if (user?.id) {
+      try {
+        await supabase.from('notifications').update({ is_read: newStatus }).eq('id', id);
+      } catch (e) {
+        console.warn('[NotificationContext] Failed to sync toggleRead:', e);
+      }
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const updated = notificationsList.map((n) => ({ ...n, isRead: true }));
+    await saveNotifications(updated);
+    if (user?.id) {
+      try {
+        await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id);
+      } catch (e) {
+        console.warn('[NotificationContext] Failed to sync markAllAsRead:', e);
+      }
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    // 1. Record in dismissed set so it is never restored on sync/refresh
+    dismissedIdsRef.current.add(id);
+    const dismissedArr = Array.from(dismissedIdsRef.current);
+    AsyncStorage.setItem(getDismissedKey(user?.id), JSON.stringify(dismissedArr)).catch(() => {});
+
+    // 2. Remove from active state & local storage
+    const updated = notificationsList.filter((n) => n.id !== id);
+    await saveNotifications(updated);
+
+    // 3. Sync delete to Supabase if user-owned
+    if (user?.id) {
+      try {
+        await supabase.from('notifications').delete().eq('id', id);
+      } catch (e) {
+        console.warn('[NotificationContext] Failed to sync delete:', e);
+      }
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    // 1. Mark clearedAt timestamp so all notifications prior to now are ignored
+    const now = Date.now();
+    clearedAtRef.current = now;
+    AsyncStorage.setItem(getClearedAtKey(user?.id), String(now)).catch(() => {});
+
+    // 2. Add all current IDs to dismissed set
+    for (const item of notificationsList) {
+      dismissedIdsRef.current.add(item.id);
+    }
+    const dismissedArr = Array.from(dismissedIdsRef.current);
+    AsyncStorage.setItem(getDismissedKey(user?.id), JSON.stringify(dismissedArr)).catch(() => {});
+
+    // 3. Clear active state & local storage
+    await saveNotifications([]);
+
+    // 4. Sync delete user-owned rows from Supabase
+    if (user?.id) {
+      try {
+        await supabase.from('notifications').delete().eq('user_id', user.id);
+      } catch (e) {
+        console.warn('[NotificationContext] Failed to sync clearAll:', e);
+      }
+    }
+  };
+
+  const unreadCount = React.useMemo(() => {
+    const seen = new Set<string>();
+    return notificationsList
+      .filter((n) => !n.isRead)
+      .filter((n) => {
+        const key = `${(n.title || '').trim().toLowerCase()}:::${(n.body || '').trim().toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).length;
+  }, [notificationsList]);
+
+  // ------------------------------------------------------------------
+  // Foreground receive + tap response
+  // ------------------------------------------------------------------
+  const notificationListener = useRef<EventSubscription | null>(null);
+  const responseListener = useRef<EventSubscription | null>(null);
+  const lastHandledNotificationId = useRef<string | null>(null);
+
+  const clearNotification = () => setNotification(null);
+
   const handleNotificationResponse = (response: NotificationResponse) => {
     const notifId = response?.notification?.request?.identifier;
-    if (notifId && lastHandledNotificationId.current === notifId) {
-      return; // Deduplicate so cold-boot doesn't execute twice
-    }
-    if (notifId) {
-      lastHandledNotificationId.current = notifId;
-    }
+    if (notifId && lastHandledNotificationId.current === notifId) return;
+    if (notifId) lastHandledNotificationId.current = notifId;
 
     const data = response?.notification?.request?.content?.data as Record<string, any> | undefined;
-    const targetRoute = resolveRoute(data);
+    const targetUserId = data?.userId || data?.user_id;
+    if (
+      targetUserId &&
+      user?.id &&
+      targetUserId !== user.id &&
+      !data?.isTest &&
+      data?.type !== 'test' &&
+      data?.type !== 'broadcast'
+    ) {
+      return;
+    }
 
-    if (targetRoute) {
-      // Delay ensures the router and root stack are mounted, especially on cold boot (Kill mode)
-      setTimeout(() => {
-        try {
-          router.push(targetRoute as any);
-        } catch (routeErr) {
-          console.warn('[NotificationContext] Navigation error on notification response:', routeErr);
+    const targetRoute = resolveRoute(data);
+    if (!targetRoute) return;
+
+    const navigate = (isRetry = false) => {
+      try {
+        router.push(targetRoute as any);
+      } catch (routeErr) {
+        console.warn(
+          `[NotificationContext] Navigation error (retry=${isRetry}):`,
+          routeErr
+        );
+        if (!isRetry) setTimeout(() => navigate(true), 1500);
+      }
+    };
+    setTimeout(() => navigate(false), 800);
+  };
+
+  const requestPermissions = async (): Promise<string | null> => {
+    if (!Notifications) return null;
+    if (registrationInFlight.current) return registrationInFlight.current;
+    const attempt = async (): Promise<string | null> => {
+      setIsRegistering(true);
+      try {
+        const result = await NotificationService.registerForPushNotificationsAsync();
+        const granted = result.status === 'granted';
+        setPermissionGranted(granted);
+
+        if (result.token) {
+          setExpoPushToken(result.token);
+          const uid = currentUserId.current;
+          if (uid) {
+            const saved = await NotificationService.syncPushTokenWithBackend(result.token, uid);
+            if (currentUserId.current !== uid) return null;
+            if (!saved) {
+              console.warn('[NotificationContext] Push token not saved; registration will retry.');
+              return null;
+            }
+          }
+          return result.token;
         }
-      }, 350);
+        return null;
+      } catch (err) {
+        console.warn('❌ [NotificationContext] Registration error:', err);
+        return null;
+      } finally {
+        setIsRegistering(false);
+      }
+    };
+    registrationInFlight.current = attempt();
+    try {
+      return await registrationInFlight.current;
+    } finally {
+      registrationInFlight.current = null;
     }
   };
 
-  // Request permissions and register token
-  const requestPermissions = async (): Promise<string | null> => {
-    if (!Notifications) {
-      console.log('ℹ️ [NotificationContext] Notifications module not available (e.g. Expo Go)');
-      return null;
-    }
+  const forceRefreshToken = async (): Promise<string | null> => {
     setIsRegistering(true);
     try {
-      console.log('🔄 [NotificationContext] Requesting push permissions & token for user:', user?.id || 'anonymous');
-      const result = await NotificationService.registerForPushNotificationsAsync();
-      const granted = result.status === 'granted';
-      setPermissionGranted(granted);
-
-      if (result.token) {
-        console.log('==============================================');
-        console.log('🔥 [PUSH TOKEN ACQUIRED]:', result.token);
-        console.log('==============================================');
-        setExpoPushToken(result.token);
-        if (user?.id) {
-          console.log('📡 [NotificationContext] Syncing token to backend for user:', user.id);
-          await NotificationService.syncPushTokenWithBackend(result.token, user.id);
-        }
-        return result.token;
-      } else {
-        console.warn('⚠️ [PUSH TOKEN NULL]:', result.error || `Status: ${result.status}`);
-      }
-      return null;
-    } catch (err) {
-      console.warn('❌ [NotificationContext] Registration error:', err);
-      return null;
+      const token = await NotificationService.forceRefreshToken(onboardingComplete ? user?.id : undefined);
+      if (token) setExpoPushToken(token);
+      return token;
     } finally {
       setIsRegistering(false);
     }
   };
 
-  // Trigger test notification locally across any channel & route
   const sendTestNotification = async (
     title = 'GetAiPilot Push Notification',
     body = 'Your push notifications are configured and active in your ecosystem.',
     channelId = 'default',
-    route = '/account/plans'
+    route = '/account/plans',
+    imageUrl?: string,
+    delaySeconds?: number
   ) => {
     if (!Notifications) return;
     await NotificationService.scheduleLocalNotification({
       title,
       body,
       channelId,
-      data: { route },
+      imageUrl,
+      delaySeconds,
+      data: { route, ...(imageUrl ? { imageUrl } : {}) },
     });
   };
 
-  // Automatically register & sync when user session is available
   useEffect(() => {
-    if (!canUseNotifications) return;
-    if (!Notifications) return;
+    (async () => {
+      try {
+        const cached = await AsyncStorage.getItem(PUSH_TOKEN_STORAGE_KEY);
+        if (cached) setExpoPushToken(cached);
+      } catch {
+        /* noop */
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!canUseNotifications || !Notifications) return;
     if (Platform.OS === 'web') return;
 
-    // Check existing permissions on mount
+    NotificationService.setupChannels().catch((err) => {
+      const msg = err?.message || String(err);
+      if (!msg.includes('NullPointerException') && !msg.includes('Expo Go')) {
+        console.warn('[NotificationContext] Channel setup error:', msg);
+      }
+    });
+
     Notifications.getPermissionsAsync()
-      .then(({ status }) => {
-        setPermissionGranted(status === 'granted');
+      .then(({ status }) => setPermissionGranted(status === 'granted'))
+      .catch(() => { });
+
+    let stopped = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const register = async () => {
+      if (stopped || AppState.currentState !== 'active') return;
+      if (retryTimer) clearTimeout(retryTimer);
+      const token = await requestPermissions();
+      if (!token && !stopped) {
+        if (isExpoGo && Platform.OS === 'android') {
+          return;
+        }
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = setTimeout(register, 30_000);
+      }
+    };
+    void register();
+    const appSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void register();
+    });
+    const unsubscribeNetwork = NetInfo.addEventListener((state) => {
+      if (state.isConnected && state.isInternetReachable !== false) void register();
+    });
+    return () => {
+      stopped = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      appSubscription.remove();
+      unsubscribeNetwork();
+    };
+  }, [canUseNotifications, user?.id]);
+
+  useEffect(() => {
+    if (!canUseNotifications || !Notifications) return;
+    if (Platform.OS === 'web') return;
+
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) handleNotificationResponse(response);
       })
       .catch(() => { });
 
-    if (user?.id) {
-      requestPermissions().catch((e) => {
-        console.warn('[NotificationContext] Auto-register notice:', e);
-      });
-    }
-  }, [user?.id, canUseNotifications]);
-
-  // Set up notification received & response listeners for Foreground, Background, and Kill modes
-  useEffect(() => {
-    if (!canUseNotifications) return;
-    if (!Notifications) return;
-    if (Platform.OS === 'web') return;
-
-    // 1. KILL / QUIT MODE: Check if the app was launched by tapping a push notification from cold state
-    Notifications.getLastNotificationResponseAsync()
-      .then((response) => {
-        if (response) {
-          console.log('[NotificationContext] Cold boot from Kill mode detected, navigating...');
-          handleNotificationResponse(response);
-        }
-      })
-      .catch((err) => {
-        console.warn('[NotificationContext] Error getting initial notification response:', err);
-      });
-
-    // 2. FOREGROUND MODE: Notification received while the user is actively inside the app
     notificationListener.current = Notifications.addNotificationReceivedListener((incoming) => {
+      const content = incoming?.request?.content;
+      if (!content) return;
+
+      const data = (content.data || {}) as Record<string, any>;
+      const targetUserId = data.userId || data.user_id;
+
+      if (
+        targetUserId &&
+        user?.id &&
+        targetUserId !== user.id &&
+        !data.isTest &&
+        data.type !== 'test' &&
+        data.type !== 'broadcast'
+      ) {
+        return;
+      }
+
+      // Canonical id = the DB row id. The Expo identifier is only a fallback.
+      const canonicalId = String(data.id || incoming.request.identifier);
+      const title = content.title || 'New Alert';
+      const body = content.body || '';
+      if (isDuplicate(notifKey(canonicalId)) || isDuplicate(contentKey(title, body))) return;
+
       setNotification(incoming);
+
+      const type = (data.type as any) || (data.category as any) || 'general';
+      const notifImageUrl = data.imageUrl || data.image || (content as any).imageUrl;
+      const newItem: AppNotification = {
+        id: canonicalId,
+        title,
+        body,
+        data,
+        imageUrl: notifImageUrl,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        type,
+      };
+
+      upsertNotification(newItem, user?.id);
     });
 
-    // 3. BACKGROUND & FOREGROUND TAP: User taps a notification banner while app is in background or foreground
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       handleNotificationResponse(response);
     });
 
     return () => {
-      if (notificationListener.current) {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current) {
-        responseListener.current.remove();
-      }
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
-  }, [router, canUseNotifications]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router, canUseNotifications, user?.id, isDuplicate, upsertNotification]);
 
-  // When notifications are unavailable (Expo Go), render children with an inert context.
-  // All hooks above have already run unconditionally, so this early return is safe.
   if (!canUseNotifications || !Notifications) {
     return (
-      <NotificationContext.Provider value={NOOP_CONTEXT}>
-        {children}
-      </NotificationContext.Provider>
+      <NotificationContext.Provider value={NOOP_CONTEXT}>{children}</NotificationContext.Provider>
     );
   }
 
@@ -264,7 +944,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         isDevice: Boolean(Device.isDevice),
         isRegistering,
         requestPermissions,
+        forceRefreshToken,
         sendTestNotification,
+        notificationsList,
+        unreadCount,
+        markAsRead,
+        toggleReadStatus,
+        markAllAsRead,
+        deleteNotification,
+        clearAllNotifications,
+        addNotification,
+        refreshNotifications,
+        syncPageClickNotifications,
+        isRefreshing,
       }}
     >
       {children}

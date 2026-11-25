@@ -1,84 +1,28 @@
-import { Dimensions, View } from "react-native";
-import { useTheme, getColors } from '@/theme';
+import React from "react";
+import { StyleSheet } from "react-native";
+import { SkeletonCard, SkeletonText } from "../Skeleton";
 
-const width = Dimensions.get("window").width;
-export function CampaignSkeleton({ isDark: propIsDark }: { isDark?: boolean }) {
-  const { isDark: themeIsDark } = useTheme();
-  const isDark = propIsDark !== undefined ? propIsDark : themeIsDark;
-  const colors = getColors(isDark);
-
+export function CampaignSkeleton({ isDark: _propIsDark }: { isDark?: boolean } = {}) {
   return (
-    <View
-      style={[
-        styles.skeletonCard,
-        {
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.skeletonLarge,
-          {
-            backgroundColor: colors.surfaceSecondary,
-          },
-        ]}
-      />
-
-      <View
-        style={[
-          styles.skeletonMedium,
-          {
-            backgroundColor: colors.surfaceSecondary,
-          },
-        ]}
-      />
-
-      <View
-        style={[
-          styles.skeletonLine,
-          {
-            backgroundColor: colors.surfaceSecondary,
-          },
-        ]}
-      />
-
-      <View
-        style={[
-          styles.skeletonLine,
-          {
-            backgroundColor: colors.surfaceSecondary,
-          },
-        ]}
-      />
-    </View>
+    <SkeletonCard style={styles.card}>
+      <SkeletonText width="90%" height={20} borderRadius={6} style={styles.mb12} />
+      <SkeletonText width="70%" height={16} borderRadius={5} style={styles.mb12} />
+      <SkeletonText width="50%" height={12} borderRadius={4} style={styles.mb8} />
+      <SkeletonText width="40%" height={12} borderRadius={4} />
+    </SkeletonCard>
   );
 }
 
-const styles = {
-  skeletonCard: {
-    borderWidth: 0,
-    borderRadius: 8,
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
-  skeletonLarge: {
-    width: width - 64,
-    height: 20,
-    borderRadius: 4,
+  mb12: {
     marginBottom: 12,
   },
-  skeletonMedium: {
-    width: width - 100,
-    height: 16,
-    borderRadius: 4,
-    marginBottom: 12,
-  },
-  skeletonLine: {
-    width: width - 150,
-    height: 12,
-    borderRadius: 4,
+  mb8: {
     marginBottom: 8,
   },
-};
+});

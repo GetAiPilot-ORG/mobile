@@ -1,4 +1,10 @@
 import { apiClient } from '../../../core/api/client';
+import { useAuthStore } from '../../../core/store/authStore';
+
+const getCurrentUserOrgId = (): string => {
+  const user = useAuthStore.getState().user;
+  return user?.organizationId || '';
+};
 import {
   AttendanceRecord,
   BirthdayEntry,
@@ -12,8 +18,27 @@ import {
 export const teamApi = {
   getMembers: async (): Promise<{ members: CRMMember[]; total_count: number }> => {
     try {
+      const res = await apiClient.get<any>('/mobile/v1/team/members');
+      if (res) {
+        if (Array.isArray(res)) {
+          return { members: res, total_count: res.length };
+        }
+        if (Array.isArray(res.members)) {
+          return { members: res.members, total_count: res.total_count ?? res.members.length };
+        }
+      }
+    } catch (bffErr: any) {
+      if (__DEV__) {
+        console.warn('[teamApi.getMembers] BFF error:', bffErr?.message);
+      }
+    }
+
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return { members: [], total_count: 0 };
+
+    try {
       const url =
-        'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.7eb7dd38-00bc-49b8-a87f-96c27cac7866&order=created_at.desc';
+        `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.${orgId}&order=created_at.desc`;
       const res = await fetch(url, {
         method: 'GET',
         headers: {
@@ -86,7 +111,7 @@ export const teamApi = {
       role: data.role || 'Sales Representative',
       birthday: data.birthday || null,
       is_active: data.is_active !== undefined ? data.is_active : true,
-      org_id: data.org_id || '7eb7dd38-00bc-49b8-a87f-96c27cac7866',
+      org_id: data.org_id || getCurrentUserOrgId() || '',
     };
     if (data.access_token) {
       payload.access_token = data.access_token;
@@ -146,8 +171,11 @@ export const teamApi = {
       }
     }
 
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return { requests: [], total_count: 0 };
+
     try {
-      let url = 'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/leave_requests?select=*%2Cmember%3Acrm_members%21member_id%28id%2Cname%2Cemail%29%2Creviewer%3Acrm_members%21reviewed_by%28id%2Cname%2Cemail%29&org_id=eq.7eb7dd38-00bc-49b8-a87f-96c27cac7866&order=created_at.desc';
+      let url = `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/leave_requests?select=*%2Cmember%3Acrm_members%21member_id%28id%2Cname%2Cemail%29%2Creviewer%3Acrm_members%21reviewed_by%28id%2Cname%2Cemail%29&org_id=eq.${orgId}&order=created_at.desc`;
       if (params?.member_id) url += `&member_id=eq.${params.member_id}`;
       if (params?.status) url += `&status=eq.${params.status}`;
       if (params?.leave_type) url += `&leave_type=eq.${params.leave_type}`;
@@ -208,8 +236,11 @@ export const teamApi = {
     return { success: true, id };
   },
   getPresence: async (params?: { member_id?: string; limit?: number }): Promise<{ members: CRMMember[]; total_count: number }> => {
+    const orgId = getCurrentUserOrgId();
+    if (!orgId) return { members: [], total_count: 0 };
+
     try {
-      const url = 'https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.7eb7dd38-00bc-49b8-a87f-96c27cac7866&order=created_at.desc';
+      const url = `https://hhieilvvechtdhhfjomn.supabase.co/rest/v1/crm_members?select=*&org_id=eq.${orgId}&order=created_at.desc`;
       const res = await fetch(url, {
         method: 'GET',
         headers: {

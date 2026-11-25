@@ -1,3 +1,7 @@
+// CRITICAL: Must be first import — registers background/kill-mode notification task
+// with expo-task-manager and setNotificationHandler before any React component mounts.
+import "../src/services/backgroundNotificationHandler";
+import "../src/services/enableGlobalButtonSounds";
 import "../src/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -11,6 +15,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { OfflineNotice } from "../src/components/OfflineNotice";
+import { AppUpdateModal } from "../src/components/AppUpdateModal";
 import { AnimatedSplashScreen } from "../src/components/splash/AnimatedSplashScreen";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { NotificationProvider } from "../src/contexts/NotificationContext";
@@ -18,11 +23,30 @@ import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
 import { useAuthStore } from "../src/core/store/authStore";
+import { supabase } from "@/lib/supabase";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
+import { Chatbot } from "../src/components/chatbot";
+import { HeadlessAudioBridge } from "../src/services/HeadlessAudioBridge";
 
 // Suppress all warning popups and known deprecation noise
 LogBox.ignoreAllLogs(true);
+
+// CRITICAL FIX: React Native Android crashes with NullPointerException in setColorScheme
+// when NativeAppearance.setColorScheme is invoked asynchronously.
+// Stub it on Android so that NativeWind/react-native-css-interop or any subcomponent never crashes.
+if (Platform.OS === 'android') {
+  try {
+    const { Appearance } = require('react-native');
+    if (Appearance) {
+      Appearance.setColorScheme = () => {};
+    }
+  } catch {}
+}
+
+export const unstable_settings = {
+  anchor: "(tabs)",
+};
 LogBox.ignoreLogs([
   '"shadow*" style props are deprecated. Use "boxShadow".',
   "props.pointerEvents is deprecated. Use style.pointerEvents",
@@ -91,15 +115,18 @@ function ReferralLinkListener() {
       try {
         const capturedCode = await captureReferralParam(rawUrl);
         if (capturedCode) {
-          // If a user session is active, attempt linking immediately
-          await handlePendingReferral(capturedCode);
+          // If already authenticated on phone, link immediately
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await handlePendingReferral(capturedCode);
+          }
         }
       } catch (e) {
         console.warn("[ReferralLinkListener] Link capture error:", e);
       }
     };
 
-    Linking.getInitialURL().then(processUrl).catch(() => {});
+    Linking.getInitialURL().then(processUrl).catch(() => { });
     const sub = Linking.addEventListener("url", (event) => {
       processUrl(event.url);
     });
@@ -114,7 +141,7 @@ function ReferralLinkListener() {
 
 /**
  * Authoritative, single-point auth route guard.
- * Listens exclusively to [authStatus, segments] and performs redirects
+ * Listens exclusively to [authStatus, onboardingCompleted, segments] and performs redirects
  * ONLY after session hydration has resolved.
  */
 function AuthRouteGuard() {
@@ -127,10 +154,21 @@ function AuthRouteGuard() {
     // 1. NEVER navigate during hydration
     if (authStatus === "hydrating") return;
 
-    // 2. Identify active route group
-    const segment0 = segments[0] as string | undefined;
-    const inAuthGroup = segment0 === "(auth)";
-    const inOnboarding = segment0 === "onboarding";
+    // 2. Identify active route group robustly across Expo Router segment formats
+    const inAuthGroup = segments.some(
+      (s) =>
+        s === "(auth)" ||
+        s === "login" ||
+        s === "signup" ||
+        s === "verify-email" ||
+        s === "forgot-password" ||
+        s === "reset-password" ||
+        s === "callback",
+    );
+    const isPendingAuthScreen = segments.some(
+      (s) => s === "verify-email" || s === "callback",
+    );
+    const inOnboarding = segments.some((s) => s === "onboarding");
 
     const timer = setTimeout(() => {
       if (authStatus === "unauthenticated" && !inAuthGroup) {
@@ -141,23 +179,17 @@ function AuthRouteGuard() {
         }
         router.replace("/(auth)/login" as any);
       } else if (authStatus === "authenticated") {
-        // Wait until onboarding check is resolved
-        if (onboardingCompleted === null) return;
-
-        if (!onboardingCompleted) {
-          if (!inOnboarding) {
-            if (__DEV__) {
-              console.log(
-                "[AuthGuard] Incomplete onboarding -> navigating to onboarding",
-              );
+        if (inAuthGroup || inOnboarding) {
+          if (onboardingCompleted === false && isPendingAuthScreen) {
+            // Strictly brand-new unverified signups transitioning to onboarding
+            if (!inOnboarding) {
+              router.replace("/onboarding" as any);
             }
-            router.replace("/onboarding" as any);
-          }
-        } else {
-          if (inAuthGroup || inOnboarding) {
+          } else {
+            // Logged in or completed user on auth/onboarding screen -> go directly to Home tabs
             if (__DEV__) {
               console.log(
-                "[AuthGuard] Authenticated & onboarded -> navigating to tabs",
+                "[AuthGuard] Authenticated user on auth/onboarding -> navigating to tabs (Home)",
               );
             }
             router.replace("/(tabs)" as any);
@@ -174,7 +206,6 @@ function AuthRouteGuard() {
 
 function SplashOverlay() {
   const authStatus = useAuthStore((s) => s.authStatus);
-  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const { networkChecked } = useNetwork();
   const [splashFinished, setSplashFinished] = useState(false);
 
@@ -182,8 +213,7 @@ function SplashOverlay() {
   if (
     splashFinished &&
     networkChecked &&
-    authStatus !== "hydrating" &&
-    (authStatus === "unauthenticated" || onboardingCompleted !== null)
+    authStatus !== "hydrating"
   ) {
     return null;
   }
@@ -207,7 +237,7 @@ function RootThemedContainer({ children }: { children: React.ReactNode }) {
   return (
     <View style={[styles.rootContainer, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {Platform.OS === "android" && <NavigationBar style={isDark ? "dark" : "light"} />}
+      {Platform.OS === "android" && <NavigationBar style={isDark ? "light" : "dark"} />}
       {children}
     </View>
   );
@@ -242,6 +272,14 @@ function ThemedNavigationStack() {
       />
       <Stack.Screen
         name="(auth)/forgot-password"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/verify-email"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="(auth)/callback"
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -283,9 +321,10 @@ function ThemedNavigationStack() {
         }}
       />
       <Stack.Screen
-        name="+not-found"
+        name="notifications"
         options={{
           headerShown: false,
+          gestureEnabled: true,
         }}
       />
     </Stack>
@@ -310,8 +349,11 @@ export default function RootLayout() {
                           <ReferralLinkListener />
                           <AuthRouteGuard />
                           <ThemedNavigationStack />
+                          <Chatbot />
                           <OfflineNotice />
+                          <AppUpdateModal />
                           <SplashOverlay />
+                          <HeadlessAudioBridge />
                         </ThemedDialogProvider>
                       </RazorpayProvider>
                     </NotificationProvider>

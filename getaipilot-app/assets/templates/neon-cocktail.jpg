@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="neon-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#220b1e"/>
+      <stop offset="50%" stop-color="#120411"/>
+      <stop offset="100%" stop-color="#050005"/>
+    </linearGradient>
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="neon-spot" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background Environment -->
+  <rect width="400" height="500" fill="#040106"/>
+
+  <!-- Ambient Neon Backlight -->
+  <ellipse cx="200" cy="180" rx="180" ry="140" fill="url(#neon-spot)"/>
+
+  <!-- Arch Dome Standee Body -->
+  <!-- M 60 160 A 140 140 0 0 1 340 160 L 340 440 A 16 16 0 0 1 324 456 L 76 456 A 16 16 0 0 1 60 440 Z -->
+  <path d="M 60 160 A 140 140 0 0 1 340 160 L 340 435 A 18 18 0 0 1 322 453 L 78 453 A 18 18 0 0 1 60 435 Z"
+        fill="url(#neon-bg)" stroke="#f43f5e" stroke-width="3" filter="url(#neon-glow)"/>
+
+  <path d="M 72 165 A 128 128 0 0 1 328 165 L 328 430 A 12 12 0 0 1 316 442 L 84 442 A 12 12 0 0 1 72 430 Z"
+        fill="none" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="6,4" opacity="0.6"/>
+
+  <!-- Glowing Neon Cocktail Glass Artwork -->
+  <g filter="url(#neon-glow)">
+    <polygon points="175,65 225,65 200,95" stroke="#fb7185" stroke-width="2.5" fill="rgba(244,63,94,0.15)"/>
+    <line x1="200" y1="95" x2="200" y2="120" stroke="#fb7185" stroke-width="2.5"/>
+    <line x1="185" y1="120" x2="215" y2="120" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Olive on skewer -->
+    <line x1="182" y1="58" x2="210" y2="88" stroke="#f43f5e" stroke-width="2"/>
+    <circle cx="196" cy="74" r="4" fill="#10b981" stroke="#f43f5e" stroke-width="1"/>
+  </g>
+
+  <!-- Venue Name & Description -->
+  <text x="200" y="162" fill="#ffffff" font-family="system-ui, sans-serif" font-size="18" font-weight="900" text-anchor="middle" letter-spacing="3">THE VELVET ROOM</text>
+  <text x="200" y="177" fill="#fb7185" font-family="system-ui, sans-serif" font-size="9.5" font-weight="800" text-anchor="middle" letter-spacing="1.5">ROOFTOP COCKTAIL LOUNGE</text>
+
+  <!-- Happy Hour Ribbon -->
+  <rect x="110" y="186" width="180" height="18" rx="9" fill="#831843" stroke="#f43f5e" stroke-width="1"/>
+  <text x="200" y="198" fill="#fecdd3" font-family="system-ui, sans-serif" font-size="8" font-weight="900" text-anchor="middle" letter-spacing="1">🔥 HAPPY HOUR • 2-FOR-1 TIL 9 PM</text>
+
+  <!-- QR Standee Inside Neon Frame -->
+  <g>
+    <rect x="125" y="215" width="150" height="130" rx="20" fill="#ffffff" stroke="#f43f5e" stroke-width="2.5" filter="url(#neon-glow)"/>
+
+    <!-- Simulated QR Finder Patterns -->
+    <rect x="138" y="228" width="28" height="28" fill="#1a0616" rx="4"/>
+    <rect x="142" y="232" width="20" height="20" fill="#fff" rx="2"/>
+    <rect x="146" y="236" width="12" height="12" fill="#1a0616" rx="1"/>
+
+    <rect x="234" y="228" width="28" height="28" fill="#1a0616" rx="4"/>
+    <rect x="238" y="232" width="20" height="20" fill="#fff" rx="2"/>
+    <rect x="242" y="236" width="12" height="12" fill="#1a0616" rx="1"/>
+
+    <rect x="138" y="304" width="28" height="28" fill="#1a0616" rx="4"/>
+    <rect x="142" y="308" width="20" height="20" fill="#fff" rx="2"/>
+    <rect x="146" y="312" width="12" height="12" fill="#1a0616" rx="1"/>
+
+    <!-- Center Logo Badge -->
+    <circle cx="200" cy="280" r="16" fill="#f43f5e" stroke="#fff" stroke-width="2"/>
+    <text x="200" y="285" fill="#fff" font-family="system-ui, sans-serif" font-size="14" font-weight="900" text-anchor="middle">G</text>
+  </g>
+
+  <!-- Call to action -->
+  <text x="200" y="368" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="1">SCAN FOR DRINKS &amp; TAPAS</text>
+  <text x="200" y="382" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="8" font-weight="600" text-anchor="middle">Order cocktails to table • Split bill • Mobile pay</text>
+
+  <!-- Bottom Footer Row -->
+  <line x1="80" y1="404" x2="320" y2="404" stroke="#4c0528" stroke-width="1"/>
+  <text x="95" y="424" fill="#34d399" font-family="system-ui, sans-serif" font-size="8.5" font-weight="800">📱 TOUCHLESS TABLE PAY</text>
+  <text x="305" y="424" fill="#fecdd3" font-family="system-ui, sans-serif" font-size="7.5" font-weight="800" text-anchor="end">POWERED BY GETAIPILOT</text>
+
+  <!-- Acrylic Pedestal Base with Neon Reflection -->
+  <rect x="80" y="455" width="240" height="12" rx="4" fill="#0f0714" stroke="#ffffff" stroke-width="0.8" opacity="0.9"/>
+  <ellipse cx="200" cy="470" rx="110" ry="8" fill="#f43f5e" opacity="0.6" filter="url(#neon-glow)"/>
+</svg>

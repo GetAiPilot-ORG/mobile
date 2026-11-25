@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../core/store/authStore';
@@ -30,6 +31,14 @@ import { ConversationSkeleton } from '../../../components/skeletonScreen';
 import { useTheme, getColors } from '@/theme';
 
 const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 Hours Meta Window
+
+const INSTA_QUICK_REPLIES = [
+  'Thanks for reaching out! We are glad to help.',
+  'Here is the link to get started!',
+  'Can I help you with anything else?',
+  'How can I open my account with your referral?',
+  'Our team is available 9 AM – 6 PM.',
+];
 
 interface ConversationScreenProps {
   conversation?: NormalizedConversation;
@@ -81,6 +90,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const queryClient = useQueryClient();
   const [inputText, setInputText] = useState<string>('');
   const [isInternalNote, setIsInternalNote] = useState<boolean>(false);
+  const [showReplyNoteModal, setShowReplyNoteModal] = useState<boolean>(false);
+  const [modalMode, setModalMode] = useState<'reply' | 'note'>('reply');
+  const [modalInputText, setModalInputText] = useState<string>('');
   const [showAgentModal, setShowAgentModal] = useState<boolean>(false);
   const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
   const [showContactDrawer, setShowContactDrawer] = useState<boolean>(false);
@@ -95,15 +107,65 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   const activeId = initialConversation?.id || conversationId || '';
 
+  const handleCopyChat = async () => {
+    if (messages.length === 0) {
+      Alert.alert('Empty Chat', 'No messages to copy yet.');
+      return;
+    }
+    const chatText = messages
+      .map(
+        (m) =>
+          `[${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}] ${
+            m.direction === 'inbound' ? conversation?.contact?.name || 'User' : 'Agent/Bot'
+          }: ${m.content}`
+      )
+      .join('\n');
+    await Clipboard.setStringAsync(chatText);
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    Alert.alert('Chat Copied', 'Full conversation history copied to clipboard.');
+  };
+
+  const handleResetChat = () => {
+    Alert.alert(
+      'Reset Chat',
+      'Are you sure you want to clear/reset this conversation view?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            queryClient.setQueryData(['conversation_details', activeId], (old: any) => ({
+              ...old,
+              messages: [],
+            }));
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSelectQuickReply = (text: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setInputText(text);
+  };
+
   // Realtime WebSocket Subscription
   useInboxWebSocket(activeId);
 
   // Fetch conversation details & message history
   const { data, isLoading } = useQuery({
     queryKey: ['conversation_details', activeId],
-    queryFn: () => inboxApi.getConversationDetails(activeId),
-    staleTime: 3000,
-    refetchInterval: 4000,
+    queryFn: () => inboxApi.getConversationDetails(activeId, initialConversation?.channel),
+    staleTime: 15000,
+    refetchInterval: 30000,
     enabled: !!activeId,
   });
 
@@ -115,7 +177,31 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   });
 
   const conversation = initialConversation || data?.conversation;
-  const messages: NormalizedMessage[] = data?.messages || [];
+  const messages: NormalizedMessage[] = useMemo(() => {
+    if (data?.messages && data.messages.length > 0) {
+      return data.messages;
+    }
+    // Fallback for social/Instagram threads where thread detail only has initial incoming message
+    if (conversation?.channel === 'instagram' && conversation?.last_message?.content) {
+      return [
+        {
+          id: `initial_${conversation.id}`,
+          conversation_id: conversation.id,
+          channel: 'instagram',
+          direction: conversation.last_message.direction || 'inbound',
+          content: conversation.last_message.content,
+          media: [],
+          sender: {
+            name: conversation.contact?.name || 'Contact',
+            type: conversation.last_message.direction === 'outbound' ? 'agent' : 'contact',
+          },
+          status: 'delivered',
+          created_at: conversation.last_message.created_at || new Date().toISOString(),
+        },
+      ];
+    }
+    return [];
+  }, [data?.messages, conversation]);
 
   // Update local states if conversation updates
   useEffect(() => {
@@ -152,11 +238,21 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     return null;
   }, [messages]);
 
+  const channel = conversation?.channel || 'whatsapp';
+  const isInstagram = channel === 'instagram';
+  const isTelegram = channel === 'telegram';
+  const isWhatsApp = !isInstagram && !isTelegram;
   const [timeRemainingStr, setTimeRemainingStr] = useState<string>('');
   const [isWindowExpired, setIsWindowExpired] = useState<boolean>(false);
 
   useEffect(() => {
     const checkWindow = () => {
+      if (!isWhatsApp) {
+        setIsWindowExpired(false);
+        setTimeRemainingStr('Always Open');
+        return;
+      }
+
       if (!latestCustomerMessageAt) {
         setIsWindowExpired(true);
         setTimeRemainingStr('Closed');
@@ -181,7 +277,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     checkWindow();
     const interval = setInterval(checkWindow, 30000);
     return () => clearInterval(interval);
-  }, [latestCustomerMessageAt]);
+  }, [latestCustomerMessageAt, isWhatsApp]);
 
   // -------------------------------------------------------------
   // 2. Sending Messages / Notes
@@ -191,6 +287,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       if (!conversation) throw new Error('No active conversation');
       return inboxApi.sendMessage({
         conversation_id: conversation.id,
+        channel: conversation.channel,
         message: payload.text,
         is_internal_note: payload.isNote,
         template: payload.template,
@@ -202,7 +299,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
       const optimisticMsg: NormalizedMessage = {
         id: `optimistic_${Date.now()}`,
         conversation_id: conversation?.id || '',
-        channel: 'whatsapp',
+        channel: conversation?.channel || 'whatsapp',
         direction: 'outbound',
         content: text,
         media: [],
@@ -284,7 +381,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     const trimmed = inputText.trim();
     if (!trimmed || sendMutation.isPending) return;
 
-    if (isWindowExpired && !isInternalNote) {
+    if (isWhatsApp && isWindowExpired && !isInternalNote) {
       Alert.alert(
         '24-Hour Window Closed',
         'Meta WhatsApp blocks outbound free-form messages 24 hours after customer\'s last message. Switch to Internal Note to record private notes, or send an approved Template.',
@@ -298,6 +395,37 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     }
 
     sendMutation.mutate({ text: trimmed, isNote: isInternalNote });
+  };
+
+  const handleOpenReplyNoteModal = (preferredMode?: 'reply' | 'note') => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setModalMode(preferredMode || (isInternalNote ? 'note' : 'reply'));
+    setShowReplyNoteModal(true);
+  };
+
+  const handleSendFromModal = () => {
+    const trimmed = modalInputText.trim();
+    if (!trimmed || sendMutation.isPending) return;
+
+    const isNote = modalMode === 'note';
+    if (isWhatsApp && isWindowExpired && !isNote) {
+      Alert.alert(
+        '24-Hour Window Closed',
+        'Meta WhatsApp blocks outbound free-form messages 24 hours after customer\'s last message. Switch to Internal Note or send an approved Template.',
+        [
+          { text: 'Switch to Note', onPress: () => setModalMode('note') },
+          { text: 'Policy Guide', onPress: () => { setShowReplyNoteModal(false); setShowGuideModal(true); } },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
+    sendMutation.mutate({ text: trimmed, isNote });
+    setModalInputText('');
+    setShowReplyNoteModal(false);
   };
 
   // -------------------------------------------------------------
@@ -382,6 +510,51 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   const headerTopPadding = Math.max(insets.top, Platform.OS === 'ios' ? 44 : 12);
   const composerBottomPadding = Math.max(insets.bottom, 10);
 
+  const chatBackground = useMemo(() => {
+    if (isInstagram || isTelegram) {
+      return isDark ? '#000000' : '#FFFFFF';
+    }
+    return isDark ? '#0B141A' : '#EFEAE2';
+  }, [isInstagram, isTelegram, isDark]);
+
+  const inputRowCustomStyle = useMemo(() => {
+    if (isInternalNote) {
+      return isDark ? styles.inputRowNoteDark : styles.inputRowNoteLight;
+    }
+    if (isInstagram) {
+      return {
+        backgroundColor: isDark ? '#1F2937' : '#F3F4F6',
+        borderColor: isDark ? '#374151' : '#E5E7EB',
+        borderRadius: 24,
+      };
+    }
+    if (isTelegram) {
+      return {
+        backgroundColor: isDark ? '#1F2937' : '#F1F5F9',
+        borderColor: isDark ? '#374151' : '#E2E8F0',
+        borderRadius: 24,
+      };
+    }
+    return isDark ? styles.inputRowDark : styles.inputRowLight;
+  }, [isInternalNote, isInstagram, isTelegram, isDark]);
+
+  const sendBtnBgColor = useMemo(() => {
+    if (!inputText.trim()) {
+      return isDark ? '#3A3A3C' : '#C7C7CC';
+    }
+    if (isInternalNote) return '#FF9500';
+    if (isInstagram) return '#EC4899';
+    if (isTelegram) return '#0284C7';
+    return '#00a884';
+  }, [inputText, isInternalNote, isInstagram, isTelegram, isDark]);
+
+  const sendBtnIcon = useMemo(() => {
+    if (isInternalNote) return 'bookmark';
+    if (isTelegram) return 'paper-plane';
+    if (isInstagram) return 'send';
+    return 'arrow-up';
+  }, [isInternalNote, isTelegram, isInstagram]);
+
   if (isLoading && !conversation) {
     return <ConversationSkeleton />;
   }
@@ -403,7 +576,16 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   return (
     <View
-      style={[styles.root, { backgroundColor: isDark ? '#000000' : '#F0EEF8' }]}
+      style={[
+        styles.root,
+        {
+          backgroundColor: isDark
+            ? '#000000'
+            : isInstagram || isTelegram
+            ? '#FFFFFF'
+            : '#F0EEF8',
+        },
+      ]}
       {...panResponder.panHandlers}
     >
       <KeyboardAvoidingView
@@ -418,7 +600,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             { paddingTop: headerTopPadding },
           ]}
         >
-          {/* Top Row: Back Button + Contact Info + CRM Button */}
+          {/* Top Row: Back Button + Contact Info + Channel Action Buttons */}
           <View style={styles.headerTopRow}>
             <Pressable cssInterop={false}
               style={({ pressed }) => [
@@ -440,9 +622,21 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               style={styles.headerContactPressable}
               onPress={() => setShowContactDrawer(true)}
             >
-              <View style={styles.headerAvatar}>
+              <View
+                style={[
+                  styles.headerAvatar,
+                  isInstagram && { backgroundColor: '#E1306C' },
+                  isTelegram && { backgroundColor: '#0284C7' },
+                ]}
+              >
                 <Text style={styles.headerAvatarText}>
-                  {conversation?.contact?.name ? conversation.contact.name.charAt(0).toUpperCase() : 'W'}
+                  {conversation?.contact?.name
+                    ? conversation.contact.name.charAt(0).toUpperCase()
+                    : conversation?.channel === 'telegram'
+                    ? 'T'
+                    : conversation?.channel === 'instagram'
+                    ? 'I'
+                    : 'W'}
                 </Text>
               </View>
 
@@ -452,32 +646,82 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                     style={[styles.contactName, { color: isDark ? '#FFFFFF' : '#000000' }]}
                     numberOfLines={1}
                   >
-                    {conversation?.contact?.name || 'WhatsApp Contact'}
+                    {conversation?.contact?.name ||
+                      (conversation?.channel === 'telegram'
+                        ? 'Telegram User'
+                        : conversation?.channel === 'instagram'
+                        ? 'InstaPilot User'
+                        : 'WhatsApp Contact')}
                   </Text>
-                  <Ionicons name="shield-checkmark" size={13} color="#34C759" />
+                  {isWhatsApp && <Ionicons name="shield-checkmark" size={13} color="#34C759" />}
                 </View>
                 <Text
                   style={[styles.contactHandle, { color: isDark ? '#8E8E93' : '#687076' }]}
                   numberOfLines={1}
                 >
-                  +{conversation?.contact?.handle_or_phone || ''}
+                  {isTelegram
+                    ? `${conversation?.contact?.handle_or_phone || 'Telegram Contact'}${conversation?.bot_name ? ` • via ${conversation.bot_name}` : ''}`
+                    : isInstagram
+                    ? `${conversation?.contact?.handle_or_phone?.startsWith('@') ? conversation.contact.handle_or_phone : `@${conversation?.contact?.handle_or_phone || 'user'}`} • via getaipilot`
+                    : conversation?.contact?.handle_or_phone?.startsWith('@')
+                    ? conversation.contact.handle_or_phone
+                    : `+${conversation?.contact?.handle_or_phone || ''}`}
                 </Text>
               </View>
             </Pressable>
 
-            {/* Quick Actions (+ CRM) */}
-            <View style={styles.headerRightActions}>
-              <Pressable cssInterop={false}
-                style={({ pressed }) => [
-                  styles.crmBtn,
-                  pressed && { opacity: 0.75 },
-                ]}
-                onPress={() => setShowCrmModal(true)}
-              >
-                <Ionicons name="briefcase-outline" size={12} color="#FFFFFF" style={{ marginRight: 3 }} />
-                <Text style={styles.crmBtnText}>+ CRM</Text>
-              </Pressable>
-            </View>
+            {/* Channel Right Actions */}
+            {isTelegram ? (
+              <View style={styles.headerRightActions}>
+                <Pressable
+                  style={[styles.headerActionPill, isDark ? styles.headerActionPillDark : styles.headerActionPillLight]}
+                  onPress={handleCopyChat}
+                >
+                  <Ionicons name="copy-outline" size={13} color={isDark ? '#CBD5E1' : '#475569'} style={{ marginRight: 4 }} />
+                  <Text style={[styles.headerActionPillText, { color: isDark ? '#E2E8F0' : '#334155' }]}>Copy Chat</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.headerActionPillDanger, isDark ? styles.headerActionPillDangerDark : styles.headerActionPillDangerLight]}
+                  onPress={handleResetChat}
+                >
+                  <Ionicons name="trash-outline" size={13} color="#EF4444" style={{ marginRight: 4 }} />
+                  <Text style={styles.headerActionPillDangerText}>Reset Chat</Text>
+                </Pressable>
+              </View>
+            ) : isInstagram ? (
+              <View style={styles.headerRightActions}>
+                <Pressable cssInterop={false}
+                  style={({ pressed }) => [
+                    styles.crmBtn,
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  onPress={() => setShowCrmModal(true)}
+                >
+                  <Ionicons name="briefcase-outline" size={12} color="#FFFFFF" style={{ marginRight: 3 }} />
+                  <Text style={styles.crmBtnText}>+ CRM</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.closeRoundBtn, isDark ? styles.closeRoundBtnDark : styles.closeRoundBtnLight]}
+                  onPress={handleBack}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={18} color={isDark ? '#E2E8F0' : '#475569'} />
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.headerRightActions}>
+                <Pressable cssInterop={false}
+                  style={({ pressed }) => [
+                    styles.crmBtn,
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  onPress={() => setShowCrmModal(true)}
+                >
+                  <Ionicons name="briefcase-outline" size={12} color="#FFFFFF" style={{ marginRight: 3 }} />
+                  <Text style={styles.crmBtnText}>+ CRM</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
 
           {/* Sub-Header Horizontal Status Capsules */}
@@ -486,33 +730,65 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.headerSubBar}
           >
-            {/* 24-Hour Meta Window Badge */}
-            <Pressable
-              style={[
-                styles.subBadge,
-                isWindowExpired ? styles.subBadgeExpired : styles.subBadgeOpen,
-              ]}
-              onPress={() => setShowGuideModal(true)}
-            >
-              <Ionicons
-                name={isWindowExpired ? 'alert-circle' : 'time-outline'}
-                size={12}
-                color={isWindowExpired ? '#FF3B30' : '#34C759'}
-              />
-              <Text
+            {/* 24-Hour Meta Window Badge or Channel Autopilot Badge */}
+            {isWhatsApp ? (
+              <Pressable
                 style={[
-                  styles.subBadgeText,
-                  { color: isWindowExpired ? (isDark ? '#FF6961' : '#D70015') : (isDark ? '#32D74B' : '#248A3D') },
+                  styles.subBadge,
+                  isWindowExpired ? styles.subBadgeExpired : styles.subBadgeOpen,
+                ]}
+                onPress={() => setShowGuideModal(true)}
+              >
+                <Ionicons
+                  name={isWindowExpired ? 'alert-circle' : 'time-outline'}
+                  size={12}
+                  color={isWindowExpired ? '#FF3B30' : '#34C759'}
+                />
+                <Text
+                  style={[
+                    styles.subBadgeText,
+                    { color: isWindowExpired ? (isDark ? '#FF6961' : '#D70015') : (isDark ? '#32D74B' : '#248A3D') },
+                  ]}
+                >
+                  {isWindowExpired ? '24h Window Closed' : timeRemainingStr}
+                </Text>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={11}
+                  color={isWindowExpired ? (isDark ? '#FF6961' : '#D70015') : (isDark ? '#32D74B' : '#248A3D')}
+                />
+              </Pressable>
+            ) : (
+              <View
+                style={[
+                  styles.subBadge,
+                  {
+                    backgroundColor:
+                      conversation?.channel === 'telegram'
+                        ? 'rgba(14, 165, 233, 0.12)'
+                        : 'rgba(236, 72, 153, 0.12)',
+                    borderColor: 'transparent',
+                  },
                 ]}
               >
-                {isWindowExpired ? '24h Window Closed' : timeRemainingStr}
-              </Text>
-              <Ionicons
-                name="information-circle-outline"
-                size={11}
-                color={isWindowExpired ? (isDark ? '#FF6961' : '#D70015') : (isDark ? '#32D74B' : '#248A3D')}
-              />
-            </Pressable>
+                <Ionicons
+                  name={conversation?.channel === 'telegram' ? 'paper-plane' : 'logo-instagram'}
+                  size={12}
+                  color={conversation?.channel === 'telegram' ? '#0284c7' : '#db2777'}
+                />
+                <Text
+                  style={[
+                    styles.subBadgeText,
+                    {
+                      color: conversation?.channel === 'telegram' ? '#0284c7' : '#db2777',
+                      fontWeight: '600',
+                    },
+                  ]}
+                >
+                  {conversation?.channel === 'telegram' ? 'Telegram Autopilot' : 'InstaPilot Direct'}
+                </Text>
+              </View>
+            )}
 
             {/* Bot Active / Paused Switch */}
             <Pressable
@@ -573,96 +849,175 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
           ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <MessageBubble message={item} />}
-          style={{ backgroundColor: isDark ? '#0B141A' : '#EFEAE2' }}
+          renderItem={({ item }) => <MessageBubble message={item} channel={conversation.channel} />}
+          style={{ backgroundColor: chatBackground }}
           contentContainerStyle={styles.messagesList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListHeaderComponent={
+            isInstagram ? (
+              <View style={styles.instaEncryptedPillWrapper}>
+                <View style={[styles.instaEncryptedPill, isDark ? styles.instaEncryptedPillDark : styles.instaEncryptedPillLight]}>
+                  <Ionicons name="logo-instagram" size={13} color="#E1306C" style={{ marginRight: 6 }} />
+                  <Text style={[styles.instaEncryptedText, { color: isDark ? '#94A3B8' : '#64748B' }]}>
+                    Encrypted social thread • Instagram Direct
+                  </Text>
+                </View>
+              </View>
+            ) : undefined
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <View style={[styles.emptyIconCircle, { backgroundColor: isDark ? '#252230' : '#E5E5EA' }]}>
-                <Ionicons name="chatbubbles" size={32} color={isDark ? '#636366' : '#8E8E93'} />
+                <Ionicons
+                  name={
+                    isTelegram
+                      ? 'paper-plane'
+                      : isInstagram
+                      ? 'logo-instagram'
+                      : 'chatbubbles'
+                  }
+                  size={32}
+                  color={
+                    isTelegram
+                      ? '#0284c7'
+                      : isInstagram
+                      ? '#db2777'
+                      : isDark
+                      ? '#636366'
+                      : '#8E8E93'
+                  }
+                />
               </View>
               <Text style={[styles.emptyTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                 No messages in this chat yet
               </Text>
               <Text style={[styles.emptySubtitle, { color: isDark ? '#8E8E93' : '#687076' }]}>
-                Send a message or record an internal note to start communicating with this customer.
+                {isTelegram
+                  ? 'Send a message or record an internal note to communicate with this Telegram user.'
+                  : isInstagram
+                  ? 'Send a DM or record an internal note to communicate with this Instagram user.'
+                  : 'Send a message or record an internal note to start communicating with this customer.'}
               </Text>
             </View>
           }
         />
 
-        {/* Streamlined iOS WhatsApp Composer Bar */}
+        {/* Streamlined Multi-Channel Composer Bar */}
         <View
           style={[
             styles.composerWrapper,
             isDark ? styles.composerDark : styles.composerLight,
             isInternalNote && (isDark ? styles.composerWrapperNoteDark : styles.composerWrapperNoteLight),
-            { paddingBottom: composerBottomPadding },
+            {
+              backgroundColor: isInternalNote
+                ? (isDark ? '#2D1B07' : '#FFFDF2')
+                : isInstagram
+                ? (isDark ? '#000000' : '#FFFFFF')
+                : isTelegram
+                ? (isDark ? '#17212B' : '#FFFFFF')
+                : (isDark ? '#1F2C34' : '#F0F2F5'),
+              paddingBottom: composerBottomPadding,
+            },
           ]}
         >
-          {/* Segmented Mode Selector */}
-          <View style={[styles.segmentContainer, isDark ? styles.segmentDark : styles.segmentLight]}>
+          {/* Floating Action / Mode Selector Above Message Input Box */}
+          <View style={styles.floatingAboveInputBar}>
             <Pressable
               style={[
-                styles.segmentTab,
-                !isInternalNote && (isDark ? styles.segmentTabActiveDark : styles.segmentTabActiveLight),
+                styles.floatingModePill,
+                isDark ? styles.floatingModePillDark : styles.floatingModePillLight,
+                isInternalNote && (isDark ? styles.floatingModePillNoteDark : styles.floatingModePillNoteLight),
               ]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync();
-                setIsInternalNote(false);
-              }}
+              onPress={() => handleOpenReplyNoteModal()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons
-                name={isWindowExpired ? 'lock-closed' : 'logo-whatsapp'}
-                size={13}
-                color={!isInternalNote ? (isWindowExpired ? '#FF9500' : '#34C759') : (isDark ? '#8E8E93' : '#8E8E93')}
-                style={{ marginRight: 5 }}
-              />
-              <Text
+              <View
                 style={[
-                  styles.segmentTabText,
+                  styles.floatingModeIconWrap,
                   {
-                    color: !isInternalNote
-                      ? (isDark ? '#FFFFFF' : '#000000')
-                      : (isDark ? '#8E8E93' : '#8E8E93'),
-                    fontWeight: !isInternalNote ? '600' : '500',
+                    backgroundColor: isInternalNote
+                      ? 'rgba(255, 149, 0, 0.18)'
+                      : isWhatsApp
+                      ? 'rgba(52, 199, 89, 0.18)'
+                      : conversation?.channel === 'telegram'
+                      ? 'rgba(2, 132, 199, 0.18)'
+                      : 'rgba(236, 72, 153, 0.18)',
                   },
                 ]}
               >
-                {isWindowExpired ? 'WhatsApp (Closed)' : 'WhatsApp Reply'}
-              </Text>
-            </Pressable>
+                <Ionicons
+                  name={
+                    isInternalNote
+                      ? 'bookmark'
+                      : isWhatsApp
+                      ? isWindowExpired
+                        ? 'lock-closed'
+                        : 'logo-whatsapp'
+                      : conversation?.channel === 'telegram'
+                      ? 'paper-plane'
+                      : 'logo-instagram'
+                  }
+                  size={13}
+                  color={
+                    isInternalNote
+                      ? '#FF9500'
+                      : isWhatsApp
+                      ? isWindowExpired
+                        ? '#FF9500'
+                        : '#34C759'
+                      : conversation?.channel === 'telegram'
+                      ? '#0284c7'
+                      : '#db2777'
+                  }
+                />
+              </View>
 
-            <Pressable
-              style={[
-                styles.segmentTab,
-                isInternalNote && (isDark ? styles.segmentTabActiveNoteDark : styles.segmentTabActiveNoteLight),
-              ]}
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.selectionAsync();
-                setIsInternalNote(true);
-              }}
-            >
-              <Ionicons
-                name="bookmark"
-                size={13}
-                color={isInternalNote ? '#FF9500' : (isDark ? '#8E8E93' : '#8E8E93')}
-                style={{ marginRight: 5 }}
-              />
               <Text
                 style={[
-                  styles.segmentTabText,
+                  styles.floatingModePillText,
                   {
                     color: isInternalNote
                       ? (isDark ? '#FFB340' : '#B25E00')
-                      : (isDark ? '#8E8E93' : '#8E8E93'),
-                    fontWeight: isInternalNote ? '600' : '500',
+                      : (isDark ? '#FFFFFF' : '#000000'),
                   },
                 ]}
+                numberOfLines={1}
               >
-                Internal Note
+                {isInternalNote
+                  ? 'Internal Note (Team Only)'
+                  : isWhatsApp
+                  ? isWindowExpired
+                    ? 'WhatsApp (Window Closed)'
+                    : 'WhatsApp Reply'
+                  : conversation?.channel === 'telegram'
+                  ? 'Telegram Reply'
+                  : 'Instagram Reply'}
               </Text>
+
+              <View style={[styles.floatingActionIconBadge, isDark ? styles.floatingActionIconBadgeDark : styles.floatingActionIconBadgeLight]}>
+                <Ionicons
+                  name="chevron-up"
+                  size={12}
+                  color={isDark ? '#8E8E93' : '#687076'}
+                />
+              </View>
+            </Pressable>
+
+            {/* Quick floating action icon to immediately switch / open modal */}
+            <Pressable
+              style={[
+                styles.floatingQuickFab,
+                isDark ? styles.floatingQuickFabDark : styles.floatingQuickFabLight,
+                isInternalNote && styles.floatingQuickFabNote,
+              ]}
+              onPress={() => handleOpenReplyNoteModal()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="swap-horizontal"
+                size={15}
+                color={isInternalNote ? '#FF9500' : (isDark ? '#0A84FF' : '#007AFF')}
+              />
             </Pressable>
           </View>
 
@@ -708,6 +1063,54 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             </View>
           ) : (
             <View>
+              {/* Telegram Training Banner */}
+              {isTelegram && !isInternalNote && (
+                <View style={[styles.telegramTrainingBanner, isDark ? styles.telegramTrainingBannerDark : styles.telegramTrainingBannerLight]}>
+                  <Ionicons name="sparkles" size={18} color="#8B5CF6" style={{ marginRight: 8 }} />
+                  <Text style={[styles.telegramTrainingText, { color: isDark ? '#CBD5E1' : '#475569' }]}>
+                    Refine and train this bot based on this user's queries by editing Knowledge Base or Prompts!
+                  </Text>
+                  <Pressable
+                    style={styles.telegramPromptBtn}
+                    onPress={() => {
+                      Alert.alert(
+                        'Bot Knowledge & Prompts',
+                        'Fine-tune system prompts and knowledge base entries based on this user\'s queries in the Telegram Bot Settings.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Open Settings', onPress: () => router.push('/(tabs)/tools' as any) },
+                        ]
+                      );
+                    }}
+                  >
+                    <Text style={styles.telegramPromptBtnText}>Go to Prompt</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Instagram Quick Reply Pills */}
+              {isInstagram && !isInternalNote && (
+                <View style={styles.quickRepliesContainer}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.quickRepliesScroll}
+                  >
+                    {INSTA_QUICK_REPLIES.map((reply, idx) => (
+                      <Pressable
+                        key={idx}
+                        style={[styles.quickReplyPill, isDark ? styles.quickReplyPillDark : styles.quickReplyPillLight]}
+                        onPress={() => handleSelectQuickReply(reply)}
+                      >
+                        <Text style={[styles.quickReplyText, { color: isDark ? '#E2E8F0' : '#374151' }]} numberOfLines={1}>
+                          {reply}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
               {isInternalNote && (
                 <View style={styles.noteIndicatorRow}>
                   <Ionicons name="eye-off-outline" size={12} color={isDark ? '#FFB340' : '#B25E00'} style={{ marginRight: 4 }} />
@@ -720,8 +1123,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
               <View
                 style={[
                   styles.inputRow,
-                  isDark ? styles.inputRowDark : styles.inputRowLight,
-                  isInternalNote && (isDark ? styles.inputRowNoteDark : styles.inputRowNoteLight),
+                  inputRowCustomStyle,
                 ]}
               >
                 <TextInput
@@ -732,7 +1134,11 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                   placeholder={
                     isInternalNote
                       ? 'Write a private note for your team...'
-                      : 'Type a message...'
+                      : isTelegram
+                      ? `Reply to ${conversation.contact.name || 'user'}...`
+                      : isInstagram
+                      ? `Reply to @${conversation.contact.handle_or_phone?.replace('@', '') || 'user'}...`
+                      : 'Type a WhatsApp message...'
                   }
                   placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
                   value={inputText}
@@ -743,9 +1149,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                 <Pressable cssInterop={false}
                   style={({ pressed }) => [
                     styles.sendBtn,
-                    !inputText.trim() &&
-                      (isDark ? styles.sendBtnDisabledDark : styles.sendBtnDisabledLight),
-                    isInternalNote && styles.sendBtnNote,
+                    { backgroundColor: sendBtnBgColor },
                     pressed && { opacity: 0.7 },
                   ]}
                   disabled={!inputText.trim() || sendMutation.isPending}
@@ -755,7 +1159,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     <Ionicons
-                      name={isInternalNote ? 'bookmark' : 'arrow-up'}
+                      name={sendBtnIcon as any}
                       size={18}
                       color="#FFFFFF"
                     />
@@ -765,6 +1169,222 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
             </View>
           )}
         </View>
+
+        {/* ------------------------------------------------------------- */}
+        {/* Reply & Internal Note Selection & Composer Modal */}
+        {/* ------------------------------------------------------------- */}
+        <Modal
+          visible={showReplyNoteModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowReplyNoteModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.replyNoteModalBox, isDark ? styles.modalBoxDark : styles.modalBoxLight]}>
+              <View style={styles.modalHeader}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={[styles.modalTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                    Reply & Internal Note
+                  </Text>
+                  <Text style={[styles.modalSub, { color: isDark ? '#8E8E93' : '#687076' }]}>
+                    Choose message type or compose note for your team.
+                  </Text>
+                </View>
+                <Pressable onPress={() => setShowReplyNoteModal(false)} hitSlop={12}>
+                  <Ionicons name="close-circle" size={24} color={isDark ? '#636366' : '#C7C7CC'} />
+                </Pressable>
+              </View>
+
+              {/* Mode Selectors */}
+              <View style={{ gap: 10, marginVertical: 8 }}>
+                {/* 1. Customer Direct Reply Option */}
+                <Pressable
+                  style={[
+                    styles.modeOptionCard,
+                    isDark ? styles.modeOptionCardDark : styles.modeOptionCardLight,
+                    modalMode === 'reply' && (isDark ? styles.modeOptionCardSelectedDark : styles.modeOptionCardSelectedLight),
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                    setModalMode('reply');
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.modeOptionIconWrap,
+                      {
+                        backgroundColor: isWhatsApp
+                          ? 'rgba(52, 199, 89, 0.15)'
+                          : isTelegram
+                          ? 'rgba(2, 132, 199, 0.15)'
+                          : 'rgba(236, 72, 153, 0.15)',
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        isWhatsApp
+                          ? isWindowExpired
+                            ? 'lock-closed'
+                            : 'logo-whatsapp'
+                          : isTelegram
+                          ? 'paper-plane'
+                          : 'logo-instagram'
+                      }
+                      size={20}
+                      color={
+                        isWhatsApp
+                          ? isWindowExpired
+                            ? '#FF9500'
+                            : '#34C759'
+                          : isTelegram
+                          ? '#0284c7'
+                          : '#db2777'
+                      }
+                    />
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.modeOptionTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                        {isWhatsApp
+                          ? 'WhatsApp Reply'
+                          : isTelegram
+                          ? 'Telegram Reply'
+                          : 'Instagram Reply'}
+                      </Text>
+                      {isWhatsApp && isWindowExpired && (
+                        <View style={styles.modeExpiredBadge}>
+                          <Text style={styles.modeExpiredBadgeText}>24h Closed</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.modeOptionDesc, { color: isDark ? '#8E8E93' : '#687076' }]}>
+                      Direct customer message visible to {conversation?.contact?.name || 'customer'}.
+                    </Text>
+                  </View>
+
+                  <Ionicons
+                    name={modalMode === 'reply' ? 'radio-button-on' : 'radio-button-off'}
+                    size={20}
+                    color={modalMode === 'reply' ? (isWhatsApp ? '#34C759' : '#0A84FF') : (isDark ? '#636366' : '#C7C7CC')}
+                  />
+                </Pressable>
+
+                {/* 2. Internal Team Note Option */}
+                <Pressable
+                  style={[
+                    styles.modeOptionCard,
+                    isDark ? styles.modeOptionCardDark : styles.modeOptionCardLight,
+                    modalMode === 'note' && styles.modeOptionCardSelectedNote,
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS !== 'web') Haptics.selectionAsync();
+                    setModalMode('note');
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.modeOptionIconWrap,
+                      { backgroundColor: 'rgba(255, 149, 0, 0.15)' },
+                    ]}
+                  >
+                    <Ionicons name="bookmark" size={20} color="#FF9500" />
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.modeOptionTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                        Internal Team Note
+                      </Text>
+                      <View style={styles.modePrivateBadge}>
+                        <Text style={styles.modePrivateBadgeText}>Private</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.modeOptionDesc, { color: isDark ? '#8E8E93' : '#687076' }]}>
+                      Private to your team. Customer will never see this message.
+                    </Text>
+                  </View>
+
+                  <Ionicons
+                    name={modalMode === 'note' ? 'radio-button-on' : 'radio-button-off'}
+                    size={20}
+                    color={modalMode === 'note' ? '#FF9500' : (isDark ? '#636366' : '#C7C7CC')}
+                  />
+                </Pressable>
+              </View>
+
+              {/* Compose Directly in Modal Section */}
+              <View style={[styles.modalComposeBox, isDark ? styles.modalComposeBoxDark : styles.modalComposeBoxLight]}>
+                <Text style={[styles.modalComposeLabel, { color: isDark ? '#8E8E93' : '#687076' }]}>
+                  {modalMode === 'note' ? 'Write Internal Note' : `Write ${isWhatsApp ? 'WhatsApp' : isTelegram ? 'Telegram' : 'Instagram'} Reply`}
+                </Text>
+                <TextInput
+                  style={[
+                    styles.modalComposeInput,
+                    { color: isDark ? '#FFFFFF' : '#000000' },
+                  ]}
+                  placeholder={
+                    modalMode === 'note'
+                      ? 'Type a private team note...'
+                      : `Type a reply to ${conversation?.contact?.name || 'customer'}...`
+                  }
+                  placeholderTextColor={isDark ? '#636366' : '#8E8E93'}
+                  value={modalInputText}
+                  onChangeText={setModalInputText}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                <View style={styles.modalComposeActions}>
+                  <Pressable
+                    style={[
+                      styles.modalSetModeBtn,
+                      isDark ? styles.modalSetModeBtnDark : styles.modalSetModeBtnLight,
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Haptics.selectionAsync();
+                      setIsInternalNote(modalMode === 'note');
+                      setShowReplyNoteModal(false);
+                    }}
+                  >
+                    <Text style={[styles.modalSetModeBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                      Set Mode in Chat
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.modalSendBtn,
+                      {
+                        backgroundColor: modalMode === 'note' ? '#FF9500' : isWhatsApp ? '#00a884' : isTelegram ? '#0284C7' : '#EC4899',
+                        opacity: !modalInputText.trim() || sendMutation.isPending ? 0.6 : 1,
+                      },
+                    ]}
+                    disabled={!modalInputText.trim() || sendMutation.isPending}
+                    onPress={handleSendFromModal}
+                  >
+                    {sendMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name={modalMode === 'note' ? 'bookmark' : 'send'}
+                          size={14}
+                          color="#FFFFFF"
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text style={styles.modalSendBtnText}>
+                          {modalMode === 'note' ? 'Add Note' : 'Send Reply'}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* ------------------------------------------------------------- */}
         {/* Agent Assignment Modal */}
@@ -1191,6 +1811,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   headerCenter: {
     flex: 1,
@@ -1314,6 +1937,96 @@ const styles = StyleSheet.create({
   composerWrapperNoteLight: {
     backgroundColor: '#FFFDF5',
     borderTopColor: '#FFE7A0',
+  },
+  floatingAboveInputBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    gap: 8,
+  },
+  floatingModePill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  floatingModePillDark: {
+    backgroundColor: '#2D283E',
+    borderColor: '#3D3553',
+  },
+  floatingModePillLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  floatingModePillNoteDark: {
+    backgroundColor: '#352108',
+    borderColor: '#603B0E',
+  },
+  floatingModePillNoteLight: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  floatingModeIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  floatingModePillText: {
+    flex: 1,
+    fontSize: 12.5,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  floatingActionIconBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  floatingActionIconBadgeDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  floatingActionIconBadgeLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  floatingQuickFab: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  floatingQuickFabDark: {
+    backgroundColor: '#2D283E',
+    borderColor: '#3D3553',
+  },
+  floatingQuickFabLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  floatingQuickFabNote: {
+    backgroundColor: '#352108',
+    borderColor: '#FF9500',
   },
   segmentContainer: {
     flexDirection: 'row',
@@ -1472,9 +2185,9 @@ const styles = StyleSheet.create({
   },
   sendBtn: {
     backgroundColor: '#007AFF',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 6,
@@ -1499,6 +2212,147 @@ const styles = StyleSheet.create({
     padding: 18,
     maxHeight: '75%',
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  replyNoteModalBox: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '85%',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  modeOptionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  modeOptionCardDark: {
+    backgroundColor: '#1E1A29',
+    borderColor: '#312B43',
+  },
+  modeOptionCardLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  modeOptionCardSelectedDark: {
+    backgroundColor: 'rgba(10, 132, 255, 0.12)',
+    borderColor: '#0A84FF',
+  },
+  modeOptionCardSelectedLight: {
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    borderColor: '#007AFF',
+  },
+  modeOptionCardSelectedNote: {
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderColor: '#FF9500',
+  },
+  modeOptionIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeOptionTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  modeOptionDesc: {
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  modeExpiredBadge: {
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  modeExpiredBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FF9500',
+  },
+  modePrivateBadge: {
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  modePrivateBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FF9500',
+  },
+  modalComposeBox: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  modalComposeBoxDark: {
+    backgroundColor: '#1E1A29',
+    borderColor: '#312B43',
+  },
+  modalComposeBoxLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  modalComposeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalComposeInput: {
+    fontSize: 14,
+    minHeight: 70,
+    maxHeight: 120,
+    textAlignVertical: 'top',
+    paddingVertical: 6,
+  },
+  modalComposeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(150, 150, 150, 0.2)',
+  },
+  modalSetModeBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  modalSetModeBtnDark: {
+    backgroundColor: '#2D283E',
+    borderColor: '#3D3553',
+  },
+  modalSetModeBtnLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+  },
+  modalSetModeBtnText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  modalSendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  modalSendBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   guideModalBox: {
     borderRadius: 18,
@@ -1690,6 +2544,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '700',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   drawerName: {
     fontSize: 17,
@@ -1829,6 +2686,154 @@ const styles = StyleSheet.create({
     color: '#34C759',
     fontSize: 15,
     fontWeight: '600',
+  },
+
+  // ── Instagram Encrypted Social Thread Pill ──────────────────────────────
+  instaEncryptedPillWrapper: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  instaEncryptedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  instaEncryptedPillLight: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  instaEncryptedPillDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  instaEncryptedText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // ── Telegram Bot Training Banner ─────────────────────────────────────────
+  telegramTrainingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 14,
+    marginBottom: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  telegramTrainingBannerLight: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  telegramTrainingBannerDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  telegramTrainingText: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginRight: 8,
+  },
+  telegramPromptBtn: {
+    backgroundColor: '#0055D4',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  telegramPromptBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── Instagram Quick Replies Bar ──────────────────────────────────────────
+  quickRepliesContainer: {
+    marginBottom: 8,
+  },
+  quickRepliesScroll: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 2,
+  },
+  quickReplyPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6.5,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  quickReplyPillLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  quickReplyPillDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#374151',
+  },
+  quickReplyText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // ── Header Action Buttons (Telegram & Instagram) ─────────────────────────
+  headerActionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
+    paddingVertical: 5.5,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  headerActionPillLight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+  },
+  headerActionPillDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  headerActionPillText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  headerActionPillDanger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
+    paddingVertical: 5.5,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  headerActionPillDangerLight: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECDD3',
+  },
+  headerActionPillDangerDark: {
+    backgroundColor: '#381E24',
+    borderColor: '#5C222E',
+  },
+  headerActionPillDangerText: {
+    color: '#EF4444',
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  closeRoundBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  closeRoundBtnLight: {
+    backgroundColor: '#F3F4F6',
+  },
+  closeRoundBtnDark: {
+    backgroundColor: '#262626',
   },
 });
 

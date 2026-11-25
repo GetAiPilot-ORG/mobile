@@ -9,6 +9,7 @@ export * from './AutoApproveModal';
 export * from './ChatBotModal';
 export * from './ReactionsModal';
 export * from './TelegramLoginModal';
+export * from './TelegramConnectModal';
 export * from './DashboardAnalyticsCharts';
 export * from './ConnectBotTokenModal';
 export * from './ui/StatCard';

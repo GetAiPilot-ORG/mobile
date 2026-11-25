@@ -39,7 +39,7 @@ export const DashboardScreen: React.FC = () => {
 
   if (isLoading && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#F5F3FB', padding: 0 }]}>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: colors.background, padding: 0 }]}>
         <DashboardSkeleton />
       </SafeAreaView>
     );
@@ -47,7 +47,7 @@ export const DashboardScreen: React.FC = () => {
 
   if (isError && !data) {
     return (
-      <SafeAreaView style={[styles.stateContainer, { backgroundColor: isDark ? '#020617' : '#F5F3FB' }]}>
+      <SafeAreaView style={[styles.stateContainer, { backgroundColor: colors.background }]}>
         <Ionicons name="warning-outline" size={36} color="#EF4444" style={{ marginBottom: 10 }} />
         <Text style={[styles.stateTitle, { color: isDark ? '#F5F3FB' : '#0f172a' }]}>Connection Error</Text>
         <Text style={[styles.stateSubtitle, { color: isDark ? '#777383' : '#64748b' }]}>

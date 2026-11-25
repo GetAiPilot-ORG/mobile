@@ -6,7 +6,7 @@ import { authStorage } from '../storage/authStorage';
  * Returns the local development BFF URL based on the current platform/host.
  */
 export function getLocalDevBffUrl(): string {
-  // Physical Android device or iOS on same Wi-Fi LAN via Metro Host IP
+  // Physical Android device, Waydroid, or iOS on same Wi-Fi LAN via Metro Host IP
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest?.debuggerHost;
   if (hostUri) {
     const ip = hostUri.split(':')[0];
@@ -15,9 +15,9 @@ export function getLocalDevBffUrl(): string {
     }
   }
 
-  // Android emulator loopback alias
+  // Waydroid or Android emulator loopback alias
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:4000';
+    return 'http://192.168.240.1:4000';
   }
 
   return 'http://localhost:4000';
@@ -35,12 +35,19 @@ export function resolveBffBaseUrl(): string {
     }
   }
 
-  const customUrl = process.env.EXPO_PUBLIC_BFF_URL;
+  // 1. Explicitly configured BFF URL from environment takes top priority
+  const customUrl = process.env.EXPO_PUBLIC_BFF_URL?.trim();
   if (customUrl && !customUrl.includes('bff.getaipilot.in')) {
-    return customUrl;
+    return customUrl.replace(/\/+$/, '');
   }
 
-  return getLocalDevBffUrl();
+  // 2. In local development without an explicit BFF URL, route to local BFF server
+  if (__DEV__) {
+    const devUrl = getLocalDevBffUrl();
+    return devUrl;
+  }
+
+  return 'https://app.getaipilot.com';
 }
 
 export const BFF_BASE_URL = resolveBffBaseUrl();
@@ -163,12 +170,15 @@ class ApiClient {
       return await response.json();
     } catch (error: any) {
       // Auto-fallback on network failure if not already retried
+      const errMsg = (error?.message || '').toLowerCase();
       const isNetworkError =
-        error?.message?.includes('Network request failed') ||
-        error?.message?.includes('Failed to fetch') ||
-        error?.message?.includes('NetworkError') ||
-        error?.message?.includes('NoRouteToHost') ||
-        error?.message?.includes('unreachable');
+        errMsg.includes('network request failed') ||
+        errMsg.includes('failed to fetch') ||
+        errMsg.includes('fetch failed') ||
+        errMsg.includes('connectexception') ||
+        errMsg.includes('networkerror') ||
+        errMsg.includes('noroutetohost') ||
+        errMsg.includes('unreachable');
 
       if (!_isRetry && isNetworkError) {
         const fallbackBase = this.baseUrl.includes('app.getaipilot.com')

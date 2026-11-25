@@ -111,25 +111,50 @@ export async function openSocialHandoff(
 
   const directUrl = SOCIAL_TARGET_URLS[target] || 'https://social.getaipilot.in/dashboard';
 
-  // 1. Primary: Generate SSO handoff consumed in getaipilot.in (/auth/handoff)
+  // 1. Primary: BFF authenticated SSO URL (directly creates session on social.getaipilot.in)
   try {
-    const webAppUrl = customWebAppUrl || 'https://getaipilot.in';
+    const res = await apiClient.post<{ success: boolean; ssoUrl: string }>(
+      '/mobile/v1/social/sso-url',
+      { target },
+    );
+
+    if (res?.ssoUrl) {
+      console.log(`[SocialSSO] Opening BFF authenticated SSO URL for ${target}:`, res.ssoUrl);
+      return await openUrlInAppBrowser(res.ssoUrl);
+    }
+  } catch (bffErr) {
+    console.warn(`[SocialSSO] BFF SSO URL generation failed for ${target}:`, bffErr);
+  }
+
+  // 2. Secondary: Edge Function web-handoff (strictly guarded to social.getaipilot.in)
+  try {
     const toolKey = SOCIAL_TOOL_KEYS[target] || 'social-channels';
     const { data, error } = await supabase.functions.invoke<{
       targetUrl: string;
       redirectPath?: string;
       webAppBaseUrl?: string;
+      socialSsoUrl?: string;
+      launchUrl?: string;
     }>('web-handoff', {
       body: {
         targetTool: toolKey,
         clientId: toolKey,
-        webAppUrl,
+        webAppUrl: 'https://social.getaipilot.in',
       },
     });
 
-    if (!error && data?.targetUrl) {
-      console.log(`[SocialSSO] Opening getaipilot.in handoff URL for ${target}:`, data.targetUrl);
-      return await openUrlInAppBrowser(data.targetUrl);
+    const ssoCandidate = data?.socialSsoUrl || data?.launchUrl || data?.targetUrl;
+    if (!error && ssoCandidate) {
+      // Strictly ensure the URL is for social.getaipilot.in (NEVER the central getaipilot.in hub)
+      const isSocialOrigin = ssoCandidate.includes('social.getaipilot.in') || ssoCandidate.includes('supabase.co');
+      const isHubHandoff = ssoCandidate.includes('getaipilot.in/auth/handoff');
+
+      if (isSocialOrigin && !isHubHandoff) {
+        console.log(`[SocialSSO] Opening edge function SSO URL for ${target}:`, ssoCandidate);
+        return await openUrlInAppBrowser(ssoCandidate);
+      } else {
+        console.warn(`[SocialSSO] Ignoring non-social handoff URL (${ssoCandidate}) to prevent hub redirect`);
+      }
     }
     if (error) {
       console.warn(`[SocialSSO] web-handoff edge function error for ${target}:`, error);
@@ -138,24 +163,9 @@ export async function openSocialHandoff(
     console.warn(`[SocialSSO] web-handoff invoke failed for ${target}:`, edgeErr);
   }
 
-  // 2. Secondary: Fallback to BFF SSO URL
+  // 3. Fallback: Direct social.getaipilot.in destination (NEVER getaipilot.in)
   try {
-    const res = await apiClient.post<{ success: boolean; ssoUrl: string }>(
-      '/mobile/v1/social/sso-url',
-      { target },
-    );
-
-    if (res?.ssoUrl) {
-      console.log(`[SocialSSO] Opening BFF SSO URL fallback for ${target}:`, res.ssoUrl);
-      return await openUrlInAppBrowser(res.ssoUrl);
-    }
-  } catch (bffErr) {
-    console.warn(`[SocialSSO] BFF fallback failed for ${target}:`, bffErr);
-  }
-
-  // 3. Fallback: Direct external link
-  try {
-    console.log(`[SocialSSO] Opening direct fallback URL for ${target}:`, directUrl);
+    console.log(`[SocialSSO] Opening direct social fallback URL for ${target}:`, directUrl);
     return await openUrlInAppBrowser(directUrl);
   } catch (err) {
     console.error(`[SocialSSO] Failed to open external URL for ${target}:`, err);

@@ -1,5 +1,7 @@
 apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
+if (!plugins.hasPlugin("org.jetbrains.kotlin.android") && !plugins.hasPlugin("kotlin-android") && project.extensions.findByName("kotlin") == null) {
+    apply plugin: "org.jetbrains.kotlin.android"
+}
 apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
@@ -87,13 +89,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.unreala9.mobile'
+    namespace 'com.getaipilot'
     defaultConfig {
-        applicationId 'com.unreala9.mobile'
+        applicationId 'com.getaipilot'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 10
+        versionName "10.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -116,7 +118,7 @@ android {
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
             crunchPngs enablePngCrunchInRelease.toBoolean()
         }
@@ -155,7 +157,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation project(':react-native-razorpay')
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
@@ -182,17 +183,4 @@ dependencies {
     }
 }
 
-// Workaround for React Native New Architecture CMake clean issue:
-// Prevents externalNativeBuildClean from crashing when codegen JNI folders are missing
-tasks.whenTaskAdded { task ->
-    if (task.name.startsWith("externalNativeBuildClean")) {
-        task.enabled = false
-    }
-}
-
-tasks.named("clean") {
-    doFirst {
-        delete "${projectDir}/.cxx"
-    }
-}
-
+apply plugin: 'com.google.gms.google-services'

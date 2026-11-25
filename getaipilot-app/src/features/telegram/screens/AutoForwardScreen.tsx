@@ -15,8 +15,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { StatCard } from '../components/ui/StatCard';
-import { ProductHeading } from "@/components/ProductUI";
+import { ProductHeading, ProductMetrics } from "@/components/ProductUI";
 import { TelegramToolKey } from '../types';
 
 type AfSection = 'mappings' | 'filters' | 'blocked' | 'delays' | 'headers';
@@ -99,78 +98,80 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
   return (
     <>
       {/* HERO: Command Center (Responsive Header with Telegram Graphic) */}
-      <ProductHeading title="Forward messages" action="Open bot" onAction={() => Linking.openURL('https://t.me/Gapautoforwardingbot')} />
+      <ProductHeading
+        title="Forward messages"
+        action="Open bot"
+        onAction={() => Linking.openURL('https://t.me/Gapautoforwardingbot')}
+      />
 
-      {/* 6 KPI Cards in Responsive Rows */}
-      <View
-        className="w-full pt-3 mt-1 gap-2 self-stretch mb-3.5"
-        style={{ borderTopColor: isDark ? '#27272A' : '#E9E6F2' }}
+      {/* Metrics */}
+      <ProductMetrics
+        items={[
+          {
+            label: "Active routes",
+            value: (forwardRules || []).length,
+            onPress: () => setAfSection("mappings"),
+          },
+          {
+            label: "Target chats",
+            value:
+              targetCount ||
+              (forwardRules.length > 0 ? forwardRules.length : 0),
+            onPress: () => setAfSection("mappings"),
+          },
+          {
+            label: "Word filters",
+            value: filtersCount,
+            onPress: () => setAfSection("filters"),
+          },
+        ]}
+      />
+
+      {/* Category Filter Pill Bar */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
       >
-        {kpiRows.map((row, rowIndex) => (
-          <View key={rowIndex} className="flex-row w-full gap-2.5 self-stretch mb-2.5">
-            {row.map((m, colIndex) => (
-              <View key={colIndex} className="flex-1 min-w-0" style={{ flexBasis: 0 }}>
-                <StatCard
-                  label={m.label}
-                  value={m.value}
-                  icon={m.icon}
-                  color={m.color}
-                  bg={m.bg}
-                  sub={m.sub}
-                  onPress={() => {
-                    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setAfSection(m.tab as AfSection);
-                  }}
-                />
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
-
-      {/* Category Filter Tabs (Overview Screen Style) */}
-      <View className="mb-3.5 p-2.5 rounded-xl " style={{ backgroundColor: colors.backgroundSecondary }}>
-        <Text className="text-[15px] font-medium mb-2.5" style={{ color: colors.text }}>
-          Forwarding Controls & Modules ({AF_CATEGORIES.length})
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-        >
-          {AF_CATEGORIES.map((cat) => {
-            const isSelected = afSection === cat.key;
-            return (
-              <Pressable
-                key={cat.key}
-                className={`flex-row items-center gap-1.5 px-3 py-[7px] rounded-full border ${isSelected
-                  ? 'bg-[#E7DEFA] border-transparent'
-                  : isDark
-                    ? 'bg-[#121212] border-[#27272A]'
-                    : 'bg-[#F5F3FB] border-[#E9E6F2]'
-                  }`}
-                onPress={() => {
-                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setAfSection(cat.key);
+        {AF_CATEGORIES.map((cat) => {
+          const isSelected = afSection === cat.key;
+          return (
+            <Pressable
+              key={cat.key}
+              onPress={() => {
+                if (Platform.OS !== "web")
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAfSection(cat.key);
+              }}
+              style={{
+                borderRadius: 24,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                backgroundColor: isSelected ? colors.primary : colors.card,
+              }}
+            >
+              <Ionicons
+                name={cat.icon}
+                size={14}
+                color={isSelected ? "#FFFFFF" : colors.textSecondary}
+              />
+              <Text
+                style={{
+                  color: isSelected ? "#FFFFFF" : colors.textSecondary,
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? "700" : "500",
                 }}
               >
-                <Ionicons
-                  name={cat.icon}
-                  size={13}
-                  color={isSelected ? '#6C55C5' : isDark ? '#94A3B8' : '#64748B'}
-                />
-                <Text
-                  className={`text-xs ${isSelected ? 'text-[#6C55C5] font-medium' : 'font-semibold'}`}
-                  style={isSelected ? undefined : { color: colors.text }}
-                >
-                  {cat.label}
-                  {cat.count !== undefined ? ` (${cat.count})` : ''}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+                {cat.label}
+                {cat.count !== undefined ? ` (${cat.count})` : ""}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {/* SECTION 1: ROUTING RULES (MAPPINGS) */}
       {afSection === 'mappings' && (
@@ -184,7 +185,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
               <Text style={styles.sectionSub} numberOfLines={1}>{(forwardRules || []).length} channels configured</Text>
             </View>
             <Pressable
-              style={styles.addMiniBtn}
+              style={[styles.addMiniBtn, { backgroundColor: colors.primary }]}
               onPress={() => {
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onOpenModal('autoforward');
@@ -205,7 +206,7 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
                 const sourceLabel = rule.source_chat_title || rule.sender_name || (rule.sender_id ? `id:${rule.sender_id}` : 'Source Channel');
                 const targetLabel = rule.target_chat_title || (Array.isArray(rule.receivers_names) && rule.receivers_names.length > 0 ? rule.receivers_names.join(', ') : (Array.isArray(rule.receivers) && rule.receivers.length > 0 ? rule.receivers.map((r: any) => `id:${r}`).join(', ') : 'Target Channel'));
                 return (
-                  <View style={[styles.mappingRow, { backgroundColor: colors.backgroundSecondary }]}>
+                  <View style={[styles.mappingRow, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                     {/* Source Row */}
                     <View style={styles.routeHeaderRow}>
                       <View style={styles.routeChannelLeft}>
@@ -438,32 +439,37 @@ export const AutoForwardScreen: React.FC<AutoForwardScreenProps> = ({ forwardRul
 };
 
 const styles = StyleSheet.create({
-  sectionCard: { padding: 16, borderRadius: 24, borderWidth: 0, marginBottom: 12 , shadowOpacity: 0 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
-  sectionIconCircle: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontSize: 18, fontWeight: '500', lineHeight: 24 },
-  sectionSub: { fontSize: 13, color: '#716B7C', marginTop: 1 },
+  sectionCard: { padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  sectionIconCircle: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(2,132,199,0.12)', alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { fontSize: 17, fontWeight: '700', lineHeight: 22 },
+  sectionSub: { fontSize: 12, color: '#716B7C', marginTop: 1 },
   addMiniBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 7,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
     flexShrink: 0,
   },
   addMiniBtnText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
-  mappingRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, borderWidth: 1 },
+  mappingRow: {
+    flexDirection: 'column',
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 8,
+  },
   routeHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 6,
+    gap: 8,
   },
   routeFooterRow: {
     flexDirection: 'row',
