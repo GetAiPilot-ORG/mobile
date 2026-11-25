@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,8 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  Platform,
+  Animated,
+  Easing,
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import QRCode from 'react-native-qrcode-svg';
@@ -17,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { CanvasConfig, CanvasTemplateId, QRStyles, QRType } from './types';
 import { buildCanvasHtml } from './htmlCanvasRenderer';
+import { GetAiPilotVectorLogo } from './NativeCanvasTemplate';
 import { useTheme, getColors } from '@/theme';
 
 interface CanvasPreviewProps {
@@ -47,16 +49,37 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 
   const [previewMode, setPreviewMode] = useState<'canvas' | 'pure-qr'>('canvas');
   const [isExporting, setIsExporting] = useState(false);
+  const [canvasHeight, setCanvasHeight] = useState<number>(580);
 
   const webViewRef = useRef<any>(null);
   const qrSvgRef = useRef<any>(null);
+  const laserAnim = useRef(new Animated.Value(0)).current;
 
-  // Generate HTML for the Standee Canvas
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(laserAnim, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(laserAnim, {
+          toValue: 0,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [laserAnim]);
+
   const htmlContent = useMemo(() => {
     return buildCanvasHtml(canvasId, config, qrStyles, qrContent);
   }, [canvasId, config, qrStyles, qrContent]);
 
-  // Handle Export / Download 300 DPI PNG
   const handleExportCanvas = () => {
     if (previewMode === 'pure-qr') {
       handleExportPureQr();
@@ -66,7 +89,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
     setIsExporting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Call html2canvas inside WebView
     webViewRef.current?.injectJavaScript(`
       if (typeof window.exportCanvas === 'function') {
         window.exportCanvas(3);
@@ -80,7 +102,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
     `);
   };
 
-  // Handle Pure QR code export via react-native-qrcode-svg
   const handleExportPureQr = () => {
     if (!qrSvgRef.current) return;
     setIsExporting(true);
@@ -109,10 +130,14 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
     });
   };
 
-  // WebView Message Listener for Export
   const handleWebViewMessage = async (event: WebViewMessageEvent) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'CANVAS_HEIGHT' && typeof data.height === 'number') {
+        const clamped = Math.max(420, Math.min(820, Math.ceil(data.height)));
+        setCanvasHeight(clamped);
+        return;
+      }
       if (data.type === 'EXPORT_SUCCESS' && data.dataUrl) {
         const base64Data = data.dataUrl.replace(/^data:image\/png;base64,/, '');
         const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'qr-standee'}-300dpi.png`;
@@ -135,13 +160,14 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         Alert.alert('Export Error', data.error || 'Failed to render 300 DPI image');
       }
     } catch (err: any) {
-      console.warn('[CanvasPreview] Error processing export message:', err);
+      console.warn('[CanvasPreview] Error processing WebView message:', err);
     } finally {
-      setIsExporting(false);
+      if (event.nativeEvent.data && !event.nativeEvent.data.includes('CANVAS_HEIGHT')) {
+        setIsExporting(false);
+      }
     }
   };
 
-  // Copy Content / Link to clipboard
   const handleCopy = async () => {
     await Clipboard.setStringAsync(qrContent);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -153,6 +179,14 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         : 'QR destination URL copied!';
     Alert.alert('Copied!', label);
   };
+
+  const fgColor = qrStyles.fgColor || '#000000';
+  const bgColor = qrStyles.bgColor || '#FFFFFF';
+  const showCenterLogo = config.showCenterLogo !== false;
+  const laserTranslateY = laserAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [6, 200],
+  });
 
   return (
     <View style={styles.container}>
@@ -166,7 +200,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
           },
         ]}
       >
-        {/* Toggle Pill: Standee Mockup vs Pure QR */}
         <View
           style={[
             styles.togglePill,
@@ -239,7 +272,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
           </Pressable>
         </View>
 
-        {/* Quick Action: Copy Link */}
         <Pressable
           style={[
             styles.copyBtn,
@@ -268,8 +300,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         ]}
       >
         {previewMode === 'canvas' ? (
-          /* True-to-life Standee Mockup Rendered via HTML/CSS Studio Canvas matching getaipilot.in */
-          <View style={styles.webViewContainer}>
+          <View style={[styles.webViewContainer, { height: canvasHeight }]}>
             <WebView
               ref={webViewRef}
               originWhitelist={['*']}
@@ -278,13 +309,12 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
               javaScriptEnabled={true}
               domStorageEnabled={true}
               style={styles.webView}
-              scrollEnabled={true}
+              scrollEnabled={false}
               showsVerticalScrollIndicator={false}
               showsHorizontalScrollIndicator={false}
             />
           </View>
         ) : (
-          /* Pure Standalone Vector QR Code Card */
           <View
             style={[
               styles.pureQrCard,
@@ -294,14 +324,40 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
               },
             ]}
           >
-            <View style={styles.qrShadowBox}>
-              <QRCode
-                value={qrContent || 'https://getaipilot.in'}
-                size={210}
-                color={qrStyles.fgColor || '#000000'}
-                backgroundColor={qrStyles.bgColor || '#FFFFFF'}
-                getRef={(ref) => (qrSvgRef.current = ref)}
-              />
+            <View style={[styles.qrShadowBox, { backgroundColor: bgColor }]}>
+              <View style={styles.pureQrInnerWrap}>
+                <QRCode
+                  value={qrContent || 'https://getaipilot.in'}
+                  size={210}
+                  color={fgColor}
+                  backgroundColor={bgColor}
+                  ecl="H"
+                  getRef={(ref) => (qrSvgRef.current = ref)}
+                />
+
+                {showCenterLogo && (
+                  <View style={[styles.centerLogoWrap, { backgroundColor: bgColor }]}>
+                    <GetAiPilotVectorLogo size={38} color={fgColor} />
+                  </View>
+                )}
+
+                {/* Animated Emerald Corner Reticles */}
+                <View pointerEvents="none" style={styles.reticleBox}>
+                  <View style={[styles.reticleCorner, styles.reticleTL]} />
+                  <View style={[styles.reticleCorner, styles.reticleTR]} />
+                  <View style={[styles.reticleCorner, styles.reticleBL]} />
+                  <View style={[styles.reticleCorner, styles.reticleBR]} />
+                </View>
+
+                {/* Animated Laser Scan Beam */}
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.laserLine,
+                    { transform: [{ translateY: laserTranslateY }] },
+                  ]}
+                />
+              </View>
             </View>
 
             <View style={{ marginTop: 14, alignItems: 'center' }}>
@@ -321,7 +377,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 
       {/* Primary Action Buttons Deck */}
       <View style={styles.actionDeck}>
-        {/* Download 300 DPI Canvas */}
         <Pressable
           style={[
             styles.downloadBtn,
@@ -348,7 +403,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
           )}
         </Pressable>
 
-        {/* Save to Dashboard */}
         <Pressable
           style={[
             styles.saveBtn,
@@ -450,27 +504,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: 8,
   },
-  posterContainer: {
-    width: '100%',
-    height: 480,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
-  },
-  fullPosterImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-  },
-  nativeMockupViewport: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-  },
   webViewContainer: {
     width: '100%',
-    height: 530,
     borderRadius: 16,
     overflow: 'hidden',
   },
@@ -490,12 +525,57 @@ const styles = StyleSheet.create({
   },
   qrShadowBox: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
+  },
+  pureQrInnerWrap: {
+    width: 210,
+    height: 210,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  centerLogoWrap: {
+    position: 'absolute',
+    width: 46,
+    height: 46,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reticleBox: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
+  },
+  reticleCorner: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderColor: '#10B981',
+  },
+  reticleTL: { top: 0, left: 0, borderTopWidth: 2.5, borderLeftWidth: 2.5, borderTopLeftRadius: 4 },
+  reticleTR: { top: 0, right: 0, borderTopWidth: 2.5, borderRightWidth: 2.5, borderTopRightRadius: 4 },
+  reticleBL: { bottom: 0, left: 0, borderBottomWidth: 2.5, borderLeftWidth: 2.5, borderBottomLeftRadius: 4 },
+  reticleBR: { bottom: 0, right: 0, borderBottomWidth: 2.5, borderRightWidth: 2.5, borderBottomRightRadius: 4 },
+  laserLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2.5,
+    backgroundColor: '#34D399',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    elevation: 3,
   },
   pureQrBrand: {
     fontSize: 15,

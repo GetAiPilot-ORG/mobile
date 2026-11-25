@@ -268,7 +268,7 @@ export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
                   config={config}
                   styles={qrStyles}
                   qrContent={qrContent}
-                  scale={0.48}
+                  scale={0.40}
                 />
               </View>
 
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   mockupContainer: {
     width: '100%',
-    height: 220,
+    height: 248,
     borderRadius: 16,
     borderWidth: 1,
     marginTop: 10,
