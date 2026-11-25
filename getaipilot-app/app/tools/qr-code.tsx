@@ -1,431 +1,723 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   Pressable,
   Alert,
-  Share,
-  Linking,
 } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
-import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppScreen } from '../../src/components/AppScreen';
 import { AppTopBar } from '../../src/components/AppTopBar';
 import { useTheme, getColors } from '@/theme';
+import { supabase } from '@/lib/supabase';
+import {
+  CanvasTemplateId,
+  CanvasConfig,
+  QRStyles,
+  QRType,
+  CANVAS_TEMPLATES,
+  DEFAULT_CANVAS_CONFIG,
+  SavedQRCode,
+  ReviewFeedback,
+} from '../../src/components/qr-studio/types';
+import { CanvasGallery } from '../../src/components/qr-studio/CanvasGallery';
+import { CanvasFormInputs } from '../../src/components/qr-studio/CanvasFormInputs';
+import { CanvasPreview } from '../../src/components/qr-studio/CanvasPreview';
+import { SavedStandeesList } from '../../src/components/qr-studio/SavedStandeesList';
+import { CustomerReviewsList } from '../../src/components/qr-studio/CustomerReviewsList';
 
-type QRType = 'url' | 'whatsapp' | 'upi' | 'wifi' | 'contact' | 'text';
-
-interface QRColorOption {
-  name: string;
-  color: string;
-  dotColor: string;
-}
-
-const QR_COLORS: QRColorOption[] = [
-  { name: 'Brand Blue', color: '#0084FF', dotColor: '#0084FF' },
-  { name: 'Emerald', color: '#10B981', dotColor: '#10B981' },
-  { name: 'Royal Purple', color: '#8B5CF6', dotColor: '#8B5CF6' },
-  { name: 'Crimson', color: '#E11D48', dotColor: '#E11D48' },
-  { name: 'Classic Dark', color: '#0F172A', dotColor: '#0F172A' },
-];
-
-const CATEGORIES: { id: QRType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: 'url', title: 'Website', icon: 'globe-outline' },
-  { id: 'whatsapp', title: 'WhatsApp', icon: 'logo-whatsapp' },
-  { id: 'upi', title: 'UPI Pay', icon: 'card-outline' },
-  { id: 'wifi', title: 'Wi-Fi', icon: 'wifi-outline' },
-  { id: 'contact', title: 'Contact', icon: 'person-outline' },
-  { id: 'text', title: 'Text Note', icon: 'document-text-outline' },
-];
+const formatExternalUrl = (url: string) => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
 
 export default function QRCodeGeneratorScreen() {
+  const router = useRouter();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
+  // Global View Mode: Canvas Studio vs Customer Reviews
+  const [viewMode, setViewMode] = useState<'generator' | 'reviews'>('generator');
+
+  // Wizard Step: 1 = Choose Canvas, 2 = Customize Details, 3 = Preview & Export
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [selectedCanvas, setSelectedCanvas] = useState<CanvasTemplateId>('bold-retail-promo');
+  const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>(DEFAULT_CANVAS_CONFIG);
+
+  // Core QR Payload
   const [qrType, setQrType] = useState<QRType>('url');
-  const [selectedColor, setSelectedColor] = useState<QRColorOption>(QR_COLORS[0]);
+  const [title, setTitle] = useState('Bold Retail Promo Standee');
+  const [isTitleCustomized, setIsTitleCustomized] = useState(false);
 
-  // Form Fields
-  const [url, setUrl] = useState('https://getaipilot.in');
+  // Web URL
+  const [urlContent, setUrlContent] = useState('https://getaipilot.in');
 
-  // WhatsApp
-  const [waPhone, setWaPhone] = useState('919876543210');
-  const [waMessage, setWaMessage] = useState('Hi! I want to learn more about GetAiPilot.');
+  // Wi-Fi Credentials
+  const [wifiSsid, setWifiSsid] = useState('GrandVista_Guest');
+  const [wifiPassword, setWifiPassword] = useState('welcomevista26');
+  const [wifiEncryption, setWifiEncryption] = useState<'WPA' | 'WEP' | 'nopass'>('WPA');
 
-  // UPI
-  const [upiVpa, setUpiVpa] = useState('business@upi');
-  const [upiName, setUpiName] = useState('GetAiPilot Enterprise');
-  const [upiAmount, setUpiAmount] = useState('999');
+  // vCard Profile
+  const [vcardFirst, setVcardFirst] = useState('John');
+  const [vcardLast, setVcardLast] = useState('Doe');
+  const [vcardPhone, setVcardPhone] = useState('+91 89822 85510');
+  const [vcardEmail, setVcardEmail] = useState('hello@getaipilot.in');
+  const [vcardOrg, setVcardOrg] = useState('The Grand Vista');
+  const [vcardTitle, setVcardTitle] = useState('General Manager');
+  const [vcardUrl, setVcardUrl] = useState('https://getaipilot.in');
 
-  // Wi-Fi
-  const [wifiSsid, setWifiSsid] = useState('GetAiPilot_Guest');
-  const [wifiPass, setWifiPass] = useState('Welcome@2026');
+  // Google Review Gate
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('https://g.page/r/sample-google-review-url');
+  const [reviewBizName, setReviewBizName] = useState('The Grand Vista Hotel');
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState('Thank you for your valuable feedback!');
+  const [reviewDesc, setReviewDesc] = useState('Please rate your experience with us today');
 
-  // Contact vCard
-  const [contactName, setContactName] = useState('Alex Smith');
-  const [contactPhone, setContactPhone] = useState('+91 98765 43210');
-  const [contactEmail, setContactEmail] = useState('alex@getaipilot.in');
+  // Email Mailto
+  const [emailTo, setEmailTo] = useState('support@getaipilot.in');
+  const [emailSubject, setEmailSubject] = useState('Inquiry from QR Standee');
+  const [emailBody, setEmailBody] = useState('Hello, I would like to learn more about your services.');
 
-  // Text
-  const [textContent, setTextContent] = useState('Scan to unlock VIP GetAiPilot discount coupon: PILOT50');
+  // QR Aesthetics
+  const [qrStyles, setQRStyles] = useState<QRStyles>({
+    fgColor: '#000000',
+    bgColor: '#ffffff',
+    level: 'H',
+    size: 240,
+    includeMargin: false,
+  });
 
-  // Dynamic Theme Mapping
-  const theme = {
-    bg: colors.background,
-    card: colors.card,
-    cardBorder: colors.border,
-    text: colors.foreground,
-    mutedText: colors.mutedForeground,
-    inputBg: isDark ? '#141416' : '#FFFFFF',
-    inputBorder: colors.border,
-    primary: colors.primary,
-  };
+  // Saved codes & reviews states
+  const [savedCodes, setSavedCodes] = useState<SavedQRCode[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(true);
+  const [activeQRId, setActiveQRId] = useState<string | null>(null);
 
-  // Compute final QR payload
-  const getQRValue = (): string => {
+  // Feedback list
+  const [allFeedbacks, setAllFeedbacks] = useState<ReviewFeedback[]>([]);
+  const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState(false);
+
+  // ══ COMPUTED QR CODE PAYLOAD ══
+  const computedQRContent = useMemo(() => {
     switch (qrType) {
-      case 'url':
-        return url.trim();
-      case 'whatsapp': {
-        const cleanNumber = waPhone.replace(/[^0-9]/g, '');
-        const encoded = encodeURIComponent(waMessage.trim());
-        return encoded ? `https://wa.me/${cleanNumber}?text=${encoded}` : `https://wa.me/${cleanNumber}`;
+      case 'review': {
+        const baseUrl = 'https://getaipilot.in';
+        if (activeQRId) {
+          return `${baseUrl}/r/${activeQRId}`;
+        }
+        const params = new URLSearchParams({
+          biz: reviewBizName || canvasConfig.brandName || 'Your Business',
+          url: formatExternalUrl(googleReviewUrl || canvasConfig.targetUrl || 'https://google.com'),
+          msg: reviewSuccessMsg || 'Thank you for your feedback!',
+          desc: reviewDesc || '',
+        }).toString();
+        return `${baseUrl}/r/preview?${params}`;
       }
-      case 'upi':
-        return `upi://pay?pa=${upiVpa.trim()}&pn=${encodeURIComponent(upiName.trim())}${upiAmount ? `&am=${upiAmount.trim()}` : ''}&cu=INR`;
       case 'wifi':
-        return `WIFI:T:WPA;S:${wifiSsid.trim()};P:${wifiPass};;`;
-      case 'contact':
-        return `BEGIN:VCARD\nVERSION:3.0\nN:${contactName}\nTEL:${contactPhone}\nEMAIL:${contactEmail}\nEND:VCARD`;
-      case 'text':
-        return textContent.trim();
-      default:
-        return 'https://getaipilot.in';
+        return `WIFI:S:${wifiSsid};T:${wifiEncryption};P:${wifiPassword};;`;
+      case 'vcard': {
+        const lines: string[] = ['BEGIN:VCARD', 'VERSION:3.0'];
+        const cleanFirst = (vcardFirst || '').trim();
+        const cleanLast = (vcardLast || '').trim();
+        const cleanOrg = (vcardOrg || '').trim();
+        const cleanTitle = (vcardTitle || '').trim();
+        const cleanPhone = (vcardPhone || '').trim();
+        const cleanEmail = (vcardEmail || '').trim();
+        const cleanUrl = (vcardUrl || '').trim();
+
+        lines.push(`N:${cleanLast};${cleanFirst};;;`);
+        const fnValue =
+          [cleanFirst, cleanLast].filter(Boolean).join(' ') ||
+          cleanOrg ||
+          canvasConfig.brandName ||
+          'Contact';
+        lines.push(`FN:${fnValue}`);
+
+        if (cleanOrg) lines.push(`ORG:${cleanOrg}`);
+        if (cleanTitle) lines.push(`TITLE:${cleanTitle}`);
+        if (cleanPhone) lines.push(`TEL;TYPE=CELL,VOICE:${cleanPhone}`);
+        if (cleanEmail) lines.push(`EMAIL:${cleanEmail}`);
+        if (cleanUrl) lines.push(`URL:${formatExternalUrl(cleanUrl)}`);
+
+        lines.push('END:VCARD');
+        return lines.join('\r\n');
+      }
+      case 'email':
+        return `mailto:${emailTo}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      case 'url':
+      default: {
+        const raw = canvasConfig.targetUrl || urlContent || 'https://getaipilot.in';
+        return formatExternalUrl(raw);
+      }
     }
-  };
+  }, [
+    qrType,
+    activeQRId,
+    reviewBizName,
+    canvasConfig.brandName,
+    canvasConfig.targetUrl,
+    googleReviewUrl,
+    reviewSuccessMsg,
+    reviewDesc,
+    wifiSsid,
+    wifiEncryption,
+    wifiPassword,
+    vcardLast,
+    vcardFirst,
+    vcardOrg,
+    vcardTitle,
+    vcardPhone,
+    vcardEmail,
+    vcardUrl,
+    emailTo,
+    emailSubject,
+    emailBody,
+    urlContent,
+  ]);
 
-  const payload = getQRValue();
+  // Load saved codes on mount
+  useEffect(() => {
+    fetchSavedCodes();
+  }, []);
 
-  const handleCopyPayload = async () => {
-    if (!payload) return;
-    await Clipboard.setStringAsync(payload);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('Copied!', 'QR Code payload copied to clipboard.');
-  };
+  // Load feedbacks when entering reviews view
+  useEffect(() => {
+    if (viewMode === 'reviews') {
+      fetchCustomerReviews();
+    }
+  }, [viewMode]);
 
-  const handleShare = async () => {
-    if (!payload) return;
+  const fetchSavedCodes = async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await Share.share({
-        message: `Scannable QR Code Data:\n\n${payload}\n\nGenerated with GetAiPilot Mobile.`,
-      });
-    } catch { }
-  };
+      setIsLoadingSaved(true);
+      // 1. Try Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('qr_codes')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-  const handleTestPayload = () => {
-    if (qrType === 'url' || qrType === 'whatsapp') {
-      Linking.openURL(payload).catch(() => {
-        Alert.alert('Unable to Open', 'The generated link could not be opened on this device.');
-      });
-    } else {
-      Alert.alert('Scannable Code Ready', 'Point any smartphone camera at the QR code above to trigger action.');
+        if (!error && data) {
+          setSavedCodes(data);
+          return;
+        }
+      }
+
+      // 2. Fallback to AsyncStorage
+      const localJson = await AsyncStorage.getItem('@saved_qr_codes');
+      if (localJson) {
+        setSavedCodes(JSON.parse(localJson));
+      }
+    } catch (e) {
+      console.warn('[QRCodeGenerator] Error fetching saved QR codes:', e);
+    } finally {
+      setIsLoadingSaved(false);
     }
   };
+
+  const fetchCustomerReviews = async () => {
+    try {
+      setIsLoadingFeedbacks(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAllFeedbacks([]);
+        return;
+      }
+
+      const { data: userQRs, error: qrError } = await supabase
+        .from('qr_codes')
+        .select('id, title')
+        .eq('user_id', user.id);
+
+      if (qrError || !userQRs || userQRs.length === 0) {
+        setAllFeedbacks([]);
+        return;
+      }
+
+      const qrIds = userQRs.map((q) => q.id);
+      const qrMap = new Map(userQRs.map((q) => [q.id, q.title]));
+
+      const { data: fbData, error: fbError } = await supabase
+        .from('review_feedback')
+        .select('*')
+        .in('qr_code_id', qrIds)
+        .order('created_at', { ascending: false });
+
+      if (fbError) throw fbError;
+
+      const joinedData: ReviewFeedback[] = (fbData || []).map((fb: any) => ({
+        ...fb,
+        qr_title: qrMap.get(fb.qr_code_id) || 'Untitled QR',
+      }));
+
+      setAllFeedbacks(joinedData);
+    } catch (e) {
+      console.warn('[QRCodeGenerator] Error fetching customer reviews:', e);
+    } finally {
+      setIsLoadingFeedbacks(false);
+    }
+  };
+
+  // When a canvas is selected, auto-update smart defaults
+  const handleSelectCanvas = (id: CanvasTemplateId) => {
+    setSelectedCanvas(id);
+    setActiveStep(2);
+    setActiveQRId(null);
+
+    const template = CANVAS_TEMPLATES.find((t) => t.id === id);
+    if (template && !isTitleCustomized) {
+      setTitle(`${canvasConfig.brandName || 'My Business'} ${template.name}`);
+    }
+
+    if (id === 'acrylic-standee' || id === 'floral-review') {
+      setQrType('review');
+    } else if (id === 'hexagon-dual') {
+      setQrType('wifi');
+    } else {
+      setQrType('url');
+    }
+  };
+
+  // Save to Dashboard
+  const handleSaveToDashboard = async () => {
+    try {
+      setIsSaving(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      const savedStyleConfig = {
+        ...qrStyles,
+        selectedCanvas,
+        canvasConfig,
+        type: qrType,
+        googleReviewUrl,
+        businessName: reviewBizName || canvasConfig.brandName,
+        successMessage: reviewSuccessMsg,
+        description: reviewDesc,
+        wifiSsid,
+        wifiPassword,
+        wifiEncryption,
+        vcardFirst,
+        vcardLast,
+        vcardPhone,
+        vcardEmail,
+        vcardOrg,
+        vcardTitle,
+        vcardUrl,
+      };
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        if (activeQRId) {
+          const updatePayload: any = {
+            title: title || canvasConfig.brandName || 'My Business QR Standee',
+            style_config: savedStyleConfig,
+          };
+          if (qrType !== 'review') {
+            updatePayload.content = computedQRContent;
+          }
+
+          const { data, error } = await supabase
+            .from('qr_codes')
+            .update(updatePayload)
+            .eq('id', activeQRId)
+            .select()
+            .single();
+
+          if (error) throw error;
+          setSavedCodes((prev) =>
+            prev.map((item) => (item.id === activeQRId ? data : item))
+          );
+          Alert.alert('Updated!', 'QR Standee updated in your dashboard.');
+        } else {
+          const { data, error } = await supabase
+            .from('qr_codes')
+            .insert([
+              {
+                user_id: user.id,
+                content: qrType === 'review' ? 'temp' : computedQRContent,
+                title: title || canvasConfig.brandName || 'My Business QR Standee',
+                style_config: savedStyleConfig,
+              },
+            ])
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          if (qrType === 'review') {
+            const finalUrl = `https://getaipilot.in/r/${data.id}`;
+            await supabase.from('qr_codes').update({ content: finalUrl }).eq('id', data.id);
+            data.content = finalUrl;
+          }
+
+          setSavedCodes([data, ...savedCodes]);
+          setActiveQRId(data.id);
+          Alert.alert('Saved!', 'QR Standee saved to your dashboard.');
+        }
+      } else {
+        // Offline / Guest Local Save
+        const newItem: SavedQRCode = {
+          id: activeQRId || `local-${Date.now()}`,
+          content: computedQRContent,
+          title: title || canvasConfig.brandName || 'My Business QR Standee',
+          style_config: savedStyleConfig,
+          created_at: new Date().toISOString(),
+        };
+
+        let updatedList: SavedQRCode[] = [];
+        if (activeQRId) {
+          updatedList = savedCodes.map((item) => (item.id === activeQRId ? newItem : item));
+        } else {
+          updatedList = [newItem, ...savedCodes];
+          setActiveQRId(newItem.id);
+        }
+
+        setSavedCodes(updatedList);
+        await AsyncStorage.setItem('@saved_qr_codes', JSON.stringify(updatedList));
+        Alert.alert('Saved Locally', 'Saved to your offline device storage.');
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      Alert.alert('Save Failed', err?.message || 'Could not save QR Standee');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Load Saved QR Standee into editor
+  const handleLoadSavedQR = (saved: SavedQRCode) => {
+    setTitle(saved.title);
+    setIsTitleCustomized(true);
+    setActiveQRId(saved.id);
+
+    if (saved.style_config) {
+      const cfg = saved.style_config;
+      if (cfg.selectedCanvas) setSelectedCanvas(cfg.selectedCanvas);
+      if (cfg.canvasConfig) setCanvasConfig(cfg.canvasConfig);
+      if (cfg.type) setQrType(cfg.type);
+      if (cfg.googleReviewUrl) setGoogleReviewUrl(cfg.googleReviewUrl);
+      if (cfg.businessName) setReviewBizName(cfg.businessName);
+      if (cfg.successMessage) setReviewSuccessMsg(cfg.successMessage);
+      if (cfg.description) setReviewDesc(cfg.description);
+      if (cfg.wifiSsid) setWifiSsid(cfg.wifiSsid);
+      if (cfg.wifiPassword) setWifiPassword(cfg.wifiPassword);
+      if (cfg.wifiEncryption) setWifiEncryption(cfg.wifiEncryption);
+      if (cfg.vcardFirst) setVcardFirst(cfg.vcardFirst);
+      if (cfg.vcardLast) setVcardLast(cfg.vcardLast);
+      if (cfg.vcardPhone) setVcardPhone(cfg.vcardPhone);
+      if (cfg.vcardEmail) setVcardEmail(cfg.vcardEmail);
+      if (cfg.vcardOrg) setVcardOrg(cfg.vcardOrg);
+      if (cfg.vcardTitle) setVcardTitle(cfg.vcardTitle);
+      if (cfg.vcardUrl) setVcardUrl(cfg.vcardUrl);
+      if (cfg.fgColor) {
+        setQRStyles((prev) => ({
+          ...prev,
+          fgColor: cfg.fgColor,
+          bgColor: cfg.bgColor || prev.bgColor,
+          level: cfg.level || prev.level,
+        }));
+      }
+    }
+
+    setActiveStep(3); // Jump to preview
+    Alert.alert('Loaded', `Loaded "${saved.title}"`);
+  };
+
+  // Delete saved code
+  const handleDeleteSaved = async (id: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('qr_codes').delete().eq('id', id);
+      }
+      const filtered = savedCodes.filter((c) => c.id !== id);
+      setSavedCodes(filtered);
+      await AsyncStorage.setItem('@saved_qr_codes', JSON.stringify(filtered));
+      if (activeQRId === id) setActiveQRId(null);
+    } catch (e) {
+      console.warn('[QRCodeGenerator] Delete error:', e);
+    }
+  };
+
+  const activeTemplateMeta =
+    CANVAS_TEMPLATES.find((t) => t.id === selectedCanvas) || CANVAS_TEMPLATES[0];
 
   return (
-    <AppScreen safeArea={false} backgroundColor={theme.bg}>
-      <AppTopBar title="QR Code Studio"
-        // subtitle="High-Resolution Custom QR Generator" 
-        showBack={true} />
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Category Selector Grid */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>1. Choose QR Category</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.mutedText }]}>
-            Select the type of content you want encoded into your high-resolution QR code.
-          </Text>
-
-          <View style={styles.categoriesGrid}>
-            {CATEGORIES.map((cat) => (
-              <Pressable
-                key={cat.id}
+    <AppScreen safeArea={true} style={{ backgroundColor: colors.background }}>
+      {/* Top Header Bar */}
+      <AppTopBar
+        title="QR Standee Studio"
+        onBackPress={() => router.back()}
+        rightElement={
+          <View
+            style={[
+              styles.modePill,
+              {
+                backgroundColor: isDark ? '#1C1B24' : '#E2E8F0',
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setViewMode('generator');
+              }}
+              style={[
+                styles.modeBtn,
+                viewMode === 'generator' && [
+                  styles.modeBtnActive,
+                  { backgroundColor: isDark ? '#262435' : '#FFFFFF' },
+                ],
+              ]}
+            >
+              <Text
                 style={[
-                  styles.categoryBtn,
+                  styles.modeBtnText,
                   {
-                    backgroundColor: qrType === cat.id ? theme.primary : isDark ? '#141416' : '#F3F4F6',
-                    borderColor: qrType === cat.id ? theme.primary : theme.cardBorder,
+                    color:
+                      viewMode === 'generator'
+                        ? colors.foreground
+                        : colors.mutedForeground,
+                    fontWeight: viewMode === 'generator' ? '800' : '600',
                   },
                 ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setQrType(cat.id);
+              >
+                Studio
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setViewMode('reviews');
+              }}
+              style={[
+                styles.modeBtn,
+                viewMode === 'reviews' && [
+                  styles.modeBtnActive,
+                  { backgroundColor: isDark ? '#262435' : '#FFFFFF' },
+                ],
+              ]}
+            >
+              <Text
+                style={[
+                  styles.modeBtnText,
+                  {
+                    color:
+                      viewMode === 'reviews'
+                        ? '#EF4444'
+                        : colors.mutedForeground,
+                    fontWeight: viewMode === 'reviews' ? '800' : '600',
+                  },
+                ]}
+              >
+                Reviews
+              </Text>
+              {allFeedbacks.length > 0 && (
+                <View style={styles.badgeCount}>
+                  <Text style={styles.badgeCountText}>{allFeedbacks.length}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+        }
+      />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {viewMode === 'generator' ? (
+          <>
+            {/* ══ 3-STEP WIZARD PROGRESS BAR ══ */}
+            <View
+              style={[
+                styles.wizardContainer,
+                {
+                  backgroundColor: isDark ? '#181722' : '#FFFFFF',
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <View style={styles.wizardRow}>
+                {[
+                  { step: 1, title: '1. Canvas', subtitle: activeTemplateMeta.name },
+                  { step: 2, title: '2. Details', subtitle: 'Design & Link' },
+                  { step: 3, title: '3. Export', subtitle: '300 DPI Print' },
+                ].map((s) => {
+                  const isActive = activeStep === s.step;
+                  const isPassed = activeStep > s.step;
+                  return (
+                    <Pressable
+                      key={s.step}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setActiveStep(s.step as 1 | 2 | 3);
+                      }}
+                      style={[
+                        styles.stepBtn,
+                        {
+                          backgroundColor: isActive
+                            ? isDark
+                              ? '#143126'
+                              : '#ECFDF5'
+                            : isDark
+                            ? '#201F2C'
+                            : '#F8FAFC',
+                          borderColor: isActive
+                            ? '#0A4737'
+                            : isPassed
+                            ? isDark
+                              ? '#1E3A2F'
+                              : '#A7F3D0'
+                            : colors.border,
+                        },
+                      ]}
+                    >
+                      <View style={styles.stepTitleRow}>
+                        <Text
+                          style={[
+                            styles.stepTitle,
+                            {
+                              color: isActive
+                                ? isDark
+                                  ? '#6EE7B7'
+                                  : '#0A4737'
+                                : colors.foreground,
+                              fontWeight: isActive ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {s.title}
+                        </Text>
+                        {isPassed && (
+                          <Ionicons name="checkmark-circle" size={14} color="#0A4737" />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.stepSubtitle,
+                          { color: colors.mutedForeground },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {s.subtitle}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* ══ STEP 1: CHOOSE CANVAS GALLERY ══ */}
+            {activeStep === 1 && (
+              <CanvasGallery
+                selectedCanvas={selectedCanvas}
+                onSelectCanvas={handleSelectCanvas}
+                onNextStep={() => setActiveStep(2)}
+                config={canvasConfig}
+                styles={qrStyles}
+                qrContent={computedQRContent}
+              />
+            )}
+
+            {/* ══ STEP 2: BUSINESS & PAYLOAD DETAILS ══ */}
+            {activeStep === 2 && (
+              <CanvasFormInputs
+                canvasId={selectedCanvas}
+                config={canvasConfig}
+                onChangeConfig={setCanvasConfig}
+                styles={qrStyles}
+                onChangeStyles={setQRStyles}
+                qrType={qrType}
+                onChangeQrType={setQrType}
+                title={title}
+                onChangeTitle={(v) => {
+                  setTitle(v);
+                  setIsTitleCustomized(true);
                 }}
-              >
-                <Ionicons
-                  name={cat.icon}
-                  size={20}
-                  color={qrType === cat.id ? '#FFFFFF' : theme.text}
-                />
-                <Text
-                  style={[
-                    styles.categoryBtnText,
-                    { color: qrType === cat.id ? '#FFFFFF' : theme.text },
-                  ]}
-                >
-                  {cat.title}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Dynamic Inputs Based on Selected Category */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>2. Enter Details</Text>
-
-          {qrType === 'url' && (
-            <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Website URL</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={url}
-                onChangeText={setUrl}
-                placeholder="https://yourwebsite.com"
-                placeholderTextColor={theme.mutedText}
-                autoCapitalize="none"
-                keyboardType="url"
+                urlContent={urlContent}
+                onChangeUrlContent={setUrlContent}
+                wifiSsid={wifiSsid}
+                onChangeWifiSsid={setWifiSsid}
+                wifiPassword={wifiPassword}
+                onChangeWifiPassword={setWifiPassword}
+                wifiEncryption={wifiEncryption}
+                onChangeWifiEncryption={setWifiEncryption}
+                vcardFirst={vcardFirst}
+                onChangeVcardFirst={setVcardFirst}
+                vcardLast={vcardLast}
+                onChangeVcardLast={setVcardLast}
+                vcardPhone={vcardPhone}
+                onChangeVcardPhone={setVcardPhone}
+                vcardEmail={vcardEmail}
+                onChangeVcardEmail={setVcardEmail}
+                vcardOrg={vcardOrg}
+                onChangeVcardOrg={setVcardOrg}
+                vcardTitle={vcardTitle}
+                onChangeVcardTitle={setVcardTitle}
+                vcardUrl={vcardUrl}
+                onChangeVcardUrl={setVcardUrl}
+                googleReviewUrl={googleReviewUrl}
+                onChangeGoogleReviewUrl={setGoogleReviewUrl}
+                reviewBizName={reviewBizName}
+                onChangeReviewBizName={setReviewBizName}
+                reviewSuccessMsg={reviewSuccessMsg}
+                onChangeReviewSuccessMsg={setReviewSuccessMsg}
+                reviewDesc={reviewDesc}
+                onChangeReviewDesc={setReviewDesc}
+                emailTo={emailTo}
+                onChangeEmailTo={setEmailTo}
+                emailSubject={emailSubject}
+                onChangeEmailSubject={setEmailSubject}
+                emailBody={emailBody}
+                onChangeEmailBody={setEmailBody}
+                onNextStep={() => setActiveStep(3)}
               />
-            </View>
-          )}
+            )}
 
-          {qrType === 'whatsapp' && (
-            <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>WhatsApp Number (with Country Code)</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={waPhone}
-                onChangeText={setWaPhone}
-                placeholder="919876543210"
-                placeholderTextColor={theme.mutedText}
-                keyboardType="phone-pad"
+            {/* ══ STEP 3: PREVIEW & EXPORT ══ */}
+            {activeStep === 3 && (
+              <CanvasPreview
+                canvasId={selectedCanvas}
+                config={canvasConfig}
+                styles={qrStyles}
+                qrContent={computedQRContent}
+                qrType={qrType}
+                title={title}
+                onSaveToDashboard={handleSaveToDashboard}
+                isSaving={isSaving}
+                isSaved={Boolean(activeQRId)}
               />
+            )}
 
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Prefilled Message</Text>
-              <TextInput
-                style={[styles.input, { height: 75, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={waMessage}
-                onChangeText={setWaMessage}
-                placeholder="Hi! I am interested in..."
-                placeholderTextColor={theme.mutedText}
-                multiline
-              />
-            </View>
-          )}
-
-          {qrType === 'upi' && (
-            <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>UPI ID (VPA)</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={upiVpa}
-                onChangeText={setUpiVpa}
-                placeholder="merchant@okhdfcbank"
-                placeholderTextColor={theme.mutedText}
-                autoCapitalize="none"
-              />
-
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Payee Business Name</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={upiName}
-                onChangeText={setUpiName}
-                placeholder="GetAiPilot Store"
-                placeholderTextColor={theme.mutedText}
-              />
-
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Fixed Amount (₹ INR - Optional)</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={upiAmount}
-                onChangeText={setUpiAmount}
-                placeholder="499"
-                placeholderTextColor={theme.mutedText}
-                keyboardType="numeric"
-              />
-            </View>
-          )}
-
-          {qrType === 'wifi' && (
-            <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Wi-Fi Network Name (SSID)</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={wifiSsid}
-                onChangeText={setWifiSsid}
-                placeholder="Office_5G_Guest"
-                placeholderTextColor={theme.mutedText}
-                autoCapitalize="none"
-              />
-
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Wi-Fi Password</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={wifiPass}
-                onChangeText={setWifiPass}
-                placeholder="SecurityPassword123"
-                placeholderTextColor={theme.mutedText}
-                autoCapitalize="none"
-                secureTextEntry
-              />
-            </View>
-          )}
-
-          {qrType === 'contact' && (
-            <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Full Name</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={contactName}
-                onChangeText={setContactName}
-                placeholder="Sarah Connor"
-                placeholderTextColor={theme.mutedText}
-              />
-
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Phone Number</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                placeholder="+91 98765 43210"
-                placeholderTextColor={theme.mutedText}
-                keyboardType="phone-pad"
-              />
-
-              <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 10 }]}>Email Address</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={contactEmail}
-                onChangeText={setContactEmail}
-                placeholder="sarah@skynet.ai"
-                placeholderTextColor={theme.mutedText}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-          )}
-
-          {qrType === 'text' && (
-            <View>
-              <Text style={[styles.inputLabel, { color: theme.mutedText }]}>Plain Text / Note</Text>
-              <TextInput
-                style={[styles.input, { height: 90, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                value={textContent}
-                onChangeText={setTextContent}
-                placeholder="Type your message, secret code, or note..."
-                placeholderTextColor={theme.mutedText}
-                multiline
-              />
-            </View>
-          )}
-
-          {/* Color Customizer */}
-          <Text style={[styles.inputLabel, { color: theme.mutedText, marginTop: 16 }]}>3. Custom QR Code Color</Text>
-          <View style={styles.colorPaletteRow}>
-            {QR_COLORS.map((c, i) => (
-              <Pressable
-                key={i}
-                style={[
-                  styles.colorCircleBtn,
-                  { backgroundColor: c.color },
-                  selectedColor.color === c.color && styles.colorCircleBtnActive,
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedColor(c);
-                }}
-              >
-                {selectedColor.color === c.color && (
-                  <Ionicons name="checkmark" size={13} color="#FFFFFF" />
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* ── LIVE SCANNABLE QR CODE CANVAS ──────────────────────────── */}
-        {payload ? (
-          <View style={[styles.qrCanvasCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-            <Text style={[styles.cardTitle, { color: theme.text, textAlign: 'center', marginBottom: 4 }]}>
-              Scannable QR Code
-            </Text>
-            <Text style={[styles.cardSubtitle, { color: theme.mutedText, textAlign: 'center', marginBottom: 16 }]}>
-              High-resolution vector SVG ready for instant mobile scanning and printing.
-            </Text>
-
-            {/* Framed QR Code Chassis */}
-            <View style={styles.qrChassis}>
-              <QRCode
-                value={payload}
-                size={220}
-                color={selectedColor.color}
-                backgroundColor="#FFFFFF"
-              />
-            </View>
-
-            {/* 3-Action Button Bar */}
-            <View style={styles.actionsRow}>
-              <Pressable
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-                ]}
-                onPress={handleShare}
-              >
-                <Ionicons name="share-social-outline" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
-                <Text style={styles.actionBtnText}>Share QR</Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.actionBtn,
-                  {
-                    backgroundColor: isDark ? '#3A3549' : '#E9E6F2',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                ]}
-                onPress={handleCopyPayload}
-              >
-                <Ionicons name="copy-outline" size={15} color={theme.text} style={{ marginRight: 4 }} />
-                <Text style={[styles.actionBtnText, { color: theme.text }]}>Copy Link</Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.actionBtn,
-                  {
-                    backgroundColor: colors.products.whatsapp,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                ]}
-                onPress={handleTestPayload}
-              >
-                <Ionicons name="open-outline" size={15} color="#FFFFFF" style={{ marginRight: 4 }} />
-                <Text style={styles.actionBtnText}>Test Link</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
+            {/* ══ SAVED QR STANDEES SECTION ══ */}
+            <SavedStandeesList
+              savedCodes={savedCodes}
+              isLoading={isLoadingSaved}
+              onLoadSaved={handleLoadSavedQR}
+              onDeleteSaved={handleDeleteSaved}
+            />
+          </>
+        ) : (
+          /* ══ CUSTOMER REVIEWS TAB ══ */
+          <CustomerReviewsList
+            feedbacks={allFeedbacks}
+            isLoading={isLoadingFeedbacks}
+            onRefresh={fetchCustomerReviews}
+          />
+        )}
       </ScrollView>
     </AppScreen>
   );
@@ -433,120 +725,74 @@ export default function QRCodeGeneratorScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    padding: 16,
-    paddingBottom: 50,
-  },
-  card: {
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 0,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 12.5,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryBtn: {
-    width: '31%',
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 4,
-  },
-  categoryBtnText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  input: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13.5,
-    borderWidth: 1,
-  },
-  colorPaletteRow: {
-    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 40,
     gap: 12,
-    marginTop: 4,
   },
-  colorCircleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorCircleBtnActive: {
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    transform: [{ scale: 1.1 }],
-  },
-  qrCanvasCard: {
-    borderRadius: 24,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 0,
-  },
-  qrChassis: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 18,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
-    marginBottom: 16,
-  },
-  payloadBox: {
-    width: '100%',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  payloadLabel: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  payloadText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-  actionsRow: {
+  modePill: {
     flexDirection: 'row',
-    gap: 8,
-    width: '100%',
+    borderRadius: 12,
+    padding: 2,
+    borderWidth: 1,
   },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+  modeBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 9,
   },
-  actionBtnText: {
-    color: '#FFFFFF',
+  modeBtnActive: {
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  modeBtnText: {
+    fontSize: 11.5,
+  },
+  badgeCount: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 8,
+  },
+  badgeCountText: {
+    color: '#B91C1C',
+    fontSize: 9.5,
     fontWeight: '800',
-    fontSize: 12.5,
+  },
+  wizardContainer: {
+    padding: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  wizardRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  stepBtn: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  stepTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  stepTitle: {
+    fontSize: 11.5,
+  },
+  stepSubtitle: {
+    fontSize: 10,
+    marginTop: 2,
   },
 });

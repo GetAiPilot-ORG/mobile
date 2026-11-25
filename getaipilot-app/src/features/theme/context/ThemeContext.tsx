@@ -32,6 +32,13 @@ export const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: async () => { },
 });
 
+// Prevent React Native Android NullPointerException in setColorScheme
+if (Platform.OS === 'android') {
+  try {
+    (Appearance as any).setColorScheme = () => {};
+  } catch {}
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [systemScheme, setSystemScheme] = useState<'light' | 'dark'>(() => {
@@ -152,12 +159,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    try {
-      if (setNWColorScheme) {
-        setNWColorScheme(themeMode === 'system' ? 'system' : activeTheme);
+    // NativeWind / react-native-css-interop delegates to Appearance.setColorScheme
+    // which throws NullPointerException on Android. Only sync NativeWind on iOS/Web.
+    if (Platform.OS !== 'android') {
+      try {
+        if (setNWColorScheme) {
+          setNWColorScheme(themeMode === 'system' ? 'system' : activeTheme);
+        }
+      } catch (e) {
+        // safe fallback
       }
-    } catch (e) {
-      // safe fallback
     }
   }, [themeMode, activeTheme, setNWColorScheme]);
 
