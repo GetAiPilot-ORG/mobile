@@ -6,13 +6,10 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SvgXml } from 'react-native-svg';
 import { CanvasTemplateId, CANVAS_TEMPLATES, CanvasTemplateMeta, CanvasConfig, QRStyles } from './types';
 import { NativeCanvasTemplate } from './NativeCanvasTemplate';
-import { TEMPLATE_RASTER_IMAGES, TEMPLATE_SVG_STRINGS } from './templateAssets';
 import { useTheme, getColors } from '@/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -266,29 +263,13 @@ export const CanvasGallery: React.FC<CanvasGalleryProps> = ({
                   },
                 ]}
               >
-                {TEMPLATE_SVG_STRINGS[item.id] ? (
-                  <View style={{ width: '100%', height: '100%', padding: 6, alignItems: 'center', justifyContent: 'center' }}>
-                    <SvgXml
-                      xml={TEMPLATE_SVG_STRINGS[item.id]}
-                      width="100%"
-                      height="100%"
-                    />
-                  </View>
-                ) : TEMPLATE_RASTER_IMAGES[item.id] ? (
-                  <Image
-                    source={TEMPLATE_RASTER_IMAGES[item.id]}
-                    style={styles.templateImage}
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <NativeCanvasTemplate
-                    canvasId={item.id}
-                    config={config}
-                    styles={qrStyles}
-                    qrContent={qrContent}
-                    scale={0.52}
-                  />
-                )}
+                <NativeCanvasTemplate
+                  canvasId={item.id}
+                  config={config}
+                  styles={qrStyles}
+                  qrContent={qrContent}
+                  scale={0.48}
+                />
               </View>
 
               {/* Title & Tagline */}

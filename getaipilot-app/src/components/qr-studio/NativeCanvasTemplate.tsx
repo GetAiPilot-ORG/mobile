@@ -546,32 +546,41 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
       case 'social-card': {
         const c = config.socialCard || {
           subtitle: 'Hospitality & Dining Experience',
-          bgTheme: 'gradient-emerald',
+          bgTheme: 'mountain',
         };
-        const bg = c.bgTheme === 'gradient-purple' ? '#5B21B6' : '#064E3B';
+        const bgPhoto = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';
 
         return (
-          <View style={[styles.cardBase, { backgroundColor: bg, width: 310 * scale, padding: 14 * scale }]}>
-            <View style={[styles.socialFrostedInner, { padding: 14 * scale, borderRadius: 20 }]}>
-              <View style={[styles.avatarCircle, { width: 44 * scale, height: 44 * scale }]}>
-                <Text style={[styles.avatarText, { fontSize: 14 * scale }]}>
-                  {config.brandName ? config.brandName.slice(0, 2).toUpperCase() : 'KD'}
+          <View style={[styles.cardBase, { width: 310 * scale, padding: 0, overflow: 'hidden', position: 'relative' }]}>
+            <Image
+              source={{ uri: bgPhoto }}
+              style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
+              resizeMode="cover"
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 22 }]} />
+
+            <View style={{ padding: 14 * scale, width: '100%', alignItems: 'center' }}>
+              <View style={[styles.socialFrostedInner, { padding: 12 * scale, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', width: '92%', alignItems: 'center' }]}>
+                <View style={[styles.avatarCircle, { width: 38 * scale, height: 38 * scale, backgroundColor: '#0A4737', borderRadius: 19 * scale, alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={[styles.avatarText, { fontSize: 12 * scale, color: '#FFFFFF', fontWeight: 'bold' }]}>
+                    {config.brandName ? config.brandName.slice(0, 2).toUpperCase() : 'GP'}
+                  </Text>
+                </View>
+
+                <Text style={[styles.socialBrand, { fontSize: 13 * scale, fontWeight: '800', color: '#0F172A', marginTop: 4 * scale }]}>
+                  {config.brandName || 'GetAiPilot'}
                 </Text>
-              </View>
+                <Text style={[styles.socialSubtitle, { fontSize: 8.5 * scale, color: '#64748B', marginTop: 1 }]}>
+                  {c.subtitle || 'Hospitality & Dining Experience'}
+                </Text>
 
-              <Text style={[styles.socialBrand, { fontSize: 13.5 * scale }]}>
-                {config.brandName || 'Keystone Designs'}
-              </Text>
-              <Text style={[styles.socialSubtitle, { fontSize: 9.5 * scale }]}>
-                {c.subtitle || 'Graphic Design & Marketing'}
-              </Text>
+                <View style={[styles.qrPlateWhite, { marginVertical: 6 * scale, padding: 6 * scale, borderRadius: 12 * scale }]}>
+                  <QRCode value={content} size={qrSize - 25} color="#000000" backgroundColor="#FFFFFF" />
+                </View>
 
-              <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 6 * scale }]}>
-                <QRCode value={content} size={qrSize - 15} color="#000000" backgroundColor="#FFFFFF" />
-              </View>
-
-              <View style={[styles.socialFollowBtn, { paddingVertical: 5 * scale, width: '100%' }]}>
-                <Text style={[styles.socialFollowText, { fontSize: 10 * scale }]}>Follow Our Story</Text>
+                <View style={[styles.socialFollowBtn, { paddingVertical: 4 * scale, width: '85%', backgroundColor: '#0A4737', borderRadius: 10 * scale, alignItems: 'center', marginTop: 2 * scale }]}>
+                  <Text style={[styles.socialFollowText, { fontSize: 9 * scale, color: '#FFFFFF', fontWeight: 'bold' }]}>Follow Our Story</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -753,31 +762,56 @@ export const NativeCanvasTemplate: React.FC<NativeCanvasTemplateProps> = ({
           platform: 'spotify',
           username: 'getaipilot',
           actionText: 'Scan the QR Code to listen',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
         };
         const platformTheme: Record<string, { bg: string; token: string; icon: any }> = {
-          spotify: { bg: '#128A42', token: '#1ED760', icon: 'musical-notes' },
+          spotify: { bg: '#16a34a', token: '#22c55e', icon: 'musical-notes' },
           instagram: { bg: '#8134AF', token: '#E1306C', icon: 'logo-instagram' },
           youtube: { bg: '#990A0A', token: '#FF0000', icon: 'logo-youtube' },
           tiktok: { bg: '#181822', token: '#25F4EE', icon: 'musical-notes' },
         };
         const p = platformTheme[c.platform] || platformTheme.spotify;
+        const avatarUrl = c.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
 
         return (
-          <View style={[styles.cardBase, { backgroundColor: p.bg, width: 310 * scale, padding: 16 * scale }]}>
-            <View style={[styles.socialShowcaseInner, { padding: 14 * scale, borderRadius: 22 }]}>
-              <View style={[styles.showcaseToken, { backgroundColor: p.token, width: 36 * scale, height: 36 * scale }]}>
-                <Ionicons name={p.icon} size={18 * scale} color="#FFFFFF" />
+          <View style={[styles.cardBase, { backgroundColor: p.bg, width: 310 * scale, padding: 14 * scale, position: 'relative', overflow: 'hidden' }]}>
+            {/* 3D Floating Tokens in background */}
+            <View style={{ position: 'absolute', top: 12 * scale, left: -10 * scale, width: 34 * scale, height: 34 * scale, borderRadius: 17 * scale, backgroundColor: p.token, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 }}>
+              <Ionicons name={p.icon} size={18 * scale} color="#FFFFFF" />
+            </View>
+            <View style={{ position: 'absolute', top: 28 * scale, right: -12 * scale, width: 38 * scale, height: 38 * scale, borderRadius: 19 * scale, backgroundColor: p.token, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 }}>
+              <Ionicons name={p.icon} size={20 * scale} color="#FFFFFF" />
+            </View>
+            <View style={{ position: 'absolute', bottom: 16 * scale, left: -8 * scale, width: 36 * scale, height: 36 * scale, borderRadius: 18 * scale, backgroundColor: p.token, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 }}>
+              <Ionicons name={p.icon} size={18 * scale} color="#FFFFFF" />
+            </View>
+            <View style={{ position: 'absolute', bottom: 22 * scale, right: -10 * scale, width: 34 * scale, height: 34 * scale, borderRadius: 17 * scale, backgroundColor: p.token, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 }}>
+              <Ionicons name={p.icon} size={18 * scale} color="#FFFFFF" />
+            </View>
+
+            {/* White Neumorphic Card with Overlapping Avatar */}
+            <View style={[styles.socialShowcaseInner, { padding: 12 * scale, borderRadius: 22 * scale, marginTop: 14 * scale, backgroundColor: '#FFFFFF', width: '100%', alignItems: 'center' }]}>
+              {/* Overlapping Avatar */}
+              <View style={{ marginTop: -26 * scale, marginBottom: 4 * scale, position: 'relative' }}>
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: 44 * scale, height: 44 * scale, borderRadius: 22 * scale, borderWidth: 3 * scale, borderColor: '#FFFFFF' }}
+                  resizeMode="cover"
+                />
+                <View style={{ position: 'absolute', bottom: -2 * scale, right: -2 * scale, width: 16 * scale, height: 16 * scale, borderRadius: 8 * scale, backgroundColor: p.token, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 * scale, borderColor: '#FFFFFF' }}>
+                  <Ionicons name={p.icon} size={9 * scale} color="#FFFFFF" />
+                </View>
               </View>
 
-              <Text style={[styles.showcaseHandle, { fontSize: 14 * scale }]}>
-                @{c.username || 'getaipilot'}
+              <Text style={[styles.showcaseHandle, { fontSize: 13 * scale, fontWeight: '900', color: '#0F172A' }]}>
+                @{c.username?.replace(/^@/, '') || 'getaipilot'}
               </Text>
-              <Text style={[styles.showcaseAction, { fontSize: 9.5 * scale }]}>
-                {c.actionText || 'Scan the QR Code to connect'}
+              <Text style={[styles.showcaseAction, { fontSize: 8.5 * scale, color: '#64748B', textAlign: 'center', marginTop: 2 * scale }]}>
+                {c.actionText || 'Scan QR Code to visit'}
               </Text>
 
-              <View style={[styles.qrPlateWhite, { marginVertical: 8 * scale, padding: 8 * scale }]}>
-                <QRCode value={content} size={qrSize - 15} color="#000000" backgroundColor="#FFFFFF" />
+              <View style={[styles.qrPlateWhite, { marginVertical: 6 * scale, padding: 6 * scale, borderRadius: 12 * scale }]}>
+                <QRCode value={content} size={qrSize - 20} color="#000000" backgroundColor="#FFFFFF" />
               </View>
             </View>
           </View>
