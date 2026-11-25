@@ -244,7 +244,7 @@ export default function HomeScreen() {
   );
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
-    if (Platform.OS !== "web") Haptics.impactAsync(style);
+    if (Platform.OS !== "web") Haptics.impactAsync(style).catch(() => {});
   };
 
   const open = (route: string) => {
