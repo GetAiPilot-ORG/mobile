@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import { soundService } from '../../services/soundFeedbackService';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { HOME_SPACING, HOME_RADIUS } from '@/theme/homeTokens';

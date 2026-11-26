@@ -21,13 +21,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  Building02Icon,
-  UserIcon,
-  ArrowRight01Icon,
-  ArrowLeft01Icon,
-  Logout01Icon,
-} from '@hugeicons/core-free-icons';
+import Building02Icon from '@hugeicons/core-free-icons/Building02Icon';
+import UserIcon from '@hugeicons/core-free-icons/UserIcon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
+import Logout01Icon from '@hugeicons/core-free-icons/Logout01Icon';
 
 import { getColors, useTheme } from '@/theme';
 import { AnimatedAiLogo } from '../src/components/home/AnimatedAiLogo';
