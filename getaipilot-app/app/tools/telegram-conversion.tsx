@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
@@ -21,6 +22,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   Activity01Icon,
   Add01Icon,
+  ArrowRight01Icon,
   ArrowUpRight01Icon,
   BrowserIcon,
   Cancel01Icon,
@@ -32,6 +34,7 @@ import {
   ShieldCheckIcon,
   TelegramIcon,
 } from "@/constants/icons";
+import { Ionicons } from "@expo/vector-icons";
 import { AppColors, getColors, useTheme } from "@/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
@@ -99,6 +102,7 @@ export default function TelegramConversionScreen() {
   const authUser = useAuthStore((s) => s.user);
 
   const [activeTab, setActiveTab] = useState<"setup" | "analytics">("setup");
+  const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1);
   const [inventory, setInventory] = useState<TrackingInventory>(emptyInventory);
   const [fallbackPages, setFallbackPages] = useState<CreatedTemplatePage[]>([]);
   const [fallbackChannels, setFallbackChannels] = useState<AvailableChannel[]>([]);
@@ -120,6 +124,9 @@ export default function TelegramConversionScreen() {
   const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
   const [channelSearch, setChannelSearch] = useState("");
 
+  // Website Type Selection: Internal (GetAiPilot Templates) vs External (Custom Domain)
+  const [websiteType, setWebsiteType] = useState<"internal" | "external">("internal");
+
   // Custom Website Form
   const [siteName, setSiteName] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
@@ -132,6 +139,7 @@ export default function TelegramConversionScreen() {
     expires_at: string;
   } | null>(null);
   const [manualChannel, setManualChannel] = useState("");
+  const [manualAccordionOpen, setManualAccordionOpen] = useState(false);
   const [ownBotToken, setOwnBotToken] = useState("");
   const [ownChatId, setOwnChatId] = useState("");
 
@@ -215,7 +223,7 @@ export default function TelegramConversionScreen() {
           setActiveLink(null);
           await loadData(false);
         }
-      } catch {}
+      } catch { }
     };
 
     const timer = setInterval(() => void poll(), 4000);
@@ -288,6 +296,35 @@ export default function TelegramConversionScreen() {
     () => inventory.sites.filter((s) => Boolean(s.verified_at)),
     [inventory.sites],
   );
+
+  const step1Done = inventory.connections.length > 0;
+  const step2Done = verifiedSites.length > 0;
+  const step3Done = inventory.campaigns.length > 0;
+
+  const selectedSite = useMemo(
+    () => inventory.sites.find((s) => s.id === selectedSiteId) || null,
+    [inventory.sites, selectedSiteId],
+  );
+
+  const selectedConnection = useMemo(
+    () =>
+      inventory.connections.find((c) => c.id === selectedConnectionId) ||
+      (inventory.connections.length > 0 ? inventory.connections[0] : null),
+    [inventory.connections, selectedConnectionId],
+  );
+
+  const isSelectedSiteInternal = useMemo(() => {
+    if (!selectedSite) return false;
+    return Boolean(
+      selectedSite.landing_page_id ||
+      selectedSite.bio_page_id ||
+      templates.some(
+        (t) =>
+          t.id === selectedSite.landing_page_id ||
+          normalizeSiteUrl(getDesignUrl(t)) === normalizeSiteUrl(selectedSite.url),
+      ),
+    );
+  }, [selectedSite, templates]);
 
   const availableChannels = useMemo(() => {
     const connByChatId = new Map(
@@ -384,13 +421,13 @@ export default function TelegramConversionScreen() {
       "site",
       isBio
         ? {
-            name: page.page_title || page.slug,
-            bio_page_id: page.id,
-          }
+          name: page.page_title || page.slug,
+          bio_page_id: page.id,
+        }
         : {
-            name: page.page_title || page.slug,
-            landing_page_id: page.id,
-          },
+          name: page.page_title || page.slug,
+          landing_page_id: page.id,
+        },
       "Design Verified",
       `${page.page_title} is connected and verified for Telegram tracking.`,
     );
@@ -504,7 +541,7 @@ export default function TelegramConversionScreen() {
     );
     if (res?.url) {
       setActiveLink(res);
-      Linking.openURL(res.url).catch(() => {});
+      Linking.openURL(res.url).catch(() => { });
     }
   };
 
@@ -532,7 +569,7 @@ export default function TelegramConversionScreen() {
     );
     if (res?.url) {
       setActiveLink(res);
-      Linking.openURL(res.url).catch(() => {});
+      Linking.openURL(res.url).catch(() => { });
     }
   };
 
@@ -597,6 +634,7 @@ export default function TelegramConversionScreen() {
     );
     if (saved?.id) {
       setCampaignName("");
+      setActiveTab("analytics");
     }
   };
 
@@ -623,41 +661,64 @@ export default function TelegramConversionScreen() {
     <AppScreen safeArea={false} backgroundColor={colors.background}>
       <AppTopBar title="Telegram Conversion" showBack={true} />
 
-      <ScrollView
-        style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              void loadData(false);
-            }}
-            tintColor={colors.primary}
-          />
-        }
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
+        <ScrollView
+          style={{ flex: 1, backgroundColor: colors.background }}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                void loadData(false);
+              }}
+              tintColor={colors.primary}
+            />
+          }
+        >
         {/* Top Hero Banner */}
+        {/* Top Hero Banner - Graphical & Minimal Text */}
         <View style={styles.heroCard}>
           <View style={styles.heroTopRow}>
-            <View style={styles.heroIconWrap}>
-              <HugeiconsIcon
-                icon={TelegramIcon}
-                size={22}
-                color={isDark ? "#38BDF8" : "#0284C7"}
-                strokeWidth={1.9}
-              />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={styles.heroIconWrap}>
+                <HugeiconsIcon
+                  icon={TelegramIcon}
+                  size={20}
+                  color={isDark ? "#38BDF8" : "#0284C7"}
+                  strokeWidth={2}
+                />
+              </View>
+              <View>
+                <Text style={styles.heroTitle}>Telegram Conversions</Text>
+                <Text style={styles.heroSubtitle}>Track verified joins & ad spend ROI</Text>
+              </View>
             </View>
             <View style={styles.advancedBadge}>
-              <Text style={styles.advancedBadgeText}>ADVANCED</Text>
+              <Text style={styles.advancedBadgeText}>PRO</Text>
             </View>
           </View>
-          <Text style={styles.heroTitle}>Telegram Conversion Tracking</Text>
-          <Text style={styles.heroSubtitle}>
-            Verify your created landing templates or your own website, link your
-            Telegram account & channel, and track real verified joins.
-          </Text>
+
+          {/* Graphic Feature Badges */}
+          <View style={styles.heroPillRow}>
+            <View style={styles.heroFeaturePill}>
+              <Ionicons name="flash" size={11} color={isDark ? "#38BDF8" : "#0284C7"} />
+              <Text style={styles.heroFeaturePillText}>Auto-Track</Text>
+            </View>
+            <View style={styles.heroFeaturePill}>
+              <Ionicons name="shield-checkmark" size={11} color="#059669" />
+              <Text style={styles.heroFeaturePillText}>Verified Joins</Text>
+            </View>
+            <View style={styles.heroFeaturePill}>
+              <Ionicons name="stats-chart" size={11} color="#7C3AED" />
+              <Text style={styles.heroFeaturePillText}>Real-Time ROI</Text>
+            </View>
+          </View>
         </View>
 
         {/* Segmented Tabs */}
@@ -673,13 +734,19 @@ export default function TelegramConversionScreen() {
                 }}
                 style={[styles.segmentBtn, active && styles.segmentBtnActive]}
               >
+                <Ionicons
+                  name={tabKey === "setup" ? "layers-outline" : "bar-chart-outline"}
+                  size={14}
+                  color={active ? colors.text : colors.textSecondary}
+                  style={{ marginRight: 6 }}
+                />
                 <Text
                   style={[
                     styles.segmentBtnText,
                     active && styles.segmentBtnTextActive,
                   ]}
                 >
-                  {tabKey === "setup" ? "Pages & Setup" : "Analytics & Campaigns"}
+                  {tabKey === "setup" ? "Setup Wizard" : "Analytics"}
                 </Text>
               </Pressable>
             );
@@ -698,238 +765,1737 @@ export default function TelegramConversionScreen() {
         {loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading templates & connections...</Text>
+            <Text style={styles.loadingText}>Loading...</Text>
           </View>
         ) : activeTab === "setup" ? (
           <>
-            {/* 1. ALL CREATED DESIGNS DROPDOWN + VERIFIED BADGE */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
+            {/* ═══════════════════════════════════════════════════════════════════════
+                STEP PROGRESS TRACKER (Interactive 3-Step Wizard Flow)
+                ═══════════════════════════════════════════════════════════════════════ */}
+            <View style={styles.stepTrackerCard}>
+              <View style={styles.stepTrackerHeader}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View style={styles.stepNumberBadge}>
+                    <Text style={styles.stepNumberBadgeText}>{setupStep}/3</Text>
+                  </View>
+                  <Text style={styles.stepTrackerMainTitle}>
+                    {setupStep === 1
+                      ? "Connect Channel"
+                      : setupStep === 2
+                        ? "Choose Destination"
+                        : "Launch Campaign"}
+                  </Text>
+                </View>
+
+                {/* Graphical mini progress dots */}
+                <View style={styles.stepDotsRow}>
+                  {[1, 2, 3].map((s) => (
+                    <View
+                      key={s}
+                      style={[
+                        styles.stepDot,
+                        setupStep === s
+                          ? styles.stepDotActive
+                          : setupStep > s
+                            ? styles.stepDotDone
+                            : styles.stepDotPending,
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.stepTrackerRow}>
+                {/* Step 1 Pill */}
+                <Pressable
+                  style={[
+                    styles.stepTabItem,
+                    setupStep === 1 && styles.stepTabItemActive,
+                  ]}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(1);
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.stepCircle,
+                      step1Done && styles.stepCircleDone,
+                      setupStep === 1 && styles.stepCircleActive,
+                    ]}
+                  >
+                    {step1Done ? (
+                      <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.stepCircleNum,
+                          setupStep === 1 && styles.stepCircleNumActive,
+                        ]}
+                      >
+                        1
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      style={[
+                        styles.stepItemTitle,
+                        setupStep === 1 && styles.stepItemTitleActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Channel
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepItemSub,
+                        step1Done && styles.stepItemSubDone,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {step1Done ? "Connected" : "Step 1"}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <View
+                  style={[
+                    styles.stepDivider,
+                    (setupStep > 1 || step1Done) && styles.stepDividerActive,
+                  ]}
+                />
+
+                {/* Step 2 Pill */}
+                <Pressable
+                  style={[
+                    styles.stepTabItem,
+                    setupStep === 2 && styles.stepTabItemActive,
+                  ]}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(2);
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.stepCircle,
+                      step2Done && styles.stepCircleDone,
+                      setupStep === 2 && styles.stepCircleActive,
+                    ]}
+                  >
+                    {step2Done ? (
+                      <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.stepCircleNum,
+                          setupStep === 2 && styles.stepCircleNumActive,
+                        ]}
+                      >
+                        2
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      style={[
+                        styles.stepItemTitle,
+                        setupStep === 2 && styles.stepItemTitleActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Website
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepItemSub,
+                        step2Done && styles.stepItemSubDone,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {step2Done ? "Verified" : "Step 2"}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <View
+                  style={[
+                    styles.stepDivider,
+                    (setupStep > 2 || step2Done) && styles.stepDividerActive,
+                  ]}
+                />
+
+                {/* Step 3 Pill */}
+                <Pressable
+                  style={[
+                    styles.stepTabItem,
+                    setupStep === 3 && styles.stepTabItemActive,
+                  ]}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(3);
+                  }}
+                >
+                  <View
+                    style={[
+                      styles.stepCircle,
+                      step3Done && styles.stepCircleDone,
+                      setupStep === 3 && styles.stepCircleActive,
+                    ]}
+                  >
+                    {step3Done ? (
+                      <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.stepCircleNum,
+                          setupStep === 3 && styles.stepCircleNumActive,
+                        ]}
+                      >
+                        3
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                      style={[
+                        styles.stepItemTitle,
+                        setupStep === 3 && styles.stepItemTitleActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Campaign
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepItemSub,
+                        step3Done && styles.stepItemSubDone,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {step3Done ? "Active" : "Step 3"}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* ═══════════════════════════════════════════════════════════════════════
+                STEP 1: CONNECT TELEGRAM CHANNEL
+                ═══════════════════════════════════════════════════════════════════════ */}
+            {setupStep === 1 && (
+              <View style={styles.sectionCard}>
+              <View style={styles.stepHeaderRow}>
+                <View style={styles.stepBadge}>
+                  <Text style={styles.stepBadgeText}>STEP 1</Text>
+                </View>
+                {inventory.connections.length > 0 ? (
+                  <View style={styles.verifiedBadge}>
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={12}
+                      color="#047857"
+                      strokeWidth={2.2}
+                    />
+                    <Text style={styles.verifiedBadgeText}>Channel Connected</Text>
+                  </View>
+                ) : (
+                  <View style={styles.pendingBadge}>
+                    <Text style={styles.pendingBadgeText}>Action Required</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.sectionHeaderLeft}>
+                <View style={styles.stepIconWrap}>
                   <HugeiconsIcon
-                    icon={Rocket01Icon}
-                    size={18}
-                    color={colors.primary}
+                    icon={TelegramIcon}
+                    size={20}
+                    color={isDark ? "#38BDF8" : "#0284C7"}
                     strokeWidth={2}
                   />
-                  <Text style={styles.sectionTitle}>Your Created Designs</Text>
                 </View>
-                <Text style={styles.countPill}>{templates.length}</Text>
-              </View>
-              <Text style={styles.sectionDesc}>
-                Select any of your created designs from the dropdown below. Once
-                verified, it shows a Verified tag and is ready for campaigns.
-              </Text>
-
-              {templates.length === 0 ? (
-                <View style={styles.emptyBox}>
-                  <Text style={styles.emptyTitle}>No created designs yet</Text>
-                  <Text style={styles.emptySubtitle}>
-                    Create a design in Landing Funnels / Bio Builder or add your
-                    own website below.
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>Connect Channel</Text>
+                  <Text style={styles.sectionDesc}>
+                    Link your Telegram account & target channel
                   </Text>
-                  <Pressable
-                    style={styles.secondaryBtn}
-                    onPress={() => router.push("/tools/landing-templates" as any)}
-                  >
-                    <Text style={styles.secondaryBtnText}>Browse Templates</Text>
-                  </Pressable>
+                </View>
+              </View>
+
+              {/* Graphic Setup Pipeline */}
+              <View style={styles.pipelineBar}>
+                <View style={[styles.pipelineStep, inventory.telegram.identity ? styles.pipelineStepActive : null]}>
+                  <Ionicons name="person" size={12} color={inventory.telegram.identity ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary} />
+                  <Text style={[styles.pipelineStepText, inventory.telegram.identity ? styles.pipelineStepTextActive : null]}>
+                    Account
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={11} color={colors.cardBorder} />
+                <View style={[styles.pipelineStep, inventory.telegram.is_admin ? styles.pipelineStepActive : null]}>
+                  <Ionicons name="shield-checkmark" size={12} color={inventory.telegram.is_admin ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary} />
+                  <Text style={[styles.pipelineStepText, inventory.telegram.is_admin ? styles.pipelineStepTextActive : null]}>
+                    Bot Admin
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={11} color={colors.cardBorder} />
+                <View style={[styles.pipelineStep, inventory.connections.length > 0 ? styles.pipelineStepActive : null]}>
+                  <Ionicons name="megaphone" size={12} color={inventory.connections.length > 0 ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary} />
+                  <Text style={[styles.pipelineStepText, inventory.connections.length > 0 ? styles.pipelineStepTextActive : null]}>
+                    Channel
+                  </Text>
+                </View>
+              </View>
+
+              {/* Telegram Account Identity Box */}
+              {inventory.telegram.identity ? (
+                <View style={styles.identityCard}>
+                  <View style={styles.titleBadgeRow}>
+                    <View style={styles.identityAvatarWrap}>
+                      <Ionicons name="person" size={16} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.identityTitle} numberOfLines={1}>
+                        {inventory.telegram.identity.display_name}
+                      </Text>
+                      <View style={styles.verifiedChip}>
+                        <Ionicons name="checkmark-circle" size={11} color="#059669" />
+                        <Text style={styles.verifiedChipText}>Verified Account</Text>
+                      </View>
+                    </View>
+                    <Pressable
+                      style={styles.dangerBtnSmall}
+                      disabled={!!busyKey}
+                      onPress={handleDisconnectTelegramAccount}
+                    >
+                      <Text style={styles.dangerBtnSmallText}>Disconnect</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ) : (
-                <>
-                  {/* Dropdown Trigger */}
+                <View style={styles.formStack}>
+                  {!inventory.telegram.configured ? (
+                    <Text style={styles.warnText}>
+                      Platform tracking bot not configured yet.
+                    </Text>
+                  ) : null}
                   <Pressable
-                    style={styles.dropdownTrigger}
-                    onPress={() => {
-                      soundService.play("click");
-                      setDesignSearch("");
-                      setDropdownOpen(true);
-                    }}
+                    style={[
+                      styles.primaryBtn,
+                      (!inventory.telegram.configured || busyKey === "tg-link") && {
+                        opacity: 0.6,
+                      },
+                    ]}
+                    disabled={!inventory.telegram.configured || !!busyKey}
+                    onPress={() => void handleLinkTelegramAccount()}
                   >
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.dropdownLabel}>
-                        Select Created Design
-                      </Text>
-                      <Text style={styles.dropdownValue} numberOfLines={1}>
-                        {selectedDesign
-                          ? `${selectedDesign.page_title} (${
-                              selectedDesign.design_type === "bio"
-                                ? "Bio"
-                                : "Landing"
-                            })`
-                          : "Choose a design..."}
-                      </Text>
-                    </View>
-                    {selectedDesign ? (
-                      findSiteForDesign(selectedDesign)?.verified_at ? (
-                        <View style={styles.verifiedBadge}>
-                          <HugeiconsIcon
-                            icon={CheckmarkCircle01Icon}
-                            size={12}
-                            color="#047857"
-                            strokeWidth={2.2}
-                          />
-                          <Text style={styles.verifiedBadgeText}>Verified</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.unverifiedBadge}>
-                          <Text style={styles.unverifiedBadgeText}>
-                            Unverified
-                          </Text>
-                        </View>
-                      )
-                    ) : null}
-                    <Text style={styles.dropdownChevron}>▾</Text>
+                    {busyKey === "tg-link" ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.primaryForeground}
+                      />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="link"
+                          size={16}
+                          color={colors.primaryForeground}
+                        />
+                        <Text style={styles.primaryBtnText}>
+                          {activeLink
+                            ? "Create Fresh Verification Link"
+                            : "Link Telegram Admin Account"}
+                        </Text>
+                      </>
+                    )}
                   </Pressable>
+                </View>
+              )}
 
-                  {/* Selected Design Card */}
-                  {selectedDesign
-                    ? (() => {
-                        const page = selectedDesign;
-                        const connectedSite = findSiteForDesign(page);
-                        const isVerified = Boolean(connectedSite?.verified_at);
-                        const isBusy = busyKey === `tpl-${page.id}`;
-                        const designUrl = getDesignUrl(page);
+              {activeLink && (
+                <View style={styles.linkStepBox}>
+                  <Text style={styles.linkStepText}>
+                    {inventory.telegram.identity
+                      ? "Tap Choose my channel inside Telegram bot and grant Invite users permission."
+                      : "Press Start in Telegram bot, then return here to confirm your account."}
+                  </Text>
+                  <Pressable
+                    style={styles.ghostBtn}
+                    onPress={() => Linking.openURL(activeLink.url).catch(() => { })}
+                  >
+                    <Text style={styles.ghostBtnText}>
+                      Open @{inventory.telegram.bot_username}
+                    </Text>
+                    <HugeiconsIcon
+                      icon={ArrowUpRight01Icon}
+                      size={13}
+                      color={colors.text}
+                      strokeWidth={2}
+                    />
+                  </Pressable>
+                </View>
+              )}
 
-                        return (
+              {linkClaimed && (
+                <View style={styles.confirmCard}>
+                  <Text style={styles.confirmTitle}>
+                    Confirm this Telegram account
+                  </Text>
+                  <Text style={styles.identityMeta}>
+                    {inventory.telegram.link?.display_name} · ID{" "}
+                    {inventory.telegram.link?.claimed_user_id}
+                  </Text>
+                  <Pressable
+                    style={[styles.primaryBtn, { marginTop: 10 }]}
+                    disabled={!!busyKey}
+                    onPress={() => void handleConfirmTelegramAccount()}
+                  >
+                    <Text style={styles.primaryBtnText}>Confirm Account</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Bot Mode Tabs with Graphics */}
+              <View style={[styles.segmentRow, { marginTop: 8 }]}>
+                {(["shared", "own"] as const).map((m) => (
+                  <Pressable
+                    key={m}
+                    onPress={() => setBotMode(m)}
+                    style={[
+                      styles.segmentBtn,
+                      botMode === m && styles.segmentBtnActive,
+                    ]}
+                  >
+                    <Ionicons
+                      name={m === "shared" ? "flash-outline" : "key-outline"}
+                      size={13}
+                      color={botMode === m ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary}
+                      style={{ marginRight: 5 }}
+                    />
+                    <Text
+                      style={[
+                        styles.segmentBtnText,
+                        botMode === m && styles.segmentBtnTextActive,
+                      ]}
+                    >
+                      {m === "shared" ? "Instant Shared Bot" : "Dedicated Bot"}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {botMode === "shared" && inventory.telegram.identity ? (
+                <View style={styles.formStack}>
+                  <View style={styles.channelsBlock}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.inputLabel}>
+                        Available Channels ({availableChannels.length})
+                      </Text>
+                      <Pressable onPress={() => void loadData(false)}>
+                        <Text style={styles.errorRetry}>Refresh</Text>
+                      </Pressable>
+                    </View>
+
+                    {availableChannels.length > 0 ? (
+                      <>
+                        <Pressable
+                          style={styles.dropdownTrigger}
+                          onPress={() => {
+                            soundService.play("click");
+                            setChannelSearch("");
+                            setChannelDropdownOpen(true);
+                          }}
+                        >
+                          <View style={styles.dropdownIconBox}>
+                            <HugeiconsIcon icon={TelegramIcon} size={15} color={colors.primary} strokeWidth={2} />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={styles.dropdownLabel}>
+                              Telegram Channel
+                            </Text>
+                            <Text style={styles.dropdownValue} numberOfLines={1}>
+                              {selectedAvailableChannel
+                                ? selectedAvailableChannel.title
+                                : "Choose a channel..."}
+                            </Text>
+                          </View>
+                          {selectedAvailableChannel?.connection_id ? (
+                            <View style={styles.verifiedBadge}>
+                              <HugeiconsIcon
+                                icon={CheckmarkCircle01Icon}
+                                size={12}
+                                color="#047857"
+                                strokeWidth={2.2}
+                              />
+                              <Text style={styles.verifiedBadgeText}>
+                                Connected
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={styles.unverifiedBadge}>
+                              <Text style={styles.unverifiedBadgeText}>
+                                Not connected
+                              </Text>
+                            </View>
+                          )}
+                          <Text style={styles.dropdownChevron}>▾</Text>
+                        </Pressable>
+
+                        {selectedAvailableChannel ? (
                           <View style={styles.itemCard}>
-                            <View style={styles.itemRow}>
-                              {page.image_url ? (
-                                <Image
-                                  source={{ uri: page.image_url }}
-                                  style={styles.thumb}
-                                  resizeMode="cover"
-                                />
-                              ) : (
-                                <View style={styles.thumbFallback}>
+                            <View style={styles.titleBadgeRow}>
+                              <Text style={styles.itemTitle} numberOfLines={1}>
+                                {selectedAvailableChannel.title}
+                              </Text>
+                              {selectedAvailableChannel.connection_id ? (
+                                <View style={styles.verifiedBadge}>
                                   <HugeiconsIcon
-                                    icon={Rocket01Icon}
-                                    size={18}
-                                    color={colors.primary}
-                                    strokeWidth={1.9}
+                                    icon={CheckmarkCircle01Icon}
+                                    size={12}
+                                    color="#047857"
+                                    strokeWidth={2.2}
                                   />
+                                  <Text style={styles.verifiedBadgeText}>
+                                    {selectedAvailableChannel.connection_status ||
+                                      "Connected"}
+                                  </Text>
+                                </View>
+                              ) : (
+                                <View style={styles.unverifiedBadge}>
+                                  <Text style={styles.unverifiedBadgeText}>
+                                    Not connected
+                                  </Text>
                                 </View>
                               )}
-
-                              <View style={{ flex: 1, minWidth: 0 }}>
-                                <View style={styles.titleBadgeRow}>
-                                  <Text style={styles.itemTitle} numberOfLines={1}>
-                                    {page.page_title}
-                                  </Text>
-                                  {isVerified ? (
-                                    <View style={styles.verifiedBadge}>
-                                      <HugeiconsIcon
-                                        icon={CheckmarkCircle01Icon}
-                                        size={12}
-                                        color="#047857"
-                                        strokeWidth={2.2}
-                                      />
-                                      <Text style={styles.verifiedBadgeText}>
-                                        Verified
-                                      </Text>
-                                    </View>
-                                  ) : (
-                                    <View style={styles.unverifiedBadge}>
-                                      <Text style={styles.unverifiedBadgeText}>
-                                        Unverified
-                                      </Text>
-                                    </View>
-                                  )}
-                                </View>
-                                <Text style={styles.itemUrl} numberOfLines={1}>
-                                  {designUrl}
-                                </Text>
-                                {page.telegram_url ? (
-                                  <Text style={styles.itemMeta} numberOfLines={1}>
-                                    Target: {page.telegram_url}
-                                  </Text>
-                                ) : null}
-                              </View>
                             </View>
-
+                            <Text style={styles.itemMeta} numberOfLines={1}>
+                              {selectedAvailableChannel.username
+                                ? `@${selectedAvailableChannel.username.replace(/^@/, "")} · `
+                                : ""}
+                              ID: {selectedAvailableChannel.chat_id}
+                            </Text>
+                            {!selectedAvailableChannel.connection_id &&
+                              inventory.telegram.bot_username ? (
+                              <Text style={styles.itemMeta}>
+                                Make @{inventory.telegram.bot_username} admin with
+                                Invite users permission, then tap Connect Channel.
+                              </Text>
+                            ) : null}
                             <View style={styles.itemActions}>
-                              <Pressable
-                                style={styles.ghostBtn}
-                                onPress={() =>
-                                  Linking.openURL(designUrl).catch(() => {})
-                                }
-                              >
-                                <Text style={styles.ghostBtnText}>Open</Text>
-                                <HugeiconsIcon
-                                  icon={ArrowUpRight01Icon}
-                                  size={13}
-                                  color={colors.text}
-                                  strokeWidth={2}
-                                />
-                              </Pressable>
-
-                              {!isVerified ? (
+                              {selectedAvailableChannel.connection_id ? (
+                                <Pressable
+                                  style={styles.outlineBtnSmall}
+                                  onPress={() => {
+                                    setSelectedConnectionId(
+                                      selectedAvailableChannel.connection_id!,
+                                    );
+                                    showNotice(
+                                      "Channel Selected",
+                                      `${selectedAvailableChannel.title} selected for campaign creation in Step 3.`,
+                                    );
+                                  }}
+                                >
+                                  <Text style={styles.outlineBtnSmallText}>
+                                    Use in Campaign
+                                  </Text>
+                                </Pressable>
+                              ) : (
                                 <Pressable
                                   style={[
                                     styles.primaryBtnSmall,
-                                    isBusy && { opacity: 0.7 },
+                                    busyKey ===
+                                    `ch-${selectedAvailableChannel.chat_id}` && {
+                                      opacity: 0.7,
+                                    },
                                   ]}
                                   disabled={!!busyKey}
-                                  onPress={() => void handleConnectTemplate(page)}
+                                  onPress={() =>
+                                    void runAction(
+                                      `ch-${selectedAvailableChannel.chat_id}`,
+                                      "connect_shared",
+                                      {
+                                        chat_id:
+                                          selectedAvailableChannel.chat_id,
+                                      },
+                                      "Channel Connected",
+                                      `${selectedAvailableChannel.title} is now connected.`,
+                                    ).then((saved) => {
+                                      if (saved?.id) {
+                                        setSelectedConnectionId(saved.id);
+                                      }
+                                    })
+                                  }
                                 >
-                                  {isBusy ? (
-                                    <ActivityIndicator
-                                      size="small"
-                                      color={colors.primaryForeground}
-                                    />
-                                  ) : (
-                                    <Text style={styles.primaryBtnSmallText}>
-                                      Verify & Connect
-                                    </Text>
-                                  )}
+                                  <Text style={styles.primaryBtnSmallText}>
+                                    Connect Channel
+                                  </Text>
                                 </Pressable>
-                              ) : (
-                                <>
-                                  <Pressable
-                                    style={styles.outlineBtnSmall}
-                                    onPress={() => {
-                                      if (connectedSite) {
-                                        setSelectedSiteId(connectedSite.id);
-                                        if (page.telegram_url) {
-                                          setOriginalTelegramUrl(page.telegram_url);
-                                        }
-                                        showNotice(
-                                          "Design Selected",
-                                          `${page.page_title} selected for campaign creation below.`,
-                                        );
-                                      }
-                                    }}
-                                  >
-                                    <Text style={styles.outlineBtnSmallText}>
-                                      Use in Campaign
-                                    </Text>
-                                  </Pressable>
-                                  {connectedSite ? (
-                                    <Pressable
-                                      style={styles.dangerBtnSmall}
-                                      disabled={!!busyKey}
-                                      onPress={() =>
-                                        handleDisconnectSite(
-                                          connectedSite.id,
-                                          page.page_title,
-                                        )
-                                      }
-                                    >
-                                      <Text style={styles.dangerBtnSmallText}>
-                                        Disconnect
-                                      </Text>
-                                    </Pressable>
-                                  ) : null}
-                                </>
                               )}
                             </View>
                           </View>
-                        );
-                      })()
-                    : null}
-                </>
+                        ) : null}
+                      </>
+                    ) : (
+                      <View style={styles.emptyGraphicBox}>
+                        <Ionicons name="megaphone-outline" size={24} color={colors.primary} />
+                        <Text style={styles.emptyGraphicTitle}>No Synced Channels</Text>
+                        <Text style={styles.emptyGraphicSub}>Select a channel via Telegram or add manually</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Pressable
+                    style={styles.secondaryBtn}
+                    disabled={!inventory.telegram.configured || !!busyKey}
+                    onPress={() => void handleOpenChannelPicker()}
+                  >
+                    <Text style={styles.secondaryBtnText}>
+                      Choose Channel in Telegram
+                    </Text>
+                  </Pressable>
+
+                  {/* Accordion for Manual Channel Entry */}
+                  <View style={styles.accordionWrap}>
+                    <Pressable
+                      style={styles.accordionHeader}
+                      onPress={() => {
+                        soundService.play("click");
+                        setManualAccordionOpen((prev) => !prev);
+                      }}
+                    >
+                      <View style={styles.accordionHeaderLeft}>
+                        <View style={styles.accordionIconBox}>
+                          <Ionicons
+                            name="create-outline"
+                            size={15}
+                            color={colors.primary}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.accordionTitle}>
+                            Enter Channel Manually
+                          </Text>
+                          <Text style={styles.accordionSubtitle}>
+                            Add via @username or Chat ID if not listed
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.accordionChevronBox}>
+                        <Ionicons
+                          name={manualAccordionOpen ? "chevron-up" : "chevron-down"}
+                          size={16}
+                          color={colors.textSecondary}
+                        />
+                      </View>
+                    </Pressable>
+
+                    {manualAccordionOpen && (
+                      <View style={styles.accordionBody}>
+                        <Text style={styles.accordionDesc}>
+                          Make sure @{inventory.telegram.bot_username || "the tracking bot"} is added as an admin with Invite users permission in your channel, then enter your channel username or chat ID below.
+                        </Text>
+
+                        <Text style={styles.inputLabel}>
+                          Channel Username or Chat ID
+                        </Text>
+                        <TextInput
+                          value={manualChannel}
+                          onChangeText={setManualChannel}
+                          placeholder="@yourchannel or -1001234567890"
+                          placeholderTextColor={colors.inputPlaceholder}
+                          autoCapitalize="none"
+                          style={styles.input}
+                        />
+                        <Pressable
+                          style={[
+                            styles.outlineBtn,
+                            (!manualChannel.trim() || !!busyKey) && { opacity: 0.6 },
+                          ]}
+                          disabled={!manualChannel.trim() || !!busyKey}
+                          onPress={() => void handleConnectManualChannel()}
+                        >
+                          {busyKey === "tg-bind" ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                          ) : (
+                            <Text style={styles.outlineBtnText}>
+                              Verify & Connect Channel
+                            </Text>
+                          )}
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ) : null}
+
+              {botMode === "own" ? (
+                <View style={styles.formStack}>
+                  <Text style={styles.inputLabel}>Dedicated Bot Token</Text>
+                  <TextInput
+                    value={ownBotToken}
+                    onChangeText={setOwnBotToken}
+                    placeholder="123456:ABC-DEF..."
+                    placeholderTextColor={colors.inputPlaceholder}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    style={styles.input}
+                  />
+                  <Text style={styles.inputLabel}>Channel Username or ID</Text>
+                  <TextInput
+                    value={ownChatId}
+                    onChangeText={setOwnChatId}
+                    placeholder="@yourchannel or -100..."
+                    placeholderTextColor={colors.inputPlaceholder}
+                    autoCapitalize="none"
+                    style={styles.input}
+                  />
+                  <Pressable
+                    style={[
+                      styles.primaryBtn,
+                      (!inventory.telegram.identity || !!busyKey) && {
+                        opacity: 0.6,
+                      },
+                    ]}
+                    disabled={!inventory.telegram.identity || !!busyKey}
+                    onPress={() => void handleConnectOwnBot()}
+                  >
+                    <Text style={styles.primaryBtnText}>
+                      Verify & Connect Own Bot
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {/* Connected Channels List */}
+              {inventory.connections.length > 0 && (
+                <View style={[styles.listStack, { marginTop: 12 }]}>
+                  <Text style={styles.subHeading}>Connected Channels</Text>
+                  {inventory.connections.map((conn) => (
+                    <View key={conn.id} style={styles.itemCard}>
+                      <View style={styles.titleBadgeRow}>
+                        <Text style={styles.itemTitle} numberOfLines={1}>
+                          {conn.title}
+                        </Text>
+                        <View
+                          style={
+                            conn.status === "healthy"
+                              ? styles.verifiedBadge
+                              : styles.pendingBadge
+                          }
+                        >
+                          <Text
+                            style={
+                              conn.status === "healthy"
+                                ? styles.verifiedBadgeText
+                                : styles.pendingBadgeText
+                            }
+                          >
+                            {conn.status}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.itemMeta}>
+                        @{conn.bot_username} ·{" "}
+                        {conn.bot_mode === "shared"
+                          ? "GetAiPilot bot"
+                          : "Own bot"}
+                      </Text>
+                      <View style={styles.itemActions}>
+                        <Pressable
+                          style={styles.ghostBtn}
+                          disabled={!!busyKey}
+                          onPress={() =>
+                            void runAction(
+                              `health-${conn.id}`,
+                              "health",
+                              { id: conn.id },
+                              "Connection Check",
+                            )
+                          }
+                        >
+                          <Text style={styles.ghostBtnText}>Check Health</Text>
+                        </Pressable>
+                        <Pressable
+                          style={styles.dangerBtnSmall}
+                          disabled={!!busyKey}
+                          onPress={() =>
+                            handleDisconnectConnection(conn.id, conn.title)
+                          }
+                        >
+                          <Text style={styles.dangerBtnSmallText}>
+                            Disconnect
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </View>
               )}
+
+              {/* Step 1 Completion Feedback */}
+              {inventory.connections.length > 0 ? (
+                <View style={styles.completionBanner}>
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle01Icon}
+                    size={16}
+                    color="#047857"
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.completionBannerText}>
+                    Connected: {inventory.connections[0].title}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View style={styles.wizardActionBox}>
+                <Pressable
+                  style={styles.wizardNextBtn}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(2);
+                  }}
+                >
+                  <Text style={styles.wizardNextBtnText}>
+                    Next: Choose Destination
+                  </Text>
+                  <HugeiconsIcon
+                    icon={ArrowRight01Icon}
+                    size={17}
+                    color="#FFFFFF"
+                    strokeWidth={2.4}
+                  />
+                </Pressable>
+              </View>
             </View>
+          )}
+
+            {/* ═══════════════════════════════════════════════════════════════════════
+                STEP 2: CONNECT WEBSITE / LANDING PAGE (INTERNAL vs EXTERNAL)
+                ═══════════════════════════════════════════════════════════════════════ */}
+            {setupStep === 2 && (
+              <View style={styles.sectionCard}>
+              <View style={styles.stepHeaderRow}>
+                <View style={styles.stepBadge}>
+                  <Text style={styles.stepBadgeText}>STEP 2</Text>
+                </View>
+                {verifiedSites.length > 0 ? (
+                  <View style={styles.verifiedBadge}>
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={12}
+                      color="#047857"
+                      strokeWidth={2.2}
+                    />
+                    <Text style={styles.verifiedBadgeText}>Website Verified</Text>
+                  </View>
+                ) : (
+                  <View style={styles.pendingBadge}>
+                    <Text style={styles.pendingBadgeText}>Action Required</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.sectionHeaderLeft}>
+                <View style={styles.stepIconWrap}>
+                  <HugeiconsIcon
+                    icon={BrowserIcon}
+                    size={20}
+                    color={colors.primary}
+                    strokeWidth={2}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>Destination Page</Text>
+                  <Text style={styles.sectionDesc}>
+                    Select where incoming traffic lands
+                  </Text>
+                </View>
+              </View>
+
+              {/* TWO TYPES SELECTOR CARDS: INTERNAL vs EXTERNAL */}
+              <View style={styles.typeSelectorGrid}>
+                {/* Internal Option */}
+                <Pressable
+                  style={[
+                    styles.typeCard,
+                    websiteType === "internal" && styles.typeCardActive,
+                  ]}
+                  onPress={() => {
+                    soundService.play("click");
+                    setWebsiteType("internal");
+                  }}
+                >
+                  <View style={styles.typeCardTop}>
+                    <View
+                      style={[
+                        styles.typeIconBox,
+                        websiteType === "internal" && styles.typeIconBoxActive,
+                      ]}
+                    >
+                      <HugeiconsIcon
+                        icon={Rocket01Icon}
+                        size={18}
+                        color={websiteType === "internal" ? colors.primary : colors.textSecondary}
+                        strokeWidth={2}
+                      />
+                    </View>
+                    <View style={styles.typeTagInternal}>
+                      <Text style={styles.typeTagInternalText}>Instant</Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.typeCardTitle,
+                      websiteType === "internal" && styles.typeCardTitleActive,
+                    ]}
+                  >
+                    Internal Funnel
+                  </Text>
+                  <Text style={styles.typeCardDesc}>
+                    GetAiPilot Funnels & Bio Pages.
+                  </Text>
+                  <View style={styles.featurePillRow}>
+                    <View style={styles.microPill}>
+                      <Ionicons name="flash" size={9} color="#059669" />
+                      <Text style={styles.microPillText}>Zero DNS</Text>
+                    </View>
+                    <View style={styles.microPill}>
+                      <Ionicons name="checkmark-circle" size={9} color="#059669" />
+                      <Text style={styles.microPillText}>Auto-Track</Text>
+                    </View>
+                  </View>
+                  <View style={styles.typeRadioRow}>
+                    <View
+                      style={[
+                        styles.typeRadioCircle,
+                        websiteType === "internal" && styles.typeRadioCircleActive,
+                      ]}
+                    >
+                      {websiteType === "internal" && <View style={styles.typeRadioDot} />}
+                    </View>
+                    <Text
+                      style={[
+                        styles.typeRadioText,
+                        websiteType === "internal" && styles.typeRadioTextActive,
+                      ]}
+                    >
+                      {templates.length > 0 ? `${templates.length} Available` : "Create Template"}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                {/* External Option */}
+                <Pressable
+                  style={[
+                    styles.typeCard,
+                    websiteType === "external" && styles.typeCardActive,
+                  ]}
+                  onPress={() => {
+                    soundService.play("click");
+                    setWebsiteType("external");
+                  }}
+                >
+                  <View style={styles.typeCardTop}>
+                    <View
+                      style={[
+                        styles.typeIconBox,
+                        websiteType === "external" && styles.typeIconBoxActive,
+                      ]}
+                    >
+                      <HugeiconsIcon
+                        icon={BrowserIcon}
+                        size={18}
+                        color={websiteType === "external" ? colors.primary : colors.textSecondary}
+                        strokeWidth={2}
+                      />
+                    </View>
+                    <View style={styles.typeTagExternal}>
+                      <Text style={styles.typeTagExternalText}>Custom</Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.typeCardTitle,
+                      websiteType === "external" && styles.typeCardTitleActive,
+                    ]}
+                  >
+                    External Website
+                  </Text>
+                  <Text style={styles.typeCardDesc}>
+                    Shopify, WordPress, Webflow.
+                  </Text>
+                  <View style={styles.featurePillRow}>
+                    <View style={styles.microPill}>
+                      <Ionicons name="globe-outline" size={9} color="#0284C7" />
+                      <Text style={styles.microPillText}>Any Site</Text>
+                    </View>
+                    <View style={styles.microPill}>
+                      <Ionicons name="code-slash" size={9} color="#0284C7" />
+                      <Text style={styles.microPillText}>Snippet</Text>
+                    </View>
+                  </View>
+                  <View style={styles.typeRadioRow}>
+                    <View
+                      style={[
+                        styles.typeRadioCircle,
+                        websiteType === "external" && styles.typeRadioCircleActive,
+                      ]}
+                    >
+                      {websiteType === "external" && <View style={styles.typeRadioDot} />}
+                    </View>
+                    <Text
+                      style={[
+                        styles.typeRadioText,
+                        websiteType === "external" && styles.typeRadioTextActive,
+                      ]}
+                    >
+                      {externalSites.length > 0 ? `${externalSites.length} Added` : "Add Domain"}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* ─────────────────────────────────────────────────────────────────
+                  INTERNAL MODE: GETAIPILOT CREATED DESIGNS
+                  ───────────────────────────────────────────────────────────────── */}
+              {websiteType === "internal" ? (
+                <View style={styles.modeSection}>
+                  <View style={styles.modeHeaderBar}>
+                    <View style={styles.modeIndicatorInternal} />
+                    <Text style={styles.modeHeaderTitle}>Internal Template</Text>
+                    <Text style={styles.countPill}>{templates.length}</Text>
+                  </View>
+
+                  {/* IF USER HAS NO TEMPLATES: CLEARLY INFORM LANDING TEMPLATE REQUIRED */}
+                  {templates.length === 0 ? (
+                    <View style={styles.noticeBoxGraphic}>
+                      <View style={styles.noticeIconCircle}>
+                        <HugeiconsIcon
+                          icon={Rocket01Icon}
+                          size={22}
+                          color="#D97706"
+                          strokeWidth={2}
+                        />
+                      </View>
+                      <Text style={styles.noticeGraphicTitle}>
+                        No Landing Funnels Yet
+                      </Text>
+                      <Text style={styles.noticeGraphicSub}>
+                        Create a landing template or connect your external website
+                      </Text>
+                      <View style={styles.noticeActionsGraphic}>
+                        <Pressable
+                          style={styles.primaryBtnSmall}
+                          onPress={() => router.push("/tools/landing-templates" as any)}
+                        >
+                          <Ionicons name="add" size={14} color="#FFFFFF" />
+                          <Text style={styles.primaryBtnSmallText}>
+                            Create Funnel
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          style={styles.outlineBtnSmall}
+                          onPress={() => {
+                            soundService.play("click");
+                            setWebsiteType("external");
+                          }}
+                        >
+                          <Ionicons name="globe-outline" size={13} color={colors.text} />
+                          <Text style={styles.outlineBtnSmallText}>
+                            Use External Site
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : (
+                    <>
+                      {/* Dropdown Trigger */}
+                      <Pressable
+                        style={styles.dropdownTrigger}
+                        onPress={() => {
+                          soundService.play("click");
+                          setDesignSearch("");
+                          setDropdownOpen(true);
+                        }}
+                      >
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={styles.dropdownLabel}>
+                            Select Internal Template
+                          </Text>
+                          <Text style={styles.dropdownValue} numberOfLines={1}>
+                            {selectedDesign
+                              ? `${selectedDesign.page_title} (${selectedDesign.design_type === "bio"
+                                ? "Bio"
+                                : "Landing"
+                              })`
+                              : "Choose an internal design..."}
+                          </Text>
+                        </View>
+                        {selectedDesign ? (
+                          findSiteForDesign(selectedDesign)?.verified_at ? (
+                            <View style={styles.verifiedBadge}>
+                              <HugeiconsIcon
+                                icon={CheckmarkCircle01Icon}
+                                size={12}
+                                color="#047857"
+                                strokeWidth={2.2}
+                              />
+                              <Text style={styles.verifiedBadgeText}>Verified</Text>
+                            </View>
+                          ) : (
+                            <View style={styles.unverifiedBadge}>
+                              <Text style={styles.unverifiedBadgeText}>
+                                Unverified
+                              </Text>
+                            </View>
+                          )
+                        ) : null}
+                        <Text style={styles.dropdownChevron}>▾</Text>
+                      </Pressable>
+
+                      {/* Selected Design Card */}
+                      {selectedDesign
+                        ? (() => {
+                          const page = selectedDesign;
+                          const connectedSite = findSiteForDesign(page);
+                          const isVerified = Boolean(connectedSite?.verified_at);
+                          const isBusy = busyKey === `tpl-${page.id}`;
+                          const designUrl = getDesignUrl(page);
+
+                          return (
+                            <View style={styles.itemCard}>
+                              <View style={styles.itemRow}>
+                                {page.image_url ? (
+                                  <Image
+                                    source={{ uri: page.image_url }}
+                                    style={styles.thumb}
+                                    resizeMode="cover"
+                                  />
+                                ) : (
+                                  <View style={styles.thumbFallback}>
+                                    <HugeiconsIcon
+                                      icon={Rocket01Icon}
+                                      size={18}
+                                      color={colors.primary}
+                                      strokeWidth={1.9}
+                                    />
+                                  </View>
+                                )}
+
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <View style={styles.titleBadgeRow}>
+                                    <Text style={styles.itemTitle} numberOfLines={1}>
+                                      {page.page_title}
+                                    </Text>
+                                    {isVerified ? (
+                                      <View style={styles.verifiedBadge}>
+                                        <HugeiconsIcon
+                                          icon={CheckmarkCircle01Icon}
+                                          size={12}
+                                          color="#047857"
+                                          strokeWidth={2.2}
+                                        />
+                                        <Text style={styles.verifiedBadgeText}>
+                                          Verified
+                                        </Text>
+                                      </View>
+                                    ) : (
+                                      <View style={styles.unverifiedBadge}>
+                                        <Text style={styles.unverifiedBadgeText}>
+                                          Unverified
+                                        </Text>
+                                      </View>
+                                    )}
+                                  </View>
+                                  <Text style={styles.itemUrl} numberOfLines={1}>
+                                    {designUrl}
+                                  </Text>
+                                  {page.telegram_url ? (
+                                    <Text style={styles.itemMeta} numberOfLines={1}>
+                                      Target: {page.telegram_url}
+                                    </Text>
+                                  ) : null}
+                                </View>
+                              </View>
+
+                              <View style={styles.itemActions}>
+                                <Pressable
+                                  style={styles.ghostBtn}
+                                  onPress={() =>
+                                    Linking.openURL(designUrl).catch(() => { })
+                                  }
+                                >
+                                  <Text style={styles.ghostBtnText}>Open Page</Text>
+                                  <HugeiconsIcon
+                                    icon={ArrowUpRight01Icon}
+                                    size={13}
+                                    color={colors.text}
+                                    strokeWidth={2}
+                                  />
+                                </Pressable>
+
+                                {!isVerified ? (
+                                  <Pressable
+                                    style={[
+                                      styles.primaryBtnSmall,
+                                      isBusy && { opacity: 0.7 },
+                                    ]}
+                                    disabled={!!busyKey}
+                                    onPress={() => void handleConnectTemplate(page)}
+                                  >
+                                    {isBusy ? (
+                                      <ActivityIndicator
+                                        size="small"
+                                        color={colors.primaryForeground}
+                                      />
+                                    ) : (
+                                      <Text style={styles.primaryBtnSmallText}>
+                                        Verify & Connect (Instant)
+                                      </Text>
+                                    )}
+                                  </Pressable>
+                                ) : (
+                                  <>
+                                    <Pressable
+                                      style={styles.outlineBtnSmall}
+                                      onPress={() => {
+                                        if (connectedSite) {
+                                          setSelectedSiteId(connectedSite.id);
+                                          if (page.telegram_url) {
+                                            setOriginalTelegramUrl(page.telegram_url);
+                                          }
+                                          showNotice(
+                                            "Design Selected",
+                                            `${page.page_title} selected for Step 3 Campaign creation below.`,
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <Text style={styles.outlineBtnSmallText}>
+                                        Use in Campaign
+                                      </Text>
+                                    </Pressable>
+                                    {connectedSite ? (
+                                      <Pressable
+                                        style={styles.dangerBtnSmall}
+                                        disabled={!!busyKey}
+                                        onPress={() =>
+                                          handleDisconnectSite(
+                                            connectedSite.id,
+                                            page.page_title,
+                                          )
+                                        }
+                                      >
+                                        <Text style={styles.dangerBtnSmallText}>
+                                          Disconnect
+                                        </Text>
+                                      </Pressable>
+                                    ) : null}
+                                  </>
+                                )}
+                              </View>
+                            </View>
+                          );
+                        })()
+                        : null}
+                    </>
+                  )}
+                </View>
+              ) : null}
+
+              {/* ─────────────────────────────────────────────────────────────────
+                  EXTERNAL MODE: CUSTOM DOMAIN & DNS TXT VERIFICATION
+                  ───────────────────────────────────────────────────────────────── */}
+              {websiteType === "external" ? (
+                <View style={styles.modeSection}>
+                  <View style={styles.modeHeaderBar}>
+                    <View style={styles.modeIndicatorExternal} />
+                    <Text style={styles.modeHeaderTitle}>External Custom Domain</Text>
+                    <Text style={styles.countPill}>{externalSites.length}</Text>
+                  </View>
+
+                  <Text style={styles.sectionDesc}>
+                    Add your existing website URL. You will receive a DNS TXT verification token to confirm ownership.
+                  </Text>
+
+                  <View style={styles.formStack}>
+                    <Text style={styles.inputLabel}>Website / Page Name</Text>
+                    <TextInput
+                      value={siteName}
+                      onChangeText={setSiteName}
+                      placeholder="e.g. My WordPress / Shopify Landing"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      style={styles.input}
+                    />
+
+                    <Text style={styles.inputLabel}>Published HTTPS URL</Text>
+                    <TextInput
+                      value={siteUrl}
+                      onChangeText={setSiteUrl}
+                      placeholder="https://yourdomain.com/landing"
+                      placeholderTextColor={colors.inputPlaceholder}
+                      autoCapitalize="none"
+                      keyboardType="url"
+                      style={styles.input}
+                    />
+
+                    <Pressable
+                      style={[
+                        styles.primaryBtn,
+                        busyKey === "add-site" && { opacity: 0.7 },
+                      ]}
+                      disabled={!!busyKey}
+                      onPress={() => void handleAddWebsite()}
+                    >
+                      {busyKey === "add-site" ? (
+                        <ActivityIndicator size="small" color={colors.primaryForeground} />
+                      ) : (
+                        <>
+                          <HugeiconsIcon
+                            icon={Add01Icon}
+                            size={16}
+                            color={colors.primaryForeground}
+                            strokeWidth={2.2}
+                          />
+                          <Text style={styles.primaryBtnText}>Add External Website</Text>
+                        </>
+                      )}
+                    </Pressable>
+                  </View>
+
+                  {/* List of External Sites */}
+                  {externalSites.length > 0 && (
+                    <View style={[styles.listStack, { marginTop: 14 }]}>
+                      <Text style={styles.subHeading}>Your External Websites</Text>
+                      {externalSites.map((site) => {
+                        const isVerified = Boolean(site.verified_at);
+                        let host = "";
+                        try {
+                          host = new URL(site.url).hostname;
+                        } catch { }
+                        const txtName = host ? `_getaipilot.${host}` : "_getaipilot";
+                        const txtValue = `getaipilot-verification=${site.verification_token}`;
+                        const verifying = busyKey === `verify-${site.id}`;
+
+                        return (
+                          <View key={site.id} style={styles.itemCard}>
+                            <View style={styles.titleBadgeRow}>
+                              <Text style={styles.itemTitle} numberOfLines={1}>
+                                {site.name}
+                              </Text>
+                              {isVerified ? (
+                                <View style={styles.verifiedBadge}>
+                                  <HugeiconsIcon
+                                    icon={CheckmarkCircle01Icon}
+                                    size={12}
+                                    color="#047857"
+                                    strokeWidth={2.2}
+                                  />
+                                  <Text style={styles.verifiedBadgeText}>Verified</Text>
+                                </View>
+                              ) : (
+                                <View style={styles.pendingBadge}>
+                                  <Text style={styles.pendingBadgeText}>
+                                    DNS Required
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text style={styles.itemUrl} numberOfLines={1}>
+                              {site.url}
+                            </Text>
+
+                            {!isVerified ? (
+                              <View style={styles.dnsBox}>
+                                <Text style={styles.dnsLabel}>1. Add DNS TXT Record Name</Text>
+                                <Text style={styles.dnsCode} selectable>
+                                  {txtName}
+                                </Text>
+                                <Text style={[styles.dnsLabel, { marginTop: 6 }]}>
+                                  2. Add DNS TXT Record Value
+                                </Text>
+                                <Text style={styles.dnsCode} selectable>
+                                  {txtValue}
+                                </Text>
+
+                                <View style={styles.itemActions}>
+                                  <Pressable
+                                    style={styles.ghostBtn}
+                                    onPress={() =>
+                                      void handleCopy(
+                                        `dns-${site.id}`,
+                                        txtValue,
+                                        "TXT record value",
+                                      )
+                                    }
+                                  >
+                                    <HugeiconsIcon
+                                      icon={Copy01Icon}
+                                      size={13}
+                                      color={colors.text}
+                                      strokeWidth={2}
+                                    />
+                                    <Text style={styles.ghostBtnText}>
+                                      {copiedKey === `dns-${site.id}`
+                                        ? "Copied"
+                                        : "Copy TXT"}
+                                    </Text>
+                                  </Pressable>
+
+                                  <Pressable
+                                    style={[
+                                      styles.primaryBtnSmall,
+                                      verifying && { opacity: 0.7 },
+                                    ]}
+                                    disabled={!!busyKey}
+                                    onPress={() => void handleVerifyExternalSite(site.id)}
+                                  >
+                                    {verifying ? (
+                                      <ActivityIndicator
+                                        size="small"
+                                        color={colors.primaryForeground}
+                                      />
+                                    ) : (
+                                      <Text style={styles.primaryBtnSmallText}>
+                                        Verify DNS
+                                      </Text>
+                                    )}
+                                  </Pressable>
+
+                                  <Pressable
+                                    style={styles.dangerBtnSmall}
+                                    disabled={!!busyKey}
+                                    onPress={() =>
+                                      handleDisconnectSite(site.id, site.name)
+                                    }
+                                  >
+                                    <Text style={styles.dangerBtnSmallText}>
+                                      Disconnect
+                                    </Text>
+                                  </Pressable>
+                                </View>
+                              </View>
+                            ) : (
+                              <View style={styles.itemActions}>
+                                <Pressable
+                                  style={styles.outlineBtnSmall}
+                                  onPress={() => {
+                                    setSelectedSiteId(site.id);
+                                    showNotice(
+                                      "Website Selected",
+                                      `${site.name} selected for Step 3 Campaign creation below.`,
+                                    );
+                                  }}
+                                >
+                                  <Text style={styles.outlineBtnSmallText}>
+                                    Use in Campaign
+                                  </Text>
+                                </Pressable>
+                                <Pressable
+                                  style={styles.dangerBtnSmall}
+                                  disabled={!!busyKey}
+                                  onPress={() =>
+                                    handleDisconnectSite(site.id, site.name)
+                                  }
+                                >
+                                  <Text style={styles.dangerBtnSmallText}>
+                                    Disconnect
+                                  </Text>
+                                </Pressable>
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              ) : null}
+
+              {/* Step 2 Completion Banner */}
+              {verifiedSites.length > 0 ? (
+                <View style={styles.completionBanner}>
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle01Icon}
+                    size={16}
+                    color="#047857"
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.completionBannerText}>
+                    Ready: {selectedSite?.name || `${verifiedSites.length} verified page(s)`}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View style={styles.wizardNavRow}>
+                <Pressable
+                  style={styles.wizardBackBtn}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(1);
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={16} color={colors.text} />
+                  <Text style={styles.wizardBackBtnText}>Back</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.wizardNextBtnFlex}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(3);
+                  }}
+                >
+                  <Text style={styles.wizardNextBtnText}>Next: Launch Campaign</Text>
+                  <HugeiconsIcon
+                    icon={ArrowRight01Icon}
+                    size={17}
+                    color="#FFFFFF"
+                    strokeWidth={2.4}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          )}
+
+            {/* ═══════════════════════════════════════════════════════════════════════
+                STEP 3: CREATE TRACKING CAMPAIGN
+                ═══════════════════════════════════════════════════════════════════════ */}
+            {setupStep === 3 && (
+              <View style={styles.sectionCard}>
+              <View style={styles.stepHeaderRow}>
+                <View style={styles.stepBadge}>
+                  <Text style={styles.stepBadgeText}>STEP 3</Text>
+                </View>
+                {inventory.campaigns.length > 0 ? (
+                  <View style={styles.verifiedBadge}>
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={12}
+                      color="#047857"
+                      strokeWidth={2.2}
+                    />
+                    <Text style={styles.verifiedBadgeText}>
+                      {inventory.campaigns.length} Active
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.unverifiedBadge}>
+                    <Text style={styles.unverifiedBadgeText}>Launch</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.sectionHeaderLeft}>
+                <View style={styles.stepIconWrap}>
+                  <HugeiconsIcon
+                    icon={Link01Icon}
+                    size={20}
+                    color={colors.primary}
+                    strokeWidth={2}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>Campaign Launch</Text>
+                  <Text style={styles.sectionDesc}>
+                    Pair channel & landing page to track conversions
+                  </Text>
+                </View>
+              </View>
+
+              {/* Graphic Flow Map of Selections */}
+              <View style={styles.graphicFlowCard}>
+                <View style={styles.flowNode}>
+                  <View style={styles.flowIconBoxTg}>
+                    <HugeiconsIcon icon={TelegramIcon} size={16} color="#0284C7" strokeWidth={2} />
+                  </View>
+                  <Text style={styles.flowNodeTitle} numberOfLines={1}>
+                    {selectedConnection ? selectedConnection.title : "Channel"}
+                  </Text>
+                  <View style={selectedConnection ? styles.flowBadgeOk : styles.flowBadgeWait}>
+                    <Text style={selectedConnection ? styles.flowBadgeOkText : styles.flowBadgeWaitText}>
+                      {selectedConnection ? "Ready" : "Step 1"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Graphical Connector */}
+                <View style={styles.flowConnector}>
+                  <View style={styles.flowLine} />
+                  <View style={styles.flowConnectorBadge}>
+                    <Ionicons name="flash" size={11} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.flowLine} />
+                </View>
+
+                <View style={styles.flowNode}>
+                  <View style={styles.flowIconBoxWeb}>
+                    <HugeiconsIcon icon={BrowserIcon} size={16} color="#10B981" strokeWidth={2} />
+                  </View>
+                  <Text style={styles.flowNodeTitle} numberOfLines={1}>
+                    {selectedSite ? selectedSite.name : "Destination"}
+                  </Text>
+                  <View style={selectedSite ? styles.flowBadgeOk : styles.flowBadgeWait}>
+                    <Text style={selectedSite ? styles.flowBadgeOkText : styles.flowBadgeWaitText}>
+                      {selectedSite ? "Ready" : "Step 2"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.formStack}>
+                <Text style={styles.inputLabel}>Campaign Name</Text>
+                <TextInput
+                  value={campaignName}
+                  onChangeText={setCampaignName}
+                  placeholder="e.g. VIP Member Launch Campaign"
+                  placeholderTextColor={colors.inputPlaceholder}
+                  style={styles.input}
+                />
+
+                <Text style={styles.inputLabel}>Select Verified Page / Website</Text>
+                {verifiedSites.length === 0 ? (
+                  <Text style={styles.warnText}>
+                    Please verify an internal template or external website in Step 2 above first.
+                  </Text>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipRow}
+                  >
+                    {verifiedSites.map((s) => {
+                      const active = selectedSiteId === s.id;
+                      const isInternal = Boolean(s.landing_page_id || s.bio_page_id);
+                      return (
+                        <Pressable
+                          key={s.id}
+                          onPress={() => setSelectedSiteId(s.id)}
+                          style={[
+                            styles.selectChip,
+                            active && styles.selectChipActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.selectChipText,
+                              active && styles.selectChipTextActive,
+                            ]}
+                          >
+                            {s.name} ({isInternal ? "Internal" : "External"})
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+
+                <Text style={styles.inputLabel}>Select Telegram Channel</Text>
+                {inventory.connections.length === 0 ? (
+                  <Text style={styles.warnText}>
+                    Please connect a Telegram channel in Step 1 above first.
+                  </Text>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipRow}
+                  >
+                    {inventory.connections.map((c) => {
+                      const active = selectedConnectionId === c.id;
+                      return (
+                        <Pressable
+                          key={c.id}
+                          onPress={() => setSelectedConnectionId(c.id)}
+                          style={[
+                            styles.selectChip,
+                            active && styles.selectChipActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.selectChipText,
+                              active && styles.selectChipTextActive,
+                            ]}
+                          >
+                            {c.title}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+
+                <Text style={styles.inputLabel}>Current Telegram Button URL</Text>
+                <TextInput
+                  value={originalTelegramUrl}
+                  onChangeText={setOriginalTelegramUrl}
+                  placeholder="https://t.me/yourchannel or https://t.me/+invite"
+                  placeholderTextColor={colors.inputPlaceholder}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  style={styles.input}
+                />
+
+                <View style={styles.switchRow}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={styles.switchLabel}>Require join approval</Text>
+                    <Text style={styles.switchHint}>
+                      Join requests count separately until approved.
+                    </Text>
+                  </View>
+                  <Switch
+                    value={joinRequest}
+                    onValueChange={setJoinRequest}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                  />
+                </View>
+
+                <Pressable
+                  style={[
+                    styles.primaryBtn,
+                    (!verifiedSites.length ||
+                      !inventory.connections.length ||
+                      !campaignName.trim() ||
+                      !originalTelegramUrl.trim() ||
+                      !!busyKey) && { opacity: 0.6 },
+                  ]}
+                  disabled={
+                    !verifiedSites.length ||
+                    !inventory.connections.length ||
+                    !campaignName.trim() ||
+                    !originalTelegramUrl.trim() ||
+                    !!busyKey
+                  }
+                  onPress={() => void handleCreateCampaign()}
+                >
+                  <HugeiconsIcon
+                    icon={Link01Icon}
+                    size={16}
+                    color={colors.primaryForeground}
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.primaryBtnText}>
+                    Create Tracking Campaign & Generate Link
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.wizardBackBtnCenter}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSetupStep(2);
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={15} color={colors.textSecondary} />
+                  <Text style={styles.wizardBackBtnCenterText}>
+                    Back to Step 2 (Destination)
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
             {/* Created Designs Dropdown Modal */}
             <Modal
@@ -938,17 +2504,21 @@ export default function TelegramConversionScreen() {
               animationType="fade"
               onRequestClose={() => setDropdownOpen(false)}
             >
-              <Pressable
-                style={styles.modalBackdrop}
-                onPress={() => setDropdownOpen(false)}
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={{ flex: 1 }}
               >
                 <Pressable
-                  style={styles.modalSheet}
-                  onPress={(e) => e.stopPropagation()}
+                  style={styles.modalBackdrop}
+                  onPress={() => setDropdownOpen(false)}
                 >
+                  <Pressable
+                    style={styles.modalSheet}
+                    onPress={(e) => e.stopPropagation()}
+                  >
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>
-                      Select Created Design ({templates.length})
+                      Select Internal Design ({templates.length})
                     </Text>
                     <Pressable
                       onPress={() => setDropdownOpen(false)}
@@ -974,7 +2544,7 @@ export default function TelegramConversionScreen() {
                     <TextInput
                       value={designSearch}
                       onChangeText={setDesignSearch}
-                      placeholder="Search your designs..."
+                      placeholder="Search internal designs..."
                       placeholderTextColor={colors.inputPlaceholder}
                       style={styles.modalSearchInput}
                     />
@@ -1060,14 +2630,19 @@ export default function TelegramConversionScreen() {
                   </ScrollView>
                 </Pressable>
               </Pressable>
-            </Modal>
+            </KeyboardAvoidingView>
+          </Modal>
 
-            {/* Telegram Channels Dropdown Modal */}
-            <Modal
-              visible={channelDropdownOpen}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setChannelDropdownOpen(false)}
+          {/* Telegram Channels Dropdown Modal */}
+          <Modal
+            visible={channelDropdownOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setChannelDropdownOpen(false)}
+          >
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={{ flex: 1 }}
             >
               <Pressable
                 style={styles.modalBackdrop}
@@ -1184,813 +2759,8 @@ export default function TelegramConversionScreen() {
                   </ScrollView>
                 </Pressable>
               </Pressable>
-            </Modal>
-
-            {/* 2. ADD YOUR OWN WEBSITE INSTEAD OF GETAIPILOT TEMPLATES */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <HugeiconsIcon
-                    icon={BrowserIcon}
-                    size={18}
-                    color={colors.primary}
-                    strokeWidth={2}
-                  />
-                  <Text style={styles.sectionTitle}>Add Your Own Website</Text>
-                </View>
-              </View>
-              <Text style={styles.sectionDesc}>
-                Use your own landing page URL instead of GetAiPilot templates.
-                Add a DNS TXT record once to get the Verified tag.
-              </Text>
-
-              <View style={styles.formStack}>
-                <Text style={styles.inputLabel}>Website / Page Name</Text>
-                <TextInput
-                  value={siteName}
-                  onChangeText={setSiteName}
-                  placeholder="e.g. Trading VIP Landing"
-                  placeholderTextColor={colors.inputPlaceholder}
-                  style={styles.input}
-                />
-
-                <Text style={styles.inputLabel}>Published HTTPS URL</Text>
-                <TextInput
-                  value={siteUrl}
-                  onChangeText={setSiteUrl}
-                  placeholder="https://yourdomain.com/community"
-                  placeholderTextColor={colors.inputPlaceholder}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  style={styles.input}
-                />
-
-                <Pressable
-                  style={[
-                    styles.primaryBtn,
-                    busyKey === "add-site" && { opacity: 0.7 },
-                  ]}
-                  disabled={!!busyKey}
-                  onPress={() => void handleAddWebsite()}
-                >
-                  {busyKey === "add-site" ? (
-                    <ActivityIndicator size="small" color={colors.primaryForeground} />
-                  ) : (
-                    <>
-                      <HugeiconsIcon
-                        icon={Add01Icon}
-                        size={16}
-                        color={colors.primaryForeground}
-                        strokeWidth={2.2}
-                      />
-                      <Text style={styles.primaryBtnText}>Add Website</Text>
-                    </>
-                  )}
-                </Pressable>
-              </View>
-
-              {externalSites.length > 0 && (
-                <View style={[styles.listStack, { marginTop: 14 }]}>
-                  {externalSites.map((site) => {
-                    const isVerified = Boolean(site.verified_at);
-                    let host = "";
-                    try {
-                      host = new URL(site.url).hostname;
-                    } catch {}
-                    const txtName = host ? `_getaipilot.${host}` : "_getaipilot";
-                    const txtValue = `getaipilot-verification=${site.verification_token}`;
-                    const verifying = busyKey === `verify-${site.id}`;
-
-                    return (
-                      <View key={site.id} style={styles.itemCard}>
-                        <View style={styles.titleBadgeRow}>
-                          <Text style={styles.itemTitle} numberOfLines={1}>
-                            {site.name}
-                          </Text>
-                          {isVerified ? (
-                            <View style={styles.verifiedBadge}>
-                              <HugeiconsIcon
-                                icon={CheckmarkCircle01Icon}
-                                size={12}
-                                color="#047857"
-                                strokeWidth={2.2}
-                              />
-                              <Text style={styles.verifiedBadgeText}>Verified</Text>
-                            </View>
-                          ) : (
-                            <View style={styles.pendingBadge}>
-                              <Text style={styles.pendingBadgeText}>
-                                DNS Required
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text style={styles.itemUrl} numberOfLines={1}>
-                          {site.url}
-                        </Text>
-
-                        {!isVerified ? (
-                          <View style={styles.dnsBox}>
-                            <Text style={styles.dnsLabel}>TXT Record Name</Text>
-                            <Text style={styles.dnsCode} selectable>
-                              {txtName}
-                            </Text>
-                            <Text style={[styles.dnsLabel, { marginTop: 6 }]}>
-                              TXT Record Value
-                            </Text>
-                            <Text style={styles.dnsCode} selectable>
-                              {txtValue}
-                            </Text>
-
-                            <View style={styles.itemActions}>
-                              <Pressable
-                                style={styles.ghostBtn}
-                                onPress={() =>
-                                  void handleCopy(
-                                    `dns-${site.id}`,
-                                    txtValue,
-                                    "TXT record value",
-                                  )
-                                }
-                              >
-                                <HugeiconsIcon
-                                  icon={Copy01Icon}
-                                  size={13}
-                                  color={colors.text}
-                                  strokeWidth={2}
-                                />
-                                <Text style={styles.ghostBtnText}>
-                                  {copiedKey === `dns-${site.id}`
-                                    ? "Copied"
-                                    : "Copy TXT"}
-                                </Text>
-                              </Pressable>
-
-                              <Pressable
-                                style={[
-                                  styles.primaryBtnSmall,
-                                  verifying && { opacity: 0.7 },
-                                ]}
-                                disabled={!!busyKey}
-                                onPress={() => void handleVerifyExternalSite(site.id)}
-                              >
-                                {verifying ? (
-                                  <ActivityIndicator
-                                    size="small"
-                                    color={colors.primaryForeground}
-                                  />
-                                ) : (
-                                  <Text style={styles.primaryBtnSmallText}>
-                                    Verify DNS
-                                  </Text>
-                                )}
-                              </Pressable>
-
-                              <Pressable
-                                style={styles.dangerBtnSmall}
-                                disabled={!!busyKey}
-                                onPress={() =>
-                                  handleDisconnectSite(site.id, site.name)
-                                }
-                              >
-                                <Text style={styles.dangerBtnSmallText}>
-                                  Disconnect
-                                </Text>
-                              </Pressable>
-                            </View>
-                          </View>
-                        ) : (
-                          <View style={styles.itemActions}>
-                            <Pressable
-                              style={styles.outlineBtnSmall}
-                              onPress={() => {
-                                setSelectedSiteId(site.id);
-                                showNotice(
-                                  "Website Selected",
-                                  `${site.name} selected for campaign creation below.`,
-                                );
-                              }}
-                            >
-                              <Text style={styles.outlineBtnSmallText}>
-                                Use in Campaign
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              style={styles.dangerBtnSmall}
-                              disabled={!!busyKey}
-                              onPress={() =>
-                                handleDisconnectSite(site.id, site.name)
-                              }
-                            >
-                              <Text style={styles.dangerBtnSmallText}>
-                                Disconnect
-                              </Text>
-                            </Pressable>
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-
-            {/* 3. ADD TELEGRAM ACCOUNT & CONNECT CHANNEL */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <HugeiconsIcon
-                    icon={TelegramIcon}
-                    size={18}
-                    color={isDark ? "#38BDF8" : "#0284C7"}
-                    strokeWidth={2}
-                  />
-                  <Text style={styles.sectionTitle}>
-                    Telegram Account & Channel
-                  </Text>
-                </View>
-                {inventory.telegram.identity ? (
-                  <View style={styles.verifiedBadge}>
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={12}
-                      color="#047857"
-                      strokeWidth={2.2}
-                    />
-                    <Text style={styles.verifiedBadgeText}>Linked</Text>
-                  </View>
-                ) : null}
-              </View>
-
-              {inventory.telegram.identity ? (
-                <View style={styles.identityCard}>
-                  <View style={styles.titleBadgeRow}>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={styles.identityTitle}>
-                        {inventory.telegram.identity.display_name}
-                      </Text>
-                      <Text style={styles.identityMeta}>
-                        Verified Telegram ID: {inventory.telegram.identity.telegram_user_id}
-                      </Text>
-                    </View>
-                    <Pressable
-                      style={styles.dangerBtnSmall}
-                      disabled={!!busyKey}
-                      onPress={handleDisconnectTelegramAccount}
-                    >
-                      <Text style={styles.dangerBtnSmallText}>Disconnect</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.formStack}>
-                  <Text style={styles.sectionDesc}>
-                    First verify the Telegram account you use to manage your
-                    channel.
-                  </Text>
-                  {!inventory.telegram.configured ? (
-                    <Text style={styles.warnText}>
-                      Shared GetAiPilot tracking bot is not configured yet on
-                      the server. Ask platform admin to configure it first.
-                    </Text>
-                  ) : null}
-                  <Pressable
-                    style={[
-                      styles.primaryBtn,
-                      (!inventory.telegram.configured || busyKey === "tg-link") && {
-                        opacity: 0.6,
-                      },
-                    ]}
-                    disabled={!inventory.telegram.configured || !!busyKey}
-                    onPress={() => void handleLinkTelegramAccount()}
-                  >
-                    {busyKey === "tg-link" ? (
-                      <ActivityIndicator
-                        size="small"
-                        color={colors.primaryForeground}
-                      />
-                    ) : (
-                      <>
-                        <HugeiconsIcon
-                          icon={ShieldCheckIcon}
-                          size={16}
-                          color={colors.primaryForeground}
-                          strokeWidth={2.1}
-                        />
-                        <Text style={styles.primaryBtnText}>
-                          {activeLink
-                            ? "Create Fresh Verification Link"
-                            : "Add Telegram Account"}
-                        </Text>
-                      </>
-                    )}
-                  </Pressable>
-                </View>
-              )}
-
-              {activeLink && (
-                <View style={styles.linkStepBox}>
-                  <Text style={styles.linkStepText}>
-                    {inventory.telegram.identity
-                      ? "Tap Choose my channel inside Telegram bot and grant Invite users permission."
-                      : "Press Start in Telegram bot, then return here to confirm your account."}
-                  </Text>
-                  <Pressable
-                    style={styles.ghostBtn}
-                    onPress={() => Linking.openURL(activeLink.url).catch(() => {})}
-                  >
-                    <Text style={styles.ghostBtnText}>
-                      Open @{inventory.telegram.bot_username}
-                    </Text>
-                    <HugeiconsIcon
-                      icon={ArrowUpRight01Icon}
-                      size={13}
-                      color={colors.text}
-                      strokeWidth={2}
-                    />
-                  </Pressable>
-                </View>
-              )}
-
-              {linkClaimed && (
-                <View style={styles.confirmCard}>
-                  <Text style={styles.confirmTitle}>
-                    Confirm this Telegram account
-                  </Text>
-                  <Text style={styles.identityMeta}>
-                    {inventory.telegram.link?.display_name} · ID{" "}
-                    {inventory.telegram.link?.claimed_user_id}
-                  </Text>
-                  <Pressable
-                    style={[styles.primaryBtn, { marginTop: 10 }]}
-                    disabled={!!busyKey}
-                    onPress={() => void handleConfirmTelegramAccount()}
-                  >
-                    <Text style={styles.primaryBtnText}>Confirm Account</Text>
-                  </Pressable>
-                </View>
-              )}
-
-              {/* Channel Connection Mode */}
-              <View style={[styles.segmentRow, { marginTop: 14, marginBottom: 10 }]}>
-                {(["shared", "own"] as const).map((m) => (
-                  <Pressable
-                    key={m}
-                    onPress={() => setBotMode(m)}
-                    style={[
-                      styles.segmentBtn,
-                      botMode === m && styles.segmentBtnActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.segmentBtnText,
-                        botMode === m && styles.segmentBtnTextActive,
-                      ]}
-                    >
-                      {m === "shared" ? "GetAiPilot Bot" : "Own Bot (Advanced)"}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {botMode === "shared" && inventory.telegram.identity ? (
-                <View style={styles.formStack}>
-                  {/* All User Telegram Channels Dropdown */}
-                  <View style={styles.channelsBlock}>
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.inputLabel}>
-                        Your Telegram Channels ({availableChannels.length})
-                      </Text>
-                      <Pressable onPress={() => void loadData(false)}>
-                        <Text style={styles.errorRetry}>Refresh</Text>
-                      </Pressable>
-                    </View>
-
-                    {availableChannels.length > 0 ? (
-                      <>
-                        <Pressable
-                          style={styles.dropdownTrigger}
-                          onPress={() => {
-                            soundService.play("click");
-                            setChannelSearch("");
-                            setChannelDropdownOpen(true);
-                          }}
-                        >
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={styles.dropdownLabel}>
-                              Select Telegram Channel
-                            </Text>
-                            <Text style={styles.dropdownValue} numberOfLines={1}>
-                              {selectedAvailableChannel
-                                ? selectedAvailableChannel.title
-                                : "Choose a channel..."}
-                            </Text>
-                          </View>
-                          {selectedAvailableChannel?.connection_id ? (
-                            <View style={styles.verifiedBadge}>
-                              <HugeiconsIcon
-                                icon={CheckmarkCircle01Icon}
-                                size={12}
-                                color="#047857"
-                                strokeWidth={2.2}
-                              />
-                              <Text style={styles.verifiedBadgeText}>
-                                Connected
-                              </Text>
-                            </View>
-                          ) : (
-                            <View style={styles.unverifiedBadge}>
-                              <Text style={styles.unverifiedBadgeText}>
-                                Not connected
-                              </Text>
-                            </View>
-                          )}
-                          <Text style={styles.dropdownChevron}>▾</Text>
-                        </Pressable>
-
-                        {selectedAvailableChannel ? (
-                          <View style={styles.itemCard}>
-                            <View style={styles.titleBadgeRow}>
-                              <Text style={styles.itemTitle} numberOfLines={1}>
-                                {selectedAvailableChannel.title}
-                              </Text>
-                              {selectedAvailableChannel.connection_id ? (
-                                <View style={styles.verifiedBadge}>
-                                  <HugeiconsIcon
-                                    icon={CheckmarkCircle01Icon}
-                                    size={12}
-                                    color="#047857"
-                                    strokeWidth={2.2}
-                                  />
-                                  <Text style={styles.verifiedBadgeText}>
-                                    {selectedAvailableChannel.connection_status ||
-                                      "Connected"}
-                                  </Text>
-                                </View>
-                              ) : (
-                                <View style={styles.unverifiedBadge}>
-                                  <Text style={styles.unverifiedBadgeText}>
-                                    Not connected
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                            <Text style={styles.itemMeta} numberOfLines={1}>
-                              {selectedAvailableChannel.username
-                                ? `@${selectedAvailableChannel.username.replace(/^@/, "")} · `
-                                : ""}
-                              ID: {selectedAvailableChannel.chat_id}
-                            </Text>
-                            {!selectedAvailableChannel.connection_id &&
-                            inventory.telegram.bot_username ? (
-                              <Text style={styles.itemMeta}>
-                                Make @{inventory.telegram.bot_username} admin with
-                                Invite users permission, then tap Connect Channel.
-                              </Text>
-                            ) : null}
-                            <View style={styles.itemActions}>
-                              {selectedAvailableChannel.connection_id ? (
-                                <Pressable
-                                  style={styles.outlineBtnSmall}
-                                  onPress={() => {
-                                    setSelectedConnectionId(
-                                      selectedAvailableChannel.connection_id!,
-                                    );
-                                    showNotice(
-                                      "Channel Selected",
-                                      `${selectedAvailableChannel.title} selected for campaign creation below.`,
-                                    );
-                                  }}
-                                >
-                                  <Text style={styles.outlineBtnSmallText}>
-                                    Use in Campaign
-                                  </Text>
-                                </Pressable>
-                              ) : (
-                                <Pressable
-                                  style={[
-                                    styles.primaryBtnSmall,
-                                    busyKey ===
-                                      `ch-${selectedAvailableChannel.chat_id}` && {
-                                      opacity: 0.7,
-                                    },
-                                  ]}
-                                  disabled={!!busyKey}
-                                  onPress={() =>
-                                    void runAction(
-                                      `ch-${selectedAvailableChannel.chat_id}`,
-                                      "connect_shared",
-                                      {
-                                        chat_id:
-                                          selectedAvailableChannel.chat_id,
-                                      },
-                                      "Channel Connected",
-                                      `${selectedAvailableChannel.title} is now connected.`,
-                                    ).then((saved) => {
-                                      if (saved?.id) {
-                                        setSelectedConnectionId(saved.id);
-                                      }
-                                    })
-                                  }
-                                >
-                                  <Text style={styles.primaryBtnSmallText}>
-                                    Connect Channel
-                                  </Text>
-                                </Pressable>
-                              )}
-                            </View>
-                          </View>
-                        ) : null}
-                      </>
-                    ) : (
-                      <Text style={styles.sectionDesc}>
-                        No synced channels found yet. Tap "Choose Channel in
-                        Telegram" below or add @{inventory.telegram.bot_username || "the tracking bot"} as
-                        channel admin and tap Refresh.
-                      </Text>
-                    )}
-                  </View>
-
-                  <Pressable
-                    style={styles.secondaryBtn}
-                    disabled={!inventory.telegram.configured || !!busyKey}
-                    onPress={() => void handleOpenChannelPicker()}
-                  >
-                    <Text style={styles.secondaryBtnText}>
-                      Choose Channel in Telegram
-                    </Text>
-                  </Pressable>
-
-                  <Text style={styles.inputLabel}>
-                    Or enter Channel Username / ID manually
-                  </Text>
-                  <TextInput
-                    value={manualChannel}
-                    onChangeText={setManualChannel}
-                    placeholder="@yourchannel or -1001234567890"
-                    placeholderTextColor={colors.inputPlaceholder}
-                    autoCapitalize="none"
-                    style={styles.input}
-                  />
-                  <Pressable
-                    style={styles.outlineBtn}
-                    disabled={!!busyKey}
-                    onPress={() => void handleConnectManualChannel()}
-                  >
-                    <Text style={styles.outlineBtnText}>
-                      Verify & Connect Channel
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : null}
-
-              {botMode === "own" ? (
-                <View style={styles.formStack}>
-                  <Text style={styles.inputLabel}>Dedicated Bot Token</Text>
-                  <TextInput
-                    value={ownBotToken}
-                    onChangeText={setOwnBotToken}
-                    placeholder="123456:ABC-DEF..."
-                    placeholderTextColor={colors.inputPlaceholder}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    style={styles.input}
-                  />
-                  <Text style={styles.inputLabel}>Channel Username or ID</Text>
-                  <TextInput
-                    value={ownChatId}
-                    onChangeText={setOwnChatId}
-                    placeholder="@yourchannel or -100..."
-                    placeholderTextColor={colors.inputPlaceholder}
-                    autoCapitalize="none"
-                    style={styles.input}
-                  />
-                  <Pressable
-                    style={[
-                      styles.primaryBtn,
-                      (!inventory.telegram.identity || !!busyKey) && {
-                        opacity: 0.6,
-                      },
-                    ]}
-                    disabled={!inventory.telegram.identity || !!busyKey}
-                    onPress={() => void handleConnectOwnBot()}
-                  >
-                    <Text style={styles.primaryBtnText}>
-                      Verify & Connect Own Bot
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : null}
-
-              {inventory.connections.length > 0 && (
-                <View style={[styles.listStack, { marginTop: 14 }]}>
-                  {inventory.connections.map((conn) => (
-                    <View key={conn.id} style={styles.itemCard}>
-                      <View style={styles.titleBadgeRow}>
-                        <Text style={styles.itemTitle} numberOfLines={1}>
-                          {conn.title}
-                        </Text>
-                        <View
-                          style={
-                            conn.status === "healthy"
-                              ? styles.verifiedBadge
-                              : styles.pendingBadge
-                          }
-                        >
-                          <Text
-                            style={
-                              conn.status === "healthy"
-                                ? styles.verifiedBadgeText
-                                : styles.pendingBadgeText
-                            }
-                          >
-                            {conn.status}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={styles.itemMeta}>
-                        @{conn.bot_username} ·{" "}
-                        {conn.bot_mode === "shared"
-                          ? "GetAiPilot bot"
-                          : "Own bot"}
-                      </Text>
-                      <View style={styles.itemActions}>
-                        <Pressable
-                          style={styles.ghostBtn}
-                          disabled={!!busyKey}
-                          onPress={() =>
-                            void runAction(
-                              `health-${conn.id}`,
-                              "health",
-                              { id: conn.id },
-                              "Connection Check",
-                            )
-                          }
-                        >
-                          <Text style={styles.ghostBtnText}>Check Health</Text>
-                        </Pressable>
-                        <Pressable
-                          style={styles.dangerBtnSmall}
-                          disabled={!!busyKey}
-                          onPress={() =>
-                            handleDisconnectConnection(conn.id, conn.title)
-                          }
-                        >
-                          <Text style={styles.dangerBtnSmallText}>
-                            Disconnect
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            {/* 4. CREATE TRACKING CAMPAIGN */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <HugeiconsIcon
-                    icon={Link01Icon}
-                    size={18}
-                    color={colors.primary}
-                    strokeWidth={2}
-                  />
-                  <Text style={styles.sectionTitle}>Create Tracking Campaign</Text>
-                </View>
-              </View>
-              <Text style={styles.sectionDesc}>
-                Pair a Verified template or website with your connected channel to
-                generate a tracked Telegram invite link.
-              </Text>
-
-              <View style={styles.formStack}>
-                <Text style={styles.inputLabel}>Campaign Name</Text>
-                <TextInput
-                  value={campaignName}
-                  onChangeText={setCampaignName}
-                  placeholder="e.g. November VIP Launch"
-                  placeholderTextColor={colors.inputPlaceholder}
-                  style={styles.input}
-                />
-
-                <Text style={styles.inputLabel}>Select Verified Page / Website</Text>
-                {verifiedSites.length === 0 ? (
-                  <Text style={styles.warnText}>
-                    Verify at least one template or external website above first.
-                  </Text>
-                ) : (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipRow}
-                  >
-                    {verifiedSites.map((s) => {
-                      const active = selectedSiteId === s.id;
-                      return (
-                        <Pressable
-                          key={s.id}
-                          onPress={() => setSelectedSiteId(s.id)}
-                          style={[
-                            styles.selectChip,
-                            active && styles.selectChipActive,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.selectChipText,
-                              active && styles.selectChipTextActive,
-                            ]}
-                          >
-                            {s.name}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                )}
-
-                <Text style={styles.inputLabel}>Select Telegram Channel</Text>
-                {inventory.connections.length === 0 ? (
-                  <Text style={styles.warnText}>
-                    Connect a Telegram channel above first.
-                  </Text>
-                ) : (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipRow}
-                  >
-                    {inventory.connections.map((c) => {
-                      const active = selectedConnectionId === c.id;
-                      return (
-                        <Pressable
-                          key={c.id}
-                          onPress={() => setSelectedConnectionId(c.id)}
-                          style={[
-                            styles.selectChip,
-                            active && styles.selectChipActive,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.selectChipText,
-                              active && styles.selectChipTextActive,
-                            ]}
-                          >
-                            {c.title}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                )}
-
-                <Text style={styles.inputLabel}>Current Telegram Button URL</Text>
-                <TextInput
-                  value={originalTelegramUrl}
-                  onChangeText={setOriginalTelegramUrl}
-                  placeholder="https://t.me/yourchannel"
-                  placeholderTextColor={colors.inputPlaceholder}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  style={styles.input}
-                />
-
-                <View style={styles.switchRow}>
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={styles.switchLabel}>Require join approval</Text>
-                    <Text style={styles.switchHint}>
-                      Join requests count separately until approved.
-                    </Text>
-                  </View>
-                  <Switch
-                    value={joinRequest}
-                    onValueChange={setJoinRequest}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                  />
-                </View>
-
-                <Pressable
-                  style={[
-                    styles.primaryBtn,
-                    (!verifiedSites.length ||
-                      !inventory.connections.length ||
-                      !!busyKey) && { opacity: 0.6 },
-                  ]}
-                  disabled={
-                    !verifiedSites.length ||
-                    !inventory.connections.length ||
-                    !!busyKey
-                  }
-                  onPress={() => void handleCreateCampaign()}
-                >
-                  <Text style={styles.primaryBtnText}>Create Campaign</Text>
-                </Pressable>
-              </View>
-            </View>
+            </KeyboardAvoidingView>
+          </Modal>
           </>
         ) : (
           /* ANALYTICS & CAMPAIGNS TAB */
@@ -2019,13 +2789,16 @@ export default function TelegramConversionScreen() {
 
             <View style={styles.kpiGrid}>
               {[
-                { label: "Page Views", value: reportTotals.views },
-                { label: "TG Clicks", value: reportTotals.clicks },
-                { label: "Verified Joins", value: reportTotals.joins },
-                { label: "Active Members", value: reportTotals.active },
+                { label: "Page Views", value: reportTotals.views, icon: "eye-outline", color: isDark ? "#38BDF8" : "#0284C7" },
+                { label: "TG Clicks", value: reportTotals.clicks, icon: "finger-print-outline", color: "#8B5CF6" },
+                { label: "Verified Joins", value: reportTotals.joins, icon: "shield-checkmark-outline", color: "#10B981" },
+                { label: "Active Members", value: reportTotals.active, icon: "people-outline", color: "#F59E0B" },
               ].map((stat) => (
                 <View key={stat.label} style={styles.kpiCard}>
-                  <Text style={styles.kpiLabel}>{stat.label}</Text>
+                  <View style={styles.kpiHeaderRow}>
+                    <Text style={styles.kpiLabel}>{stat.label}</Text>
+                    <Ionicons name={stat.icon as any} size={15} color={stat.color} />
+                  </View>
                   <Text style={styles.kpiValue}>{stat.value}</Text>
                 </View>
               ))}
@@ -2099,15 +2872,18 @@ export default function TelegramConversionScreen() {
 
                         {perf && (
                           <View style={styles.miniMetricsRow}>
-                            <Text style={styles.miniMetric}>
-                              Views: {perf.views}
-                            </Text>
-                            <Text style={styles.miniMetric}>
-                              Clicks: {perf.clicks}
-                            </Text>
-                            <Text style={styles.miniMetric}>
-                              Joins: {perf.acquisitions}
-                            </Text>
+                            <View style={styles.metricPill}>
+                              <Ionicons name="eye-outline" size={11} color={colors.textSecondary} />
+                              <Text style={styles.miniMetric}>{perf.views}</Text>
+                            </View>
+                            <View style={styles.metricPill}>
+                              <Ionicons name="finger-print-outline" size={11} color={colors.textSecondary} />
+                              <Text style={styles.miniMetric}>{perf.clicks}</Text>
+                            </View>
+                            <View style={styles.metricPill}>
+                              <Ionicons name="shield-checkmark-outline" size={11} color="#059669" />
+                              <Text style={[styles.miniMetric, { color: "#059669", fontWeight: "700" }]}>{perf.acquisitions}</Text>
+                            </View>
                           </View>
                         )}
 
@@ -2198,7 +2974,8 @@ export default function TelegramConversionScreen() {
             </View>
           </>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </AppScreen>
   );
 }
@@ -2850,5 +3627,815 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
       fontSize: 11.5,
       fontWeight: "600",
       color: colors.text,
+    },
+
+    // Step Tracker Card
+    stepTrackerCard: {
+      borderRadius: 18,
+      padding: 14,
+      backgroundColor: isDark ? "#141F2B" : "#F0F9FF",
+      borderWidth: 1.25,
+      borderColor: isDark ? "rgba(56, 189, 248, 0.28)" : "rgba(2, 132, 199, 0.2)",
+      gap: 12,
+    },
+    stepTrackerHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    stepTrackerTitleRow: {
+      gap: 2,
+    },
+    stepTrackerMainTitle: {
+      fontSize: 14.5,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    stepTrackerSubTitle: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    stepProgressPill: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.18)" : "#E0F2FE",
+    },
+    stepProgressPillText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: isDark ? "#7DD3FC" : "#0369A1",
+    },
+    stepTrackerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingTop: 2,
+      gap: 4,
+    },
+    stepTabItem: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingVertical: 6,
+      paddingHorizontal: 6,
+      borderRadius: 10,
+      opacity: 0.75,
+    },
+    stepTabItemActive: {
+      opacity: 1,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.12)" : "rgba(2, 132, 199, 0.08)",
+    },
+    stepCircle: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: isDark ? "#2A2838" : "#E2E8F0",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stepCircleActive: {
+      backgroundColor: isDark ? "#0284C7" : "#0284C7",
+    },
+    stepCircleDone: {
+      backgroundColor: "#059669",
+    },
+    stepCircleNum: {
+      fontSize: 10.5,
+      fontWeight: "800",
+      color: colors.textSecondary,
+    },
+    stepCircleNumActive: {
+      color: "#FFFFFF",
+    },
+    stepItemTitle: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    stepItemTitleActive: {
+      color: isDark ? "#38BDF8" : "#0284C7",
+      fontWeight: "800",
+    },
+    stepItemSub: {
+      fontSize: 9.5,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    stepItemSubDone: {
+      color: isDark ? "#34D399" : "#047857",
+      fontWeight: "600",
+    },
+    stepDivider: {
+      width: 10,
+      height: 1.5,
+      backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "#CBD5E1",
+      marginHorizontal: 1,
+    },
+    stepDividerActive: {
+      backgroundColor: isDark ? "#38BDF8" : "#0284C7",
+    },
+
+    // Wizard Navigation Buttons
+    wizardActionBox: {
+      marginTop: 8,
+    },
+    wizardNextBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      gap: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.18,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    wizardNextBtnText: {
+      fontSize: 13.5,
+      fontWeight: "800",
+      color: colors.primaryForeground,
+    },
+    wizardNavRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginTop: 8,
+    },
+    wizardBackBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      backgroundColor: isDark ? "#232032" : "#F1F5F9",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0",
+    },
+    wizardBackBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    wizardNextBtnFlex: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      gap: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.18,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    wizardBackBtnCenter: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 10,
+      marginTop: 2,
+    },
+    wizardBackBtnCenterText: {
+      fontSize: 12.5,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+
+    // Step Header & Badges
+    stepHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 2,
+    },
+    stepBadge: {
+      paddingHorizontal: 9,
+      paddingVertical: 3.5,
+      borderRadius: 7,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.18)" : "#E0F2FE",
+    },
+    stepBadgeText: {
+      fontSize: 10,
+      fontWeight: "900",
+      letterSpacing: 0.8,
+      color: isDark ? "#38BDF8" : "#0284C7",
+    },
+    stepIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.accentSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    subHeading: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 4,
+    },
+    completionBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      padding: 11,
+      borderRadius: 11,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.14)" : "#ECFDF5",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.28)" : "#A7F3D0",
+      marginTop: 6,
+    },
+    completionBannerText: {
+      flex: 1,
+      fontSize: 11.5,
+      fontWeight: "600",
+      color: isDark ? "#6EE7B7" : "#047857",
+      lineHeight: 16,
+    },
+
+    // Two-Option Selector Cards (Internal vs External)
+    typeSelectorGrid: {
+      flexDirection: "row",
+      gap: 10,
+      marginVertical: 4,
+    },
+    typeCard: {
+      flex: 1,
+      borderRadius: 14,
+      padding: 12,
+      backgroundColor: isDark ? "#171523" : "#F8FAFC",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+      gap: 7,
+    },
+    typeCardActive: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.08)" : "#F0F9FF",
+    },
+    typeCardTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    typeIconBox: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      backgroundColor: isDark ? "#232032" : "#EDE9FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    typeIconBoxActive: {
+      backgroundColor: colors.primaryMuted,
+    },
+    typeTagInternal: {
+      paddingHorizontal: 7,
+      paddingVertical: 2.5,
+      borderRadius: 6,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#D1FAE5",
+    },
+    typeTagInternalText: {
+      fontSize: 9.5,
+      fontWeight: "800",
+      color: isDark ? "#6EE7B7" : "#047857",
+    },
+    typeTagExternal: {
+      paddingHorizontal: 7,
+      paddingVertical: 2.5,
+      borderRadius: 6,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.2)" : "#E0F2FE",
+    },
+    typeTagExternalText: {
+      fontSize: 9.5,
+      fontWeight: "800",
+      color: isDark ? "#38BDF8" : "#0284C7",
+    },
+    typeCardTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 2,
+    },
+    typeCardTitleActive: {
+      color: colors.primary,
+    },
+    typeCardDesc: {
+      fontSize: 10.5,
+      lineHeight: 14.5,
+      color: colors.textSecondary,
+    },
+    typeRadioRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 4,
+      paddingTop: 6,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? "rgba(255,255,255,0.06)" : "#F1F5F9",
+    },
+    typeRadioCircle: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      borderWidth: 1.5,
+      borderColor: colors.textSecondary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    typeRadioCircleActive: {
+      borderColor: colors.primary,
+    },
+    typeRadioDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: colors.primary,
+    },
+    typeRadioText: {
+      fontSize: 10.5,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    typeRadioTextActive: {
+      color: colors.text,
+      fontWeight: "700",
+    },
+
+    // Mode Sections inside Step 2
+    modeSection: {
+      marginTop: 6,
+      gap: 10,
+    },
+    modeHeaderBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingBottom: 4,
+    },
+    modeIndicatorInternal: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: "#10B981",
+    },
+    modeIndicatorExternal: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? "#38BDF8" : "#0284C7",
+    },
+    modeHeaderTitle: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+
+    // Notice Box for Missing Landing Template
+    noticeBox: {
+      padding: 14,
+      borderRadius: 14,
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.12)" : "#FFFBEB",
+      borderWidth: 1.25,
+      borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A",
+      gap: 8,
+    },
+    noticeHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    noticeTitle: {
+      fontSize: 13.5,
+      fontWeight: "800",
+      color: isDark ? "#FCD34D" : "#B45309",
+    },
+    noticeText: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: isDark ? "#FDE68A" : "#92400E",
+    },
+    noticeSubText: {
+      fontSize: 11,
+      lineHeight: 15.5,
+      color: colors.textSecondary,
+    },
+    noticeActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 4,
+      flexWrap: "wrap",
+    },
+
+    // Step 3 Selection Summary Card
+    selectionSummaryCard: {
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: isDark ? "#171523" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0",
+      gap: 8,
+    },
+    selectionSummaryHeading: {
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+      color: colors.textSecondary,
+      textTransform: "uppercase",
+      marginBottom: 2,
+    },
+    summaryItemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 9,
+    },
+    summaryIconBox: {
+      width: 28,
+      height: 28,
+      borderRadius: 7,
+      backgroundColor: isDark ? "#232032" : "#EDE9FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    summaryItemLabel: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    summaryItemValue: {
+      fontSize: 12.5,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 1,
+    },
+
+    // Accordion for Manual Channel Entry
+    accordionWrap: {
+      marginTop: 8,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
+      backgroundColor: isDark ? "#171523" : "#F8FAFC",
+      overflow: "hidden",
+    },
+    accordionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 12,
+    },
+    accordionHeaderLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      flex: 1,
+    },
+    accordionIconBox: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      backgroundColor: colors.accentSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    accordionTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    accordionSubtitle: {
+      fontSize: 10.5,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    accordionChevronBox: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F1F5F9",
+    },
+    accordionBody: {
+      paddingHorizontal: 12,
+      paddingBottom: 12,
+      paddingTop: 6,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#F1F5F9",
+      gap: 8,
+    },
+    accordionDesc: {
+      fontSize: 11.5,
+      lineHeight: 16,
+      color: colors.textSecondary,
+    },
+
+    // Hero Graphic Badges
+    heroPillRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 2,
+      flexWrap: "wrap",
+    },
+    heroFeaturePill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4.5,
+      paddingHorizontal: 8,
+      paddingVertical: 3.5,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    heroFeaturePillText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+
+    // Stepper header graphics
+    stepNumberBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 6,
+      backgroundColor: colors.primary,
+    },
+    stepNumberBadgeText: {
+      fontSize: 10,
+      fontWeight: "900",
+      color: colors.primaryForeground,
+    },
+    stepDotsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    stepDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    stepDotActive: {
+      width: 16,
+      backgroundColor: colors.primary,
+    },
+    stepDotDone: {
+      backgroundColor: "#059669",
+    },
+    stepDotPending: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#CBD5E1",
+    },
+
+    // Step 1 Setup Pipeline Bar
+    pipelineBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 7,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      backgroundColor: isDark ? "#171523" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#E2E8F0",
+      marginVertical: 4,
+    },
+    pipelineStep: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      opacity: 0.5,
+    },
+    pipelineStepActive: {
+      opacity: 1,
+    },
+    pipelineStepText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    pipelineStepTextActive: {
+      color: colors.text,
+      fontWeight: "800",
+    },
+
+    // Identity Card graphics
+    identityAvatarWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.16)" : "#E0F2FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    verifiedChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      marginTop: 2,
+    },
+    verifiedChipText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: "#059669",
+    },
+
+    // Dropdown Icon Box & Empty Graphics
+    dropdownIconBox: {
+      width: 28,
+      height: 28,
+      borderRadius: 7,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.15)" : "#E0F2FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyGraphicBox: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 18,
+      gap: 6,
+    },
+    emptyGraphicTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    emptyGraphicSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+
+    // Micro Feature Pills for Step 2 Cards
+    featurePillRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      marginTop: 4,
+      flexWrap: "wrap",
+    },
+    microPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3.5,
+      paddingHorizontal: 6,
+      paddingVertical: 2.5,
+      borderRadius: 5,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.07)" : "#E2E8F0",
+    },
+    microPillText: {
+      fontSize: 9.5,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+
+    // Notice Box Graphic
+    noticeBoxGraphic: {
+      padding: 16,
+      borderRadius: 14,
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.12)" : "#FFFBEB",
+      borderWidth: 1.25,
+      borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+    },
+    noticeIconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#FEF3C7",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 2,
+    },
+    noticeGraphicTitle: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: isDark ? "#FCD34D" : "#B45309",
+    },
+    noticeGraphicSub: {
+      fontSize: 11.5,
+      color: isDark ? "#FDE68A" : "#92400E",
+      textAlign: "center",
+    },
+    noticeActionsGraphic: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 6,
+    },
+
+    // Graphic Flow Connector for Step 3
+    graphicFlowCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 14,
+      borderRadius: 14,
+      backgroundColor: isDark ? "#171523" : "#F8FAFC",
+      borderWidth: 1.25,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#E2E8F0",
+    },
+    flowNode: {
+      flex: 1,
+      alignItems: "center",
+      gap: 5,
+    },
+    flowIconBoxTg: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.16)" : "#E0F2FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    flowIconBoxWeb: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.16)" : "#D1FAE5",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    flowNodeTitle: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.text,
+      textAlign: "center",
+    },
+    flowBadgeOk: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 5,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#D1FAE5",
+    },
+    flowBadgeOkText: {
+      fontSize: 9,
+      fontWeight: "800",
+      color: "#059669",
+    },
+    flowBadgeWait: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 5,
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2",
+    },
+    flowBadgeWaitText: {
+      fontSize: 9,
+      fontWeight: "800",
+      color: "#DC2626",
+    },
+    flowConnector: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 4,
+    },
+    flowLine: {
+      width: 14,
+      height: 1.5,
+      backgroundColor: colors.primary,
+    },
+    flowConnectorBadge: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    // KPI Header & Metric Pills
+    kpiHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+    },
+    metricPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3.5,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 5,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
     },
   });
