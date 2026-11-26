@@ -139,7 +139,7 @@ export const Chatbot: React.FC = () => {
           style={styles.touchArea}
         >
           <ChatBotLogo
-            size={24}
+            size={28}
             variant="black"
             isAnimated={true}
             interactive={true}
@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 24,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
