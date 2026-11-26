@@ -14,6 +14,11 @@ function escapeHtml(str: string | undefined | null): string {
     .replace(/'/g, '&#039;');
 }
 
+const GETAIPILOT_DOT_PATH =
+  'M286 13 L299 13 L305 15 L312 19 L318 25 L323 34 L325 41 L324 54 L320 63 L311 72 L298 77 L286 77 L279 75 L271 70 L267 66 L262 58 L260 51 L261 35 L265 27 L274 18 L280 15 L285 14 Z';
+const GETAIPILOT_BODY_PATH =
+  'M140 54 L159 54 L160 55 L175 56 L188 59 L199 63 L223 77 L232 84 L247 99 L257 114 L264 128 L269 144 L270 155 L271 156 L271 173 L270 174 L270 181 L269 182 L268 190 L264 198 L259 203 L253 206 L244 207 L237 205 L230 200 L225 191 L223 159 L219 147 L210 132 L197 119 L180 109 L164 104 L159 104 L158 103 L136 103 L135 104 L130 104 L116 108 L106 113 L90 125 L78 139 L68 158 L64 174 L64 184 L63 185 L64 200 L69 220 L77 236 L83 244 L94 255 L104 262 L122 270 L130 272 L136 272 L137 273 L153 272 L160 269 L168 261 L171 254 L171 245 L169 239 L166 235 L156 228 L152 227 L138 228 L130 226 L124 223 L112 211 L108 203 L106 195 L106 179 L107 178 L107 174 L114 160 L122 152 L130 147 L141 144 L150 144 L158 146 L164 149 L176 161 L181 172 L182 192 L183 193 L183 199 L186 211 L191 222 L198 232 L204 238 L212 244 L220 248 L235 252 L250 252 L251 251 L256 251 L264 249 L275 244 L284 238 L297 225 L306 212 L313 197 L318 181 L320 165 L321 164 L321 143 L322 143 L324 157 L325 158 L325 165 L326 166 L326 199 L325 200 L325 207 L324 208 L323 218 L319 230 L319 233 L317 236 L314 246 L304 265 L291 283 L274 300 L265 307 L251 316 L235 324 L222 329 L202 334 L186 335 L185 336 L163 336 L162 335 L152 335 L151 334 L135 332 L113 325 L96 317 L77 305 L66 296 L52 282 L43 271 L28 246 L21 227 L17 211 L17 205 L16 204 L16 193 L15 192 L16 171 L17 170 L17 164 L18 163 L19 155 L25 137 L34 119 L44 104 L61 86 L70 79 L86 69 L102 62 L124 56 L139 55 Z';
+
 /**
  * Generates an animated QR SVG matching website's AnimatedCanvasQR 1:1:
  * - Excavates modules around the center logo (matching qrcode.react excavate: true)
@@ -61,35 +66,45 @@ function createAnimatedQrSvg(
     }
 
     let svgCenterLogo = '';
+    let htmlCenterLogo = '';
     if (logoUrl) {
       const boxX = ((size - boxSize) / 2).toFixed(2);
       const boxY = ((size - boxSize) / 2).toFixed(2);
       const logoInnerSize = Math.max(14, Math.round(logoSize * 0.94));
-      const scaleFactor = (logoInnerSize / 353).toFixed(5);
-      const logoW = 348 * Number(scaleFactor);
-      const logoH = 353 * Number(scaleFactor);
-      const logoX = ((size - logoW) / 2).toFixed(2);
-      const logoY = ((size - logoH) / 2).toFixed(2);
+      const logoW = (348 * (logoInnerSize / 353)).toFixed(2);
+      const logoH = logoInnerSize.toFixed(2);
+      const logoX = ((size - Number(logoW)) / 2).toFixed(2);
+      const logoY = ((size - logoInnerSize) / 2).toFixed(2);
       const bgFill = bgColor === 'transparent' ? '#ffffff' : bgColor;
 
-      // Crisp vector GetAiPilot logo embedded directly inside the SVG
-      // 100% vector, razor-sharp at 300 DPI, zero html2canvas image-loading bugs
+      // 1. Nested SVG inside the QR SVG (without fragile <g transform> matrix transforms)
       svgCenterLogo = `
         <rect x="${boxX}" y="${boxY}" width="${boxSize}" height="${boxSize}" rx="5" ry="5" fill="${bgFill}" />
-        <g transform="translate(${logoX}, ${logoY}) scale(${scaleFactor})">
-          <path d="M286 13 L299 13 L305 15 L312 19 L318 25 L323 34 L325 41 L324 54 L320 63 L311 72 L298 77 L286 77 L279 75 L271 70 L267 66 L262 58 L260 51 L261 35 L265 27 L274 18 L280 15 L285 14 Z" fill="${fgColor}" />
-          <path d="M140 54 L159 54 L160 55 L175 56 L188 59 L199 63 L223 77 L232 84 L247 99 L257 114 L264 128 L269 144 L270 155 L271 156 L271 173 L270 174 L270 181 L269 182 L268 190 L264 198 L259 203 L253 206 L244 207 L237 205 L230 200 L225 191 L223 159 L219 147 L210 132 L197 119 L180 109 L164 104 L159 104 L158 103 L136 103 L135 104 L130 104 L116 108 L106 113 L90 125 L78 139 L68 158 L64 174 L64 184 L63 185 L64 200 L69 220 L77 236 L83 244 L94 255 L104 262 L122 270 L130 272 L136 272 L137 273 L153 272 L160 269 L168 261 L171 254 L171 245 L169 239 L166 235 L156 228 L152 227 L138 228 L130 226 L124 223 L112 211 L108 203 L106 195 L106 179 L107 178 L107 174 L114 160 L122 152 L130 147 L141 144 L150 144 L158 146 L164 149 L176 161 L181 172 L182 192 L183 193 L183 199 L186 211 L191 222 L198 232 L204 238 L212 244 L220 248 L235 252 L250 252 L251 251 L256 251 L264 249 L275 244 L284 238 L297 225 L306 212 L313 197 L318 181 L320 165 L321 164 L321 143 L322 143 L324 157 L325 158 L325 165 L326 166 L326 199 L325 200 L325 207 L324 208 L323 218 L319 230 L319 233 L317 236 L314 246 L304 265 L291 283 L274 300 L265 307 L251 316 L235 324 L222 329 L202 334 L186 335 L185 336 L163 336 L162 335 L152 335 L151 334 L135 332 L113 325 L96 317 L77 305 L66 296 L52 282 L43 271 L28 246 L21 227 L17 211 L17 205 L16 204 L16 193 L15 192 L16 171 L17 170 L17 164 L18 163 L19 155 L25 137 L34 119 L44 104 L61 86 L70 79 L86 69 L102 62 L124 56 L139 55 Z" fill="${fgColor}" />
-        </g>
+        <svg x="${logoX}" y="${logoY}" width="${logoW}" height="${logoH}" viewBox="0 0 348 353" style="overflow:visible;">
+          <path d="${GETAIPILOT_DOT_PATH}" fill="${fgColor}" />
+          <path d="${GETAIPILOT_BODY_PATH}" fill="${fgColor}" />
+        </svg>
+      `;
+
+      // 2. HTML DOM element overlay (for perfect live preview & html2canvas DOM parsing)
+      htmlCenterLogo = `
+        <div class="qr-center-logo" style="position:absolute;left:${boxX}px;top:${boxY}px;width:${boxSize}px;height:${boxSize}px;background:${bgFill};border-radius:5px;display:flex;align-items:center;justify-content:center;z-index:12;box-sizing:border-box;pointer-events:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="${logoW}" height="${logoH}" viewBox="0 0 348 353" style="display:block;">
+            <path d="${GETAIPILOT_DOT_PATH}" fill="${fgColor}" />
+            <path d="${GETAIPILOT_BODY_PATH}" fill="${fgColor}" />
+          </svg>
+        </div>
       `;
     }
 
     const svgBg = bgColor === 'transparent' ? 'transparent' : bgColor;
 
     return `<div class="qr-anim-container" style="width:${size}px;height:${size}px;">` +
-      `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="background:${svgBg};display:block;">` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="background:${svgBg};display:block;">` +
       rects +
       svgCenterLogo +
       `</svg>` +
+      htmlCenterLogo +
       `<div data-html2canvas-ignore="true" class="pointer-events-none absolute inset-1.5 z-20">` +
       `<span class="absolute top-0 left-0 w-4 h-4 border-t-[2.5px] border-l-[2.5px] border-emerald-500 rounded-tl-xs animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]"></span>` +
       `<span class="absolute top-0 right-0 w-4 h-4 border-t-[2.5px] border-r-[2.5px] border-emerald-500 rounded-tr-xs animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]"></span>` +
@@ -1684,6 +1699,77 @@ export function buildCanvasHtml(
         backgroundColor: null,
         logging: false,
       }).then(function(canvas) {
+        // Guaranteed razor-sharp GetAiPilot logo stamp on exported canvas at 300 DPI
+        try {
+          var logoEl = target.querySelector('.qr-center-logo');
+          var qrEl = target.querySelector('.qr-anim-container') || target.querySelector('svg');
+          if (target && (logoEl || qrEl)) {
+            var targetRect = target.getBoundingClientRect();
+            var ctx = canvas.getContext('2d');
+            
+            var lx = 0, ly = 0, lw = 0, lh = 0, fg = '#000000';
+            if (logoEl) {
+              var logoRect = logoEl.getBoundingClientRect();
+              lx = (logoRect.left - targetRect.left) * scale;
+              ly = (logoRect.top - targetRect.top) * scale;
+              lw = logoRect.width * scale;
+              lh = logoRect.height * scale;
+              var p = logoEl.querySelector('path');
+              if (p && p.getAttribute('fill')) fg = p.getAttribute('fill');
+            } else if (qrEl) {
+              var qrRect = qrEl.getBoundingClientRect();
+              var qx = (qrRect.left - targetRect.left) * scale;
+              var qy = (qrRect.top - targetRect.top) * scale;
+              var qw = qrRect.width * scale;
+              var qh = qrRect.height * scale;
+              lw = qw * 0.22;
+              lh = qh * 0.22;
+              lx = qx + (qw - lw) / 2;
+              ly = qy + (qh - lh) / 2;
+              var qp = qrEl.querySelector('rect[fill]');
+              if (qp && qp.getAttribute('fill')) fg = qp.getAttribute('fill');
+            }
+
+            if (lw > 0 && lh > 0) {
+              var r = 5 * scale;
+              ctx.save();
+              ctx.fillStyle = '#ffffff';
+              ctx.beginPath();
+              ctx.moveTo(lx + r, ly);
+              ctx.lineTo(lx + lw - r, ly);
+              ctx.quadraticCurveTo(lx + lw, ly, lx + lw, ly + r);
+              ctx.lineTo(lx + lw, ly + lh - r);
+              ctx.quadraticCurveTo(lx + lw, ly + lh, lx + lw - r, ly + lh);
+              ctx.lineTo(lx + r, ly + lh);
+              ctx.quadraticCurveTo(lx, ly + lh, lx, ly + lh - r);
+              ctx.lineTo(lx, ly + r);
+              ctx.quadraticCurveTo(lx, ly, lx + r, ly);
+              ctx.closePath();
+              ctx.fill();
+
+              var innerPad = (lw - (lw * 0.76)) / 2;
+              var innerSize = lw * 0.76;
+              var innerX = lx + innerPad;
+              var innerY = ly + innerPad;
+              var s = innerSize / 353;
+              var logoW = 348 * s;
+
+              ctx.fillStyle = fg;
+              ctx.translate(innerX + (innerSize - logoW) / 2, innerY);
+              ctx.scale(s, s);
+              if (typeof Path2D === 'function') {
+                var dotPath = new Path2D('M286 13 L299 13 L305 15 L312 19 L318 25 L323 34 L325 41 L324 54 L320 63 L311 72 L298 77 L286 77 L279 75 L271 70 L267 66 L262 58 L260 51 L261 35 L265 27 L274 18 L280 15 L285 14 Z');
+                var bodyPath = new Path2D('M140 54 L159 54 L160 55 L175 56 L188 59 L199 63 L223 77 L232 84 L247 99 L257 114 L264 128 L269 144 L270 155 L271 156 L271 173 L270 174 L270 181 L269 182 L268 190 L264 198 L259 203 L253 206 L244 207 L237 205 L230 200 L225 191 L223 159 L219 147 L210 132 L197 119 L180 109 L164 104 L159 104 L158 103 L136 103 L135 104 L130 104 L116 108 L106 113 L90 125 L78 139 L68 158 L64 174 L64 184 L63 185 L64 200 L69 220 L77 236 L83 244 L94 255 L104 262 L122 270 L130 272 L136 272 L137 273 L153 272 L160 269 L168 261 L171 254 L171 245 L169 239 L166 235 L156 228 L152 227 L138 228 L130 226 L124 223 L112 211 L108 203 L106 195 L106 179 L107 178 L107 174 L114 160 L122 152 L130 147 L141 144 L150 144 L158 146 L164 149 L176 161 L181 172 L182 192 L183 193 L183 199 L186 211 L191 222 L198 232 L204 238 L212 244 L220 248 L235 252 L250 252 L251 251 L256 251 L264 249 L275 244 L284 238 L297 225 L306 212 L313 197 L318 181 L320 165 L321 164 L321 143 L322 143 L324 157 L325 158 L325 165 L326 166 L326 199 L325 200 L325 207 L324 208 L323 218 L319 230 L319 233 L317 236 L314 246 L304 265 L291 283 L274 300 L265 307 L251 316 L235 324 L222 329 L202 334 L186 335 L185 336 L163 336 L162 335 L152 335 L151 334 L135 332 L113 325 L96 317 L77 305 L66 296 L52 282 L43 271 L28 246 L21 227 L17 211 L17 205 L16 204 L16 193 L15 192 L16 171 L17 170 L17 164 L18 163 L19 155 L25 137 L34 119 L44 104 L61 86 L70 79 L86 69 L102 62 L124 56 L139 55 Z');
+                ctx.fill(dotPath);
+                ctx.fill(bodyPath);
+              }
+              ctx.restore();
+            }
+          }
+        } catch (stampErr) {
+          console.warn('[exportCanvas] Logo stamp error:', stampErr);
+        }
+
         var dataUrl = canvas.toDataURL('image/png');
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage(JSON.stringify({

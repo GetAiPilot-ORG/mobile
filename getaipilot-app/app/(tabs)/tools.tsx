@@ -18,6 +18,7 @@ import {
   Rocket01Icon,
   Search01Icon,
   SmartPhone01Icon,
+  TelegramIcon,
   VoiceToTextIcon,
   WhatsappIcon,
 } from "@/constants/icons";
@@ -48,9 +49,10 @@ interface ToolItem {
   badgeBgDark?: string;
   badgeColorLight?: string;
   badgeColorDark?: string;
+  highlighted?: boolean;
   route: string;
   builder?: {
-    targetTool: "landing-templates" | "bio-builder" | "web-app";
+    targetTool: "landing-templates" | "bio-builder" | "web-app" | "telegram-conversions";
     templateId?: string;
   };
 }
@@ -185,6 +187,24 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     iconColorLight: "#0D9488",
     iconColorDark: "#2DD4BF",
   },
+  {
+    id: "telegram-conversion",
+    title: "Telegram Conversion",
+    category: "MESSAGING",
+    description: "Track landing clicks, verified Telegram joins & ad spend.",
+    icon: TelegramIcon,
+    image: require("../../assets/images/products/telegram.webp"),
+    badge: "ADVANCED",
+    route: "/tools/telegram-conversion",
+    iconBgLight: "#E0F2FE",
+    iconBgDark: "rgba(56, 189, 248, 0.16)",
+    iconColorLight: "#0284C7",
+    iconColorDark: "#38BDF8",
+    badgeBgLight: "#EEF2FF",
+    badgeBgDark: "rgba(129, 140, 248, 0.22)",
+    badgeColorLight: "#4338CA",
+    badgeColorDark: "#A5B4FC",
+  },
 ];
 
 const CATEGORIES = ["All", "TEMPLATES", "MESSAGING", "UTILITIES", "AI AUDIO"];
@@ -215,7 +235,10 @@ export default function FreeToolsScreen() {
           tool.builder.targetTool,
           tool.builder.templateId,
         );
-      } else if (tool.builder.targetTool === "landing-templates") {
+      } else if (
+        tool.builder.targetTool === "landing-templates" ||
+        tool.builder.targetTool === "telegram-conversions"
+      ) {
         await openAuthenticatedTemplate(tool.builder.targetTool, "");
       }
     } catch (error) {
@@ -436,9 +459,21 @@ export default function FreeToolsScreen() {
                     ? (tool.badgeColorDark || tool.iconColorDark)
                     : (tool.badgeColorLight || tool.iconColorLight)
                 }
-                style={{
-                  width: "48.2%",
-                }}
+                style={[
+                  {
+                    width: "48.2%",
+                  },
+                  tool.highlighted && {
+                    backgroundColor: isDark ? "#13212E" : "#F4FAFF",
+                    borderColor: isDark
+                      ? "rgba(56, 189, 248, 0.34)"
+                      : "rgba(2, 132, 199, 0.26)",
+                    borderWidth: 1.25,
+                    shadowColor: isDark ? "#38BDF8" : "#0284C7",
+                    shadowOpacity: isDark ? 0.16 : 0.08,
+                    shadowRadius: 8,
+                  },
+                ]}
                 onPress={() => void handleToolPress(tool)}
               />
             ))}
