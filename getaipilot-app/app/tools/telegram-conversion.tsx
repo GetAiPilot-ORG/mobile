@@ -49,6 +49,7 @@ import {
   fetchUserCreatedTemplates,
   fetchUserTelegramChannels,
   TelegramSetup,
+  TrackingCampaign,
   TrackingInventory,
   trackingRequest,
 } from "../../src/lib/telegramConversionApi";
@@ -149,6 +150,9 @@ export default function TelegramConversionScreen() {
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
   const [originalTelegramUrl, setOriginalTelegramUrl] = useState("");
   const [joinRequest, setJoinRequest] = useState(false);
+  const [expandedInstallMap, setExpandedInstallMap] = useState<
+    Record<string, boolean>
+  >({});
 
   const loadData = useCallback(
     async (showLoader = false) => {
@@ -414,6 +418,33 @@ export default function TelegramConversionScreen() {
     showNotice("Copied", `${label} copied to clipboard.`);
   };
 
+  const normalizeTelegramDestination = (raw?: string | null): string => {
+    const trimmed = (raw || "").trim();
+    if (!trimmed) return "";
+    if (/^@([a-zA-Z0-9_]{3,})$/.test(trimmed)) {
+      return `https://t.me/${trimmed.slice(1)}`;
+    }
+    const withProto = /^https?:\/\//i.test(trimmed)
+      ? trimmed.replace(/^http:\/\//i, "https://")
+      : /^t\.me\/.+/i.test(trimmed)
+        ? `https://${trimmed}`
+        : trimmed;
+    try {
+      const url = new URL(withProto);
+      if (
+        url.protocol === "https:" &&
+        url.hostname.toLowerCase() === "t.me" &&
+        url.pathname &&
+        url.pathname !== "/"
+      ) {
+        return url.href;
+      }
+    } catch {
+      // ignore invalid placeholder URLs like "https://"
+    }
+    return "";
+  };
+
   const handleConnectTemplate = async (page: CreatedTemplatePage) => {
     const isBio = page.design_type === "bio";
     const saved = await runAction(
@@ -433,8 +464,9 @@ export default function TelegramConversionScreen() {
     );
     if (saved?.id) {
       setSelectedSiteId(saved.id);
-      if (page.telegram_url && !originalTelegramUrl) {
-        setOriginalTelegramUrl(page.telegram_url);
+      const cleanTarget = normalizeTelegramDestination(page.telegram_url);
+      if (cleanTarget && !normalizeTelegramDestination(originalTelegramUrl)) {
+        setOriginalTelegramUrl(cleanTarget);
       }
     }
   };
@@ -612,28 +644,90 @@ export default function TelegramConversionScreen() {
   };
 
   const handleCreateCampaign = async () => {
-    if (!campaignName.trim() || !selectedSiteId || !selectedConnectionId || !originalTelegramUrl.trim()) {
+    const verifiedSites = inventory.sites.filter((s) => Boolean(s.verified_at));
+    const effectiveSiteId =
+      verifiedSites.find((s) => s.id === selectedSiteId)?.id ||
+      (verifiedSites.length === 1 ? verifiedSites[0].id : "");
+    const effectiveConnectionId =
+      inventory.connections.find((c) => c.id === selectedConnectionId)?.id ||
+      (inventory.connections.length === 1 ? inventory.connections[0].id : "");
+
+    if (!effectiveSiteId) {
       showNotice(
-        "Incomplete Campaign",
-        "Select a verified page/website, a connected channel, campaign name, and your https://t.me/... link.",
+        "Verified Page Required",
+        "Verify and select a created design or website before creating a campaign.",
       );
       return;
     }
-    const saved = await runAction(
-      "create-campaign",
-      "campaign",
-      {
+    if (!effectiveConnectionId) {
+      showNotice(
+        "Telegram Channel Required",
+        "Connect and select a Telegram channel before creating a campaign.",
+      );
+      return;
+    }
+    if (!campaignName.trim()) {
+      showNotice("Campaign Name Required", "Enter a name for your campaign.");
+      return;
+    }
+    if (campaignName.trim().length > 120) {
+      showNotice(
+        "Campaign Name Too Long",
+        "Campaign name must be 120 characters or fewer.",
+      );
+      return;
+    }
+
+    const cleanTelegramUrl = normalizeTelegramDestination(originalTelegramUrl);
+    if (!cleanTelegramUrl) {
+      showNotice(
+        "Valid Telegram Link Required",
+        "Enter a valid destination link like https://t.me/yourchannel or https://t.me/+invite.",
+      );
+      return;
+    }
+    if (cleanTelegramUrl !== originalTelegramUrl.trim()) {
+      setOriginalTelegramUrl(cleanTelegramUrl);
+    }
+
+    setBusyKey("create-campaign");
+    try {
+      const created = await trackingRequest<TrackingCampaign>("campaign", {
         name: campaignName.trim(),
-        site_id: selectedSiteId,
-        connection_id: selectedConnectionId,
-        original_telegram_url: originalTelegramUrl.trim(),
+        site_id: effectiveSiteId,
+        connection_id: effectiveConnectionId,
+        original_telegram_url: cleanTelegramUrl,
         join_request: joinRequest,
-      },
-      "Campaign Created",
-      "Tap Activate & Generate Invite on the campaign below.",
-    );
-    if (saved?.id) {
+      });
+
+      let activatedInvite: string | null = null;
+      if (created?.id) {
+        try {
+          const act = await trackingRequest<{ invite_link?: string }>(
+            "activate",
+            { id: created.id },
+          );
+          activatedInvite = act?.invite_link || null;
+        } catch {
+          // Campaign remains in draft; user can tap Activate on the card below.
+        }
+      }
+
+      soundService.play("success");
       setCampaignName("");
+      await loadData(false);
+
+      showNotice(
+        activatedInvite ? "Campaign Active" : "Campaign Created",
+        activatedInvite
+          ? "Your tracking campaign is active! Copy the Campaign Tracking URL and Telegram Invite Link below."
+          : "Campaign created below. Tap Activate & Generate Invite to generate your tracking invite link.",
+      );
+    } catch (e: any) {
+      soundService.play("click");
+      showNotice("Action Failed", e?.message || "Could not create campaign.");
+    } finally {
+      setBusyKey("");
       setActiveTab("analytics");
     }
   };
@@ -656,6 +750,264 @@ export default function TelegramConversionScreen() {
       { views: 0, clicks: 0, joins: 0, active: 0, leaves: 0 },
     );
   }, [report]);
+
+  const renderCampaignCard = (c: TrackingCampaign) => {
+    const site = inventory.sites.find((s) => s.id === c.site_id);
+    const conn = inventory.connections.find((ch) => ch.id === c.connection_id);
+    const perf = report?.campaigns.find((r) => r.id === c.id);
+    const campaignUrl = site ? `${site.url}?gap_campaign=${c.public_key}` : "";
+    const isExternal = Boolean(site && !site.landing_page_id);
+    const showInstall =
+      expandedInstallMap[c.id] !== undefined
+        ? expandedInstallMap[c.id]
+        : isExternal;
+    const buttonHtml = `<a href="${c.invite_link || c.original_telegram_url}"\n   data-gap-telegram="join-community">Join Telegram</a>`;
+
+    return (
+      <View key={c.id} style={styles.itemCard}>
+        <View style={styles.titleBadgeRow}>
+          <Text style={styles.itemTitle} numberOfLines={1}>
+            {c.name}
+          </Text>
+          <View
+            style={
+              c.status === "active"
+                ? styles.verifiedBadge
+                : c.status === "paused"
+                  ? styles.pendingBadge
+                  : styles.unverifiedBadge
+            }
+          >
+            <Text
+              style={
+                c.status === "active"
+                  ? styles.verifiedBadgeText
+                  : c.status === "paused"
+                    ? styles.pendingBadgeText
+                    : styles.unverifiedBadgeText
+              }
+            >
+              {c.status}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.itemUrl} numberOfLines={1}>
+          {site?.name || "Unknown page"} · {conn?.title || "Telegram channel"}
+        </Text>
+
+        {perf && (
+          <View style={styles.miniMetricsRow}>
+            <Text style={styles.miniMetric}>Views: {perf.views}</Text>
+            <Text style={styles.miniMetric}>Clicks: {perf.clicks}</Text>
+            <Text style={styles.miniMetric}>Joins: {perf.acquisitions}</Text>
+            <Text style={styles.miniMetric}>Active: {perf.active}</Text>
+            <Text style={[styles.miniMetric, styles.miniMetricLeave]}>
+              Leaves: {perf.leave_events}
+            </Text>
+          </View>
+        )}
+
+        {/* Campaign Page URL (Use in Ads / Share) */}
+        {campaignUrl ? (
+          <View style={styles.codeBox}>
+            <View style={styles.codeBoxHeader}>
+              <Text style={styles.codeBoxLabel}>
+                Campaign Tracking URL (Use in Ads)
+              </Text>
+              <Pressable
+                onPress={() =>
+                  void handleCopy(
+                    `url-${c.id}`,
+                    campaignUrl,
+                    "Campaign tracking URL",
+                  )
+                }
+              >
+                <Text style={styles.errorRetry}>
+                  {copiedKey === `url-${c.id}` ? "Copied" : "Copy URL"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.dnsCode} selectable>
+              {campaignUrl}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Unique Telegram Invite Link */}
+        {c.invite_link ? (
+          <View style={styles.codeBox}>
+            <View style={styles.codeBoxHeader}>
+              <Text style={styles.codeBoxLabel}>
+                Tracked Telegram Invite Link
+              </Text>
+              <Pressable
+                onPress={() =>
+                  void handleCopy(
+                    `inv-${c.id}`,
+                    c.invite_link!,
+                    "Telegram invite link",
+                  )
+                }
+              >
+                <Text style={styles.errorRetry}>
+                  {copiedKey === `inv-${c.id}` ? "Copied" : "Copy Invite"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.dnsCode} selectable>
+              {c.invite_link}
+            </Text>
+          </View>
+        ) : (
+          <Text style={styles.warnText}>
+            Activate this campaign to generate its unique Telegram invite link.
+          </Text>
+        )}
+
+        {/* Script & HTML Button Install Snippet */}
+        {showInstall && (
+          <View style={styles.codeBox}>
+            <View style={styles.codeBoxHeader}>
+              <Text style={styles.codeBoxLabel}>
+                {isExternal
+                  ? "Website Measurement Script (Required)"
+                  : "Measurement Script (Auto on GetAiPilot pages)"}
+              </Text>
+              <Pressable
+                onPress={() =>
+                  void handleCopy(
+                    `script-${c.id}`,
+                    buildInstallSnippet(c.public_key),
+                    "Installation script",
+                  )
+                }
+              >
+                <Text style={styles.errorRetry}>
+                  {copiedKey === `script-${c.id}` ? "Copied" : "Copy Script"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.dnsCode} selectable>
+              {buildInstallSnippet(c.public_key)}
+            </Text>
+
+            <View style={[styles.codeBoxHeader, { marginTop: 8 }]}>
+              <Text style={styles.codeBoxLabel}>Telegram Button Tag</Text>
+              <Pressable
+                onPress={() =>
+                  void handleCopy(`btn-${c.id}`, buttonHtml, "Button HTML")
+                }
+              >
+                <Text style={styles.errorRetry}>
+                  {copiedKey === `btn-${c.id}` ? "Copied" : "Copy Button"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.dnsCode} selectable>
+              {buttonHtml}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.itemActions}>
+          {c.status !== "archived" &&
+            (c.status === "active" ? (
+              <Pressable
+                style={styles.ghostBtn}
+                disabled={!!busyKey}
+                onPress={() =>
+                  void runAction(
+                    `pause-${c.id}`,
+                    "pause",
+                    { id: c.id },
+                    "Campaign Paused",
+                    "Tracking paused while keeping the invite active.",
+                  )
+                }
+              >
+                <Text style={styles.ghostBtnText}>Pause</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[
+                  styles.primaryBtnSmall,
+                  busyKey === `act-${c.id}` && { opacity: 0.7 },
+                ]}
+                disabled={!!busyKey}
+                onPress={() =>
+                  void runAction(
+                    `act-${c.id}`,
+                    "activate",
+                    { id: c.id },
+                    "Campaign Activated",
+                    "Unique Telegram invite link generated and active.",
+                  )
+                }
+              >
+                <Text style={styles.primaryBtnSmallText}>
+                  {c.invite_link ? "Resume" : "Activate & Get Link"}
+                </Text>
+              </Pressable>
+            ))}
+
+          {campaignUrl ? (
+            <Pressable
+              style={styles.ghostBtn}
+              onPress={() => Linking.openURL(campaignUrl).catch(() => {})}
+            >
+              <Text style={styles.ghostBtnText}>Open</Text>
+              <HugeiconsIcon
+                icon={ArrowUpRight01Icon}
+                size={13}
+                color={colors.text}
+                strokeWidth={2}
+              />
+            </Pressable>
+          ) : null}
+
+          <Pressable
+            style={styles.ghostBtn}
+            onPress={() =>
+              setExpandedInstallMap((prev) => ({
+                ...prev,
+                [c.id]: !showInstall,
+              }))
+            }
+          >
+            <Text style={styles.ghostBtnText}>
+              {showInstall ? "Hide Script" : "Install Script"}
+            </Text>
+          </Pressable>
+
+          {c.status !== "archived" && (
+            <Pressable
+              style={styles.dangerBtnSmall}
+              disabled={!!busyKey}
+              onPress={() =>
+                confirmAction(
+                  "Archive Campaign",
+                  `Archive "${c.name}"? Historical metrics are preserved.`,
+                  () => {
+                    void runAction(
+                      `arch-${c.id}`,
+                      "archive",
+                      { id: c.id },
+                      "Campaign Archived",
+                      "Historical tracking records are preserved.",
+                    );
+                  },
+                )
+              }
+            >
+              <Text style={styles.dangerBtnSmallText}>Archive</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
@@ -756,9 +1108,21 @@ export default function TelegramConversionScreen() {
         {errorMsg ? (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>{errorMsg}</Text>
-            <Pressable onPress={() => void loadData(true)}>
-              <Text style={styles.errorRetry}>Retry</Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              {errorMsg.toLowerCase().includes("sign in") ? (
+                <Pressable
+                  onPress={async () => {
+                    await useAuthStore.getState().logout();
+                    router.replace("/(auth)/login" as any);
+                  }}
+                >
+                  <Text style={styles.errorRetry}>Sign In</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={() => void loadData(true)}>
+                <Text style={styles.errorRetry}>Retry</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
 
@@ -859,6 +1223,41 @@ export default function TelegramConversionScreen() {
                   </View>
                 </Pressable>
 
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <View style={styles.titleBadgeRow}>
+                                  <Text style={styles.itemTitle} numberOfLines={1}>
+                                    {page.page_title}
+                                  </Text>
+                                  {isVerified ? (
+                                    <View style={styles.verifiedBadge}>
+                                      <HugeiconsIcon
+                                        icon={CheckmarkCircle01Icon}
+                                        size={12}
+                                        color="#047857"
+                                        strokeWidth={2.2}
+                                      />
+                                      <Text style={styles.verifiedBadgeText}>
+                                        Verified
+                                      </Text>
+                                    </View>
+                                  ) : (
+                                    <View style={styles.unverifiedBadge}>
+                                      <Text style={styles.unverifiedBadgeText}>
+                                        Unverified
+                                      </Text>
+                                    </View>
+                                  )}
+                                </View>
+                                <Text style={styles.itemUrl} numberOfLines={1}>
+                                  {designUrl}
+                                </Text>
+                                {normalizeTelegramDestination(page.telegram_url) ? (
+                                  <Text style={styles.itemMeta} numberOfLines={1}>
+                                    Target: {normalizeTelegramDestination(page.telegram_url)}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            </View>
                 <View
                   style={[
                     styles.stepDivider,
@@ -919,6 +1318,77 @@ export default function TelegramConversionScreen() {
                   </View>
                 </Pressable>
 
+                              {!isVerified ? (
+                                <Pressable
+                                  style={[
+                                    styles.primaryBtnSmall,
+                                    isBusy && { opacity: 0.7 },
+                                  ]}
+                                  disabled={!!busyKey}
+                                  onPress={() => void handleConnectTemplate(page)}
+                                >
+                                  {isBusy ? (
+                                    <ActivityIndicator
+                                      size="small"
+                                      color={colors.primaryForeground}
+                                    />
+                                  ) : (
+                                    <Text style={styles.primaryBtnSmallText}>
+                                      Verify & Connect
+                                    </Text>
+                                  )}
+                                </Pressable>
+                              ) : (
+                                <>
+                                  <Pressable
+                                    style={styles.outlineBtnSmall}
+                                    onPress={() => {
+                                      if (connectedSite) {
+                                        setSelectedSiteId(connectedSite.id);
+                                        const cleanTarget =
+                                          normalizeTelegramDestination(
+                                            page.telegram_url,
+                                          );
+                                        if (cleanTarget) {
+                                          setOriginalTelegramUrl(cleanTarget);
+                                        }
+                                        showNotice(
+                                          "Design Selected",
+                                          `${page.page_title} selected for campaign creation below.`,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <Text style={styles.outlineBtnSmallText}>
+                                      Use in Campaign
+                                    </Text>
+                                  </Pressable>
+                                  {connectedSite ? (
+                                    <Pressable
+                                      style={styles.dangerBtnSmall}
+                                      disabled={!!busyKey}
+                                      onPress={() =>
+                                        handleDisconnectSite(
+                                          connectedSite.id,
+                                          page.page_title,
+                                        )
+                                      }
+                                    >
+                                      <Text style={styles.dangerBtnSmallText}>
+                                        Disconnect
+                                      </Text>
+                                    </Pressable>
+                                  ) : null}
+                                </>
+                              )}
+                            </View>
+                          </View>
+                        );
+                      })()
+                    : null}
+                </>
+              )}
+            </View>
                 <View
                   style={[
                     styles.stepDivider,
@@ -2470,6 +2940,50 @@ export default function TelegramConversionScreen() {
                   }
                   onPress={() => void handleCreateCampaign()}
                 >
+                  <Text style={styles.primaryBtnText}>
+                    {busyKey === "create-campaign"
+                      ? "Creating & Generating Link..."
+                      : "Create Campaign & Get Link"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* 5. CAMPAIGNS & TRACKING LINKS (VISIBLE RIGHT AFTER CREATION) */}
+            {inventory.campaigns.length > 0 && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <HugeiconsIcon
+                      icon={Activity01Icon}
+                      size={18}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.sectionTitle}>
+                      Campaigns & Tracking Links
+                    </Text>
+                  </View>
+                  <Text style={styles.countPill}>
+                    {inventory.campaigns.length}
+                  </Text>
+                </View>
+                <Text style={styles.sectionDesc}>
+                  Share the Campaign Tracking URL in your ads or bio. Every
+                  click swaps to your tracked Telegram invite link and counts
+                  verified channel joins.
+                </Text>
+                <View style={styles.listStack}>
+                  {inventory.campaigns.map(renderCampaignCard)}
+                </View>
+              </View>
+            )}
+          </>
+        ) : (
+          /* ANALYTICS & CAMPAIGNS TAB */
+          <>
+            <View style={styles.rangeRow}>
+              {([7, 30] as const).map((days) => (
                   <HugeiconsIcon
                     icon={Link01Icon}
                     size={16}
@@ -2493,6 +3007,28 @@ export default function TelegramConversionScreen() {
                     Back to Step 2 (Destination)
                   </Text>
                 </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.kpiGrid}>
+              {[
+                { label: "Page Views", value: reportTotals.views },
+                { label: "TG Clicks", value: reportTotals.clicks },
+                { label: "Verified Joins", value: reportTotals.joins },
+                { label: "Active Members", value: reportTotals.active },
+                { label: "Channel Leaves", value: reportTotals.leaves },
+                {
+                  label: "Retention Rate",
+                  value: reportTotals.joins
+                    ? `${Math.round((reportTotals.active / reportTotals.joins) * 100)}%`
+                    : "—",
+                },
+              ].map((stat) => (
+                <View key={stat.label} style={styles.kpiCard}>
+                  <Text style={styles.kpiLabel}>{stat.label}</Text>
+                  <Text style={styles.kpiValue}>{stat.value}</Text>
+                </View>
+              ))}
               </View>
             </View>
           )}
@@ -2828,6 +3364,7 @@ export default function TelegramConversionScreen() {
                 </View>
               ) : (
                 <View style={styles.listStack}>
+                  {inventory.campaigns.map(renderCampaignCard)}
                   {inventory.campaigns.map((c) => {
                     const site = inventory.sites.find((s) => s.id === c.site_id);
                     const perf = report?.campaigns.find((r) => r.id === c.id);
@@ -4153,6 +4690,29 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
       marginTop: 2,
       flexWrap: "wrap",
     },
+    codeBox: {
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: isDark ? "#12101A" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0",
+      gap: 4,
+    },
+    codeBoxHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    codeBoxLabel: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    identityCard: {
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
     heroFeaturePill: {
       flexDirection: "row",
       alignItems: "center",
@@ -4405,6 +4965,11 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
     },
     flowConnector: {
       flexDirection: "row",
+      flexWrap: "wrap",
+      columnGap: 12,
+      rowGap: 4,
+      marginTop: 4,
+      marginBottom: 2,
       alignItems: "center",
       paddingHorizontal: 4,
     },
@@ -4437,5 +5002,8 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
       paddingVertical: 2,
       borderRadius: 5,
       backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
+    },
+    miniMetricLeave: {
+      color: isDark ? "#FCA5A5" : "#DC2626",
     },
   });

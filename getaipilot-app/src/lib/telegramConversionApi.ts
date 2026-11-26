@@ -126,13 +126,24 @@ export interface ConversionReport {
   unknown_members: number;
 }
 
-export async function getValidSupabaseAccessToken(): Promise<string | null> {
+export async function getValidSupabaseAccessToken(
+  forceRefresh = false,
+): Promise<string | null> {
+  if (forceRefresh) {
+    try {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      if (refreshed?.session?.access_token) {
+        return refreshed.session.access_token;
+      }
+    } catch {}
+  }
+
   try {
     const { data } = await supabase.auth.getSession();
     const current = data?.session;
     if (current?.access_token) {
       const expiresAtMs = (current.expires_at ?? 0) * 1000;
-      if (!expiresAtMs || expiresAtMs > Date.now() + 60_000) {
+      if (!forceRefresh && (!expiresAtMs || expiresAtMs > Date.now() + 60_000)) {
         return current.access_token;
       }
       const { data: refreshed } = await supabase.auth
@@ -141,7 +152,9 @@ export async function getValidSupabaseAccessToken(): Promise<string | null> {
       if (refreshed?.session?.access_token) {
         return refreshed.session.access_token;
       }
-      return current.access_token;
+      if (!forceRefresh) {
+        return current.access_token;
+      }
     }
   } catch {}
 
@@ -177,8 +190,9 @@ export async function getValidSupabaseAccessToken(): Promise<string | null> {
 export async function trackingRequest<T>(
   action: string,
   body?: object,
+  _retried = false,
 ): Promise<T> {
-  const token = await getValidSupabaseAccessToken();
+  const token = await getValidSupabaseAccessToken(_retried);
   if (!token) {
     throw new Error("Sign in to manage Telegram conversion tracking.");
   }
@@ -195,6 +209,13 @@ export async function trackingRequest<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     },
   );
+
+  if (response.status === 401 && !_retried) {
+    const refreshedToken = await getValidSupabaseAccessToken(true);
+    if (refreshedToken) {
+      return trackingRequest<T>(action, body, true);
+    }
+  }
 
   const result = await response
     .json()
