@@ -288,6 +288,7 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: 'absolute',
+    overflow: 'hidden',
   },
   badge: {
     overflow: 'hidden',
