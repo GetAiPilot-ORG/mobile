@@ -14,6 +14,11 @@ function escapeHtml(str: string | undefined | null): string {
     .replace(/'/g, '&#039;');
 }
 
+const GETAIPILOT_DOT_PATH =
+  'M286 13 L299 13 L305 15 L312 19 L318 25 L323 34 L325 41 L324 54 L320 63 L311 72 L298 77 L286 77 L279 75 L271 70 L267 66 L262 58 L260 51 L261 35 L265 27 L274 18 L280 15 L285 14 Z';
+const GETAIPILOT_BODY_PATH =
+  'M140 54 L159 54 L160 55 L175 56 L188 59 L199 63 L223 77 L232 84 L247 99 L257 114 L264 128 L269 144 L270 155 L271 156 L271 173 L270 174 L270 181 L269 182 L268 190 L264 198 L259 203 L253 206 L244 207 L237 205 L230 200 L225 191 L223 159 L219 147 L210 132 L197 119 L180 109 L164 104 L159 104 L158 103 L136 103 L135 104 L130 104 L116 108 L106 113 L90 125 L78 139 L68 158 L64 174 L64 184 L63 185 L64 200 L69 220 L77 236 L83 244 L94 255 L104 262 L122 270 L130 272 L136 272 L137 273 L153 272 L160 269 L168 261 L171 254 L171 245 L169 239 L166 235 L156 228 L152 227 L138 228 L130 226 L124 223 L112 211 L108 203 L106 195 L106 179 L107 178 L107 174 L114 160 L122 152 L130 147 L141 144 L150 144 L158 146 L164 149 L176 161 L181 172 L182 192 L183 193 L183 199 L186 211 L191 222 L198 232 L204 238 L212 244 L220 248 L235 252 L250 252 L251 251 L256 251 L264 249 L275 244 L284 238 L297 225 L306 212 L313 197 L318 181 L320 165 L321 164 L321 143 L322 143 L324 157 L325 158 L325 165 L326 166 L326 199 L325 200 L325 207 L324 208 L323 218 L319 230 L319 233 L317 236 L314 246 L304 265 L291 283 L274 300 L265 307 L251 316 L235 324 L222 329 L202 334 L186 335 L185 336 L163 336 L162 335 L152 335 L151 334 L135 332 L113 325 L96 317 L77 305 L66 296 L52 282 L43 271 L28 246 L21 227 L17 211 L17 205 L16 204 L16 193 L15 192 L16 171 L17 170 L17 164 L18 163 L19 155 L25 137 L34 119 L44 104 L61 86 L70 79 L86 69 L102 62 L124 56 L139 55 Z';
+
 /**
  * Generates an animated QR SVG matching website's AnimatedCanvasQR 1:1:
  * - Excavates modules around the center logo (matching qrcode.react excavate: true)
@@ -25,7 +30,7 @@ function createAnimatedQrSvg(
   fgColor: string = '#000000',
   bgColor: string = '#ffffff',
   logoUrl?: string,
-  logoScale: number = 0.18
+  logoScale: number = 0.19
 ): string {
   try {
     const qr = QRCode.create(content || 'https://getaipilot.in', {
@@ -35,10 +40,10 @@ function createAnimatedQrSvg(
     const cellSize = size / modCount;
 
     // Calculate center excavation bounds in module coordinates
-    const scale = logoScale || 0.18;
-    const logoSize = Math.max(16, Math.round(size * scale));
-    const excavatePad = 4;
-    const excHalf = (logoSize / 2 + excavatePad) / cellSize;
+    const scale = logoScale || 0.19;
+    const logoSize = Math.max(14, Math.round(size * scale));
+    const boxSize = Math.round(logoSize + 6);
+    const excHalf = (boxSize / 2 + 1) / cellSize;
     const centerMod = modCount / 2;
 
     let rects = '';
@@ -60,20 +65,46 @@ function createAnimatedQrSvg(
       }
     }
 
-    let logoHtml = '';
+    let svgCenterLogo = '';
+    let htmlCenterLogo = '';
     if (logoUrl) {
-      logoHtml = `<div class="qr-center-logo" style="width:${logoSize}px;height:${logoSize}px;">` +
-        `<img src="${logoUrl}" style="width:100%;height:100%;object-fit:contain;display:block;" />` +
-        `</div>`;
+      const boxX = ((size - boxSize) / 2).toFixed(2);
+      const boxY = ((size - boxSize) / 2).toFixed(2);
+      const logoInnerSize = Math.max(14, Math.round(logoSize * 0.94));
+      const logoW = (348 * (logoInnerSize / 353)).toFixed(2);
+      const logoH = logoInnerSize.toFixed(2);
+      const logoX = ((size - Number(logoW)) / 2).toFixed(2);
+      const logoY = ((size - logoInnerSize) / 2).toFixed(2);
+      const bgFill = bgColor === 'transparent' ? '#ffffff' : bgColor;
+
+      // 1. Nested SVG inside the QR SVG (without fragile <g transform> matrix transforms)
+      svgCenterLogo = `
+        <rect x="${boxX}" y="${boxY}" width="${boxSize}" height="${boxSize}" rx="5" ry="5" fill="${bgFill}" />
+        <svg x="${logoX}" y="${logoY}" width="${logoW}" height="${logoH}" viewBox="0 0 348 353" style="overflow:visible;">
+          <path d="${GETAIPILOT_DOT_PATH}" fill="${fgColor}" />
+          <path d="${GETAIPILOT_BODY_PATH}" fill="${fgColor}" />
+        </svg>
+      `;
+
+      // 2. HTML DOM element overlay (for perfect live preview & html2canvas DOM parsing)
+      htmlCenterLogo = `
+        <div class="qr-center-logo" style="position:absolute;left:${boxX}px;top:${boxY}px;width:${boxSize}px;height:${boxSize}px;background:${bgFill};border-radius:5px;display:flex;align-items:center;justify-content:center;z-index:12;box-sizing:border-box;pointer-events:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="${logoW}" height="${logoH}" viewBox="0 0 348 353" style="display:block;">
+            <path d="${GETAIPILOT_DOT_PATH}" fill="${fgColor}" />
+            <path d="${GETAIPILOT_BODY_PATH}" fill="${fgColor}" />
+          </svg>
+        </div>
+      `;
     }
 
     const svgBg = bgColor === 'transparent' ? 'transparent' : bgColor;
 
     return `<div class="qr-anim-container" style="width:${size}px;height:${size}px;">` +
-      `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="background:${svgBg};display:block;">` +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="background:${svgBg};display:block;">` +
       rects +
+      svgCenterLogo +
       `</svg>` +
-      logoHtml +
+      htmlCenterLogo +
       `<div data-html2canvas-ignore="true" class="pointer-events-none absolute inset-1.5 z-20">` +
       `<span class="absolute top-0 left-0 w-4 h-4 border-t-[2.5px] border-l-[2.5px] border-emerald-500 rounded-tl-xs animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]"></span>` +
       `<span class="absolute top-0 right-0 w-4 h-4 border-t-[2.5px] border-r-[2.5px] border-emerald-500 rounded-tr-xs animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]"></span>` +
@@ -97,9 +128,27 @@ function createAnimatedQrSvg(
   }
 }
 
+function renderHatchCircleSvg(color: string, size = 104): string {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" style="display:block;overflow:visible;">
+    <line x1="64.13" y1="4.13" x2="95.87" y2="35.87" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="52.04" y1="2.04" x2="97.96" y2="47.96" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="42.58" y1="2.58" x2="97.42" y2="57.42" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="34.55" y1="4.55" x2="95.45" y2="65.45" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="27.57" y1="7.57" x2="92.43" y2="72.43" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="21.43" y1="11.43" x2="88.57" y2="78.57" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="16.06" y1="16.06" x2="83.94" y2="83.94" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="11.43" y1="21.43" x2="78.57" y2="88.57" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="7.57" y1="27.57" x2="72.43" y2="92.43" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="4.55" y1="34.55" x2="65.45" y2="95.45" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="2.58" y1="42.58" x2="57.42" y2="97.42" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="2.04" y1="52.04" x2="47.96" y2="97.96" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+    <line x1="4.13" y1="64.13" x2="35.87" y2="95.87" stroke="${color}" stroke-width="3.8" stroke-linecap="round" />
+  </svg>`;
+}
+
 /* Inline Crisp Lucide SVG Icons (zero external CDN dependency) */
-const ICON_TAG = (cls = 'w-3.5 h-3.5') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>`;
-const ICON_CHEVRON_DOWN = (cls = 'w-3.5 h-3.5') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+const ICON_TAG = (cls = 'w-3.5 h-3.5', color = 'currentColor') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="${color}"/></svg>`;
+const ICON_CHEVRON_DOWN = (cls = 'w-3.5 h-3.5', color = 'currentColor') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 const ICON_LEAF = (cls = 'w-2.5 h-2.5') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>`;
 const ICON_AWARD = (cls = 'w-3.5 h-3.5') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>`;
 const ICON_WIFI = (cls = 'w-3.5 h-3.5') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg>`;
@@ -165,72 +214,61 @@ export function buildCanvasHtml(
     case 'bold-retail-promo': {
       const c = config.boldRetailPromo || ({} as any);
       const theme = c.theme || 'forest-gold';
-      const themeMap: Record<string, any> = {
-        'navy-coral': { cardBg: 'bg-[#0a192f]', qrBadgeBg: 'bg-[#061121]', hatch: '#ff6b6b', sub: 'text-blue-100/90', accent: 'text-[#ff6b6b]', iconBg: 'bg-[#ff6b6b]/20 text-[#ff6b6b] border-[#ff6b6b]', qrColor: '#0a192f' },
-        'crimson-amber': { cardBg: 'bg-[#380b0b]', qrBadgeBg: 'bg-[#240505]', hatch: '#f59e0b', sub: 'text-amber-100/90', accent: 'text-[#f59e0b]', iconBg: 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]', qrColor: '#380b0b' },
-        'obsidian-lime': { cardBg: 'bg-[#09090b]', qrBadgeBg: 'bg-[#18181b]', hatch: '#a3e635', sub: 'text-zinc-200/90', accent: 'text-[#a3e635]', iconBg: 'bg-[#a3e635]/20 text-[#a3e635] border-[#a3e635]', qrColor: '#09090b' },
-        'forest-gold': { cardBg: 'bg-[#0e372b]', qrBadgeBg: 'bg-[#09271e]', hatch: '#d4c33d', sub: 'text-emerald-50/90', accent: 'text-[#d4c33d]', iconBg: 'bg-[#d4c33d]/20 text-[#d4c33d] border-[#d4c33d]', qrColor: '#0e372b' },
+      const themeMap: Record<string, { bg: string; hatch: string; qrBg: string; sub: string; qrColor: string }> = {
+        'navy-coral': { bg: '#0A192F', hatch: '#FF6B6B', qrBg: '#061121', sub: '#DBEAFE', qrColor: '#0A192F' },
+        'crimson-amber': { bg: '#380B0B', hatch: '#F59E0B', qrBg: '#240505', sub: '#FEF3C7', qrColor: '#380B0B' },
+        'obsidian-lime': { bg: '#09090B', hatch: '#A3E635', qrBg: '#18181B', sub: '#E4E4E7', qrColor: '#09090B' },
+        'forest-gold': { bg: '#0E372B', hatch: '#D4C33D', qrBg: '#09271E', sub: '#D1FAE5', qrColor: '#0E372B' },
       };
       const t = themeMap[theme] || themeMap['forest-gold'];
-      const qrSvg = createAnimatedQrSvg(qrContent, 146, t.qrColor, '#ffffff', logoFor(t.qrColor));
+      const qrSvg = createAnimatedQrSvg(qrContent, 142, t.qrColor, '#ffffff', logoFor(t.qrColor), 0.19);
 
       templateHtml = `
-        <div class="relative w-[332px] rounded-[24px] border border-black/20 p-6 flex flex-col items-center justify-between text-center overflow-hidden shadow-2xl ${t.cardBg}">
-          <svg width="0" height="0" class="absolute">
-            <defs>
-              <pattern id="diagonal-hatch-${theme}" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="0" x2="0" y2="10" stroke="${t.hatch}" stroke-width="3.8" />
-              </pattern>
-            </defs>
-          </svg>
-
-          <div class="space-y-1 z-10 w-full mb-3">
-            <h2 class="text-[32px] font-black tracking-tighter uppercase leading-none text-white" style="font-family:'Impact','Arial Black',sans-serif;">
+        <div class="relative w-[324px] rounded-[24px] p-6 flex flex-col items-center justify-between text-center overflow-hidden shadow-2xl" style="background-color: ${t.bg}; box-sizing: border-box;">
+          <div class="w-full flex flex-col items-center mb-3.5 z-10">
+            <h2 class="text-[30px] font-black tracking-[-0.5px] uppercase leading-tight text-white m-0">
               ${escapeHtml(c.headline || 'SCAN HERE')}
             </h2>
-            <p class="text-[10px] font-bold tracking-[0.16em] uppercase ${t.sub}">
+            <p class="text-[10px] font-extrabold tracking-[1.5px] uppercase mt-0.5 m-0" style="color: ${t.sub};">
               ${escapeHtml(c.subheadline || 'TO SEE OUR BEST PRODUCTS')}
             </p>
           </div>
 
-          <div class="relative my-4 flex items-center justify-center w-full z-10">
-            <div class="absolute -top-6 -right-3 w-28 h-28 pointer-events-none z-0 animate-pulse" style="animation-duration:4s;">
-              <svg width="112" height="112" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="48" fill="url(#diagonal-hatch-${theme})" />
-              </svg>
+          <div class="relative my-2.5 flex items-center justify-center w-full z-10">
+            <!-- Top-Right Hatch Circle -->
+            <div class="absolute -top-[18px] -right-[4px] pointer-events-none z-0">
+              ${renderHatchCircleSvg(t.hatch, 104)}
             </div>
-            <div class="absolute -bottom-6 -left-3 w-28 h-28 pointer-events-none z-0 animate-pulse" style="animation-duration:4s;">
-              <svg width="112" height="112" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="48" fill="url(#diagonal-hatch-${theme})" />
-              </svg>
+            <!-- Bottom-Left Hatch Circle -->
+            <div class="absolute -bottom-[18px] -left-[4px] pointer-events-none z-0">
+              ${renderHatchCircleSvg(t.hatch, 104)}
             </div>
 
-            <div class="relative z-10 p-4 rounded-[24px] border-[2.5px] border-white shadow-2xl ${t.qrBadgeBg}">
-              <div class="p-2.5 rounded-[16px] bg-white shadow-inner flex items-center justify-center">
+            <div class="relative z-10 p-3.5 rounded-[22px] border-[2.5px] border-white shadow-2xl" style="background-color: ${t.qrBg};">
+              <div class="p-2.5 rounded-[14px] bg-white shadow-inner flex items-center justify-center">
                 ${qrSvg}
               </div>
             </div>
           </div>
 
-          <div class="w-full mt-4 pt-3 flex items-center justify-between text-left z-10">
-            <div class="max-w-[170px] flex items-center gap-1.5">
-              <div class="p-1 rounded-md bg-white/10 shrink-0 ${t.accent} animate-icon-wiggle">
-                ${ICON_TAG('w-3.5 h-3.5')}
+          <div class="w-full mt-[22px] flex flex-row items-center justify-between text-left z-10">
+            <div class="flex flex-row items-center gap-1.5 max-w-[165px]">
+              <div class="p-[5px] rounded-[6px] flex items-center justify-center shrink-0" style="background-color: rgba(255,255,255,0.12); color: ${t.hatch};">
+                ${ICON_TAG('w-[13px] h-[13px]', t.hatch)}
               </div>
-              <h3 class="text-[14px] font-black uppercase tracking-tight leading-[1.1] text-white" style="font-family:'Impact','Arial Black',sans-serif;">
+              <h3 class="text-[13.5px] font-black uppercase leading-[15px] text-white m-0">
                 ${escapeHtml(c.discountText || 'GET DISCOUNT UP TO 50% OFF!')}
               </h3>
             </div>
 
-            <div class="flex flex-col items-end space-y-1">
-              <div class="flex items-center gap-1.5 w-full justify-end">
-                <div class="h-[1.5px] w-12 bg-white/40"></div>
-                <div class="relative w-6 h-6 rounded-full border flex items-center justify-center ${t.iconBg} shadow-sm">
-                  <span class="absolute inset-0 rounded-full bg-current opacity-25 animate-ping" style="animation-duration:2.2s;"></span>
-                  ${ICON_CHEVRON_DOWN('w-3.5 h-3.5 animate-icon-bounce relative z-10')}
+            <div class="flex flex-col items-end gap-[3px]">
+              <div class="flex flex-row items-center gap-1.5">
+                <div class="w-[42px] h-[1.5px]" style="background-color: rgba(255,255,255,0.4);"></div>
+                <div class="w-[22px] h-[22px] rounded-full border flex items-center justify-center" style="border-color: ${t.hatch}; background-color: rgba(255,255,255,0.12); color: ${t.hatch};">
+                  ${ICON_CHEVRON_DOWN('w-[13px] h-[13px]', t.hatch)}
                 </div>
               </div>
-              <span class="text-[9.5px] font-bold tracking-wide ${t.sub}">
+              <span class="text-[9.5px] font-bold tracking-wide" style="color: ${t.sub};">
                 ${escapeHtml(c.websiteUrl || 'www.getaipilot.in')}
               </span>
             </div>
@@ -1642,7 +1680,8 @@ export function buildCanvasHtml(
 
     window.exportCanvas = function(scale) {
       scale = scale || 3;
-      var target = document.getElementById('canvas-export-root');
+      var root = document.getElementById('canvas-export-root');
+      var target = (root && root.firstElementChild) ? root.firstElementChild : root;
       if (!target || typeof html2canvas !== 'function') {
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -1660,6 +1699,77 @@ export function buildCanvasHtml(
         backgroundColor: null,
         logging: false,
       }).then(function(canvas) {
+        // Guaranteed razor-sharp GetAiPilot logo stamp on exported canvas at 300 DPI
+        try {
+          var logoEl = target.querySelector('.qr-center-logo');
+          var qrEl = target.querySelector('.qr-anim-container') || target.querySelector('svg');
+          if (target && (logoEl || qrEl)) {
+            var targetRect = target.getBoundingClientRect();
+            var ctx = canvas.getContext('2d');
+            
+            var lx = 0, ly = 0, lw = 0, lh = 0, fg = '#000000';
+            if (logoEl) {
+              var logoRect = logoEl.getBoundingClientRect();
+              lx = (logoRect.left - targetRect.left) * scale;
+              ly = (logoRect.top - targetRect.top) * scale;
+              lw = logoRect.width * scale;
+              lh = logoRect.height * scale;
+              var p = logoEl.querySelector('path');
+              if (p && p.getAttribute('fill')) fg = p.getAttribute('fill');
+            } else if (qrEl) {
+              var qrRect = qrEl.getBoundingClientRect();
+              var qx = (qrRect.left - targetRect.left) * scale;
+              var qy = (qrRect.top - targetRect.top) * scale;
+              var qw = qrRect.width * scale;
+              var qh = qrRect.height * scale;
+              lw = qw * 0.22;
+              lh = qh * 0.22;
+              lx = qx + (qw - lw) / 2;
+              ly = qy + (qh - lh) / 2;
+              var qp = qrEl.querySelector('rect[fill]');
+              if (qp && qp.getAttribute('fill')) fg = qp.getAttribute('fill');
+            }
+
+            if (lw > 0 && lh > 0) {
+              var r = 5 * scale;
+              ctx.save();
+              ctx.fillStyle = '#ffffff';
+              ctx.beginPath();
+              ctx.moveTo(lx + r, ly);
+              ctx.lineTo(lx + lw - r, ly);
+              ctx.quadraticCurveTo(lx + lw, ly, lx + lw, ly + r);
+              ctx.lineTo(lx + lw, ly + lh - r);
+              ctx.quadraticCurveTo(lx + lw, ly + lh, lx + lw - r, ly + lh);
+              ctx.lineTo(lx + r, ly + lh);
+              ctx.quadraticCurveTo(lx, ly + lh, lx, ly + lh - r);
+              ctx.lineTo(lx, ly + r);
+              ctx.quadraticCurveTo(lx, ly, lx + r, ly);
+              ctx.closePath();
+              ctx.fill();
+
+              var innerPad = (lw - (lw * 0.76)) / 2;
+              var innerSize = lw * 0.76;
+              var innerX = lx + innerPad;
+              var innerY = ly + innerPad;
+              var s = innerSize / 353;
+              var logoW = 348 * s;
+
+              ctx.fillStyle = fg;
+              ctx.translate(innerX + (innerSize - logoW) / 2, innerY);
+              ctx.scale(s, s);
+              if (typeof Path2D === 'function') {
+                var dotPath = new Path2D('M286 13 L299 13 L305 15 L312 19 L318 25 L323 34 L325 41 L324 54 L320 63 L311 72 L298 77 L286 77 L279 75 L271 70 L267 66 L262 58 L260 51 L261 35 L265 27 L274 18 L280 15 L285 14 Z');
+                var bodyPath = new Path2D('M140 54 L159 54 L160 55 L175 56 L188 59 L199 63 L223 77 L232 84 L247 99 L257 114 L264 128 L269 144 L270 155 L271 156 L271 173 L270 174 L270 181 L269 182 L268 190 L264 198 L259 203 L253 206 L244 207 L237 205 L230 200 L225 191 L223 159 L219 147 L210 132 L197 119 L180 109 L164 104 L159 104 L158 103 L136 103 L135 104 L130 104 L116 108 L106 113 L90 125 L78 139 L68 158 L64 174 L64 184 L63 185 L64 200 L69 220 L77 236 L83 244 L94 255 L104 262 L122 270 L130 272 L136 272 L137 273 L153 272 L160 269 L168 261 L171 254 L171 245 L169 239 L166 235 L156 228 L152 227 L138 228 L130 226 L124 223 L112 211 L108 203 L106 195 L106 179 L107 178 L107 174 L114 160 L122 152 L130 147 L141 144 L150 144 L158 146 L164 149 L176 161 L181 172 L182 192 L183 193 L183 199 L186 211 L191 222 L198 232 L204 238 L212 244 L220 248 L235 252 L250 252 L251 251 L256 251 L264 249 L275 244 L284 238 L297 225 L306 212 L313 197 L318 181 L320 165 L321 164 L321 143 L322 143 L324 157 L325 158 L325 165 L326 166 L326 199 L325 200 L325 207 L324 208 L323 218 L319 230 L319 233 L317 236 L314 246 L304 265 L291 283 L274 300 L265 307 L251 316 L235 324 L222 329 L202 334 L186 335 L185 336 L163 336 L162 335 L152 335 L151 334 L135 332 L113 325 L96 317 L77 305 L66 296 L52 282 L43 271 L28 246 L21 227 L17 211 L17 205 L16 204 L16 193 L15 192 L16 171 L17 170 L17 164 L18 163 L19 155 L25 137 L34 119 L44 104 L61 86 L70 79 L86 69 L102 62 L124 56 L139 55 Z');
+                ctx.fill(dotPath);
+                ctx.fill(bodyPath);
+              }
+              ctx.restore();
+            }
+          }
+        } catch (stampErr) {
+          console.warn('[exportCanvas] Logo stamp error:', stampErr);
+        }
+
         var dataUrl = canvas.toDataURL('image/png');
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage(JSON.stringify({

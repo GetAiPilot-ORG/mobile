@@ -16,7 +16,7 @@ import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { CanvasConfig, CanvasTemplateId, QRStyles, QRType } from './types';
+import { CanvasConfig, CanvasTemplateId, QRStyles, QRType, getGetAiPilotLogoSvgDataUrl } from './types';
 import { buildCanvasHtml } from './htmlCanvasRenderer';
 import { GetAiPilotVectorLogo } from './NativeCanvasTemplate';
 import { useTheme, getColors } from '@/theme';
@@ -87,7 +87,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
     }
 
     setIsExporting(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
     webViewRef.current?.injectJavaScript(`
       if (typeof window.exportCanvas === 'function') {
@@ -121,7 +121,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         } else {
           Alert.alert('Saved!', 'QR Code image saved to cache.');
         }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       } catch (err: any) {
         Alert.alert('Export Failed', err?.message || 'Could not save QR image');
       } finally {
@@ -155,7 +155,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         } else {
           Alert.alert('Success', 'Standee PNG saved to cache.');
         }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       } else if (data.type === 'EXPORT_ERROR') {
         Alert.alert('Export Error', data.error || 'Failed to render 300 DPI image');
       }
@@ -170,13 +170,13 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(qrContent);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     const label =
       qrType === 'vcard'
         ? 'Contact vCard copied!'
         : qrType === 'wifi'
-        ? 'Wi-Fi credentials copied!'
-        : 'QR destination URL copied!';
+          ? 'Wi-Fi credentials copied!'
+          : 'QR destination URL copied!';
     Alert.alert('Copied!', label);
   };
 
@@ -218,7 +218,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
               ],
             ]}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
               setPreviewMode('canvas');
             }}
           >
@@ -249,7 +249,7 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
               ],
             ]}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
               setPreviewMode('pure-qr');
             }}
           >
@@ -271,22 +271,6 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
             </Text>
           </Pressable>
         </View>
-
-        <Pressable
-          style={[
-            styles.copyBtn,
-            {
-              backgroundColor: isDark ? '#262435' : '#FFFFFF',
-              borderColor: colors.border,
-            },
-          ]}
-          onPress={handleCopy}
-        >
-          <Ionicons name="copy-outline" size={15} color={colors.foreground} />
-          <Text style={[styles.copyBtnText, { color: colors.foreground }]}>
-            Copy Link
-          </Text>
-        </Pressable>
       </View>
 
       {/* Main Preview Viewport */}
@@ -332,14 +316,13 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
                   color={fgColor}
                   backgroundColor={bgColor}
                   ecl="H"
+                  logo={showCenterLogo ? require('@/assets/images/logo-white-bg.png') : undefined}
+                  logoSize={38}
+                  logoBackgroundColor={bgColor}
+                  logoMargin={2}
+                  logoBorderRadius={5}
                   getRef={(ref) => (qrSvgRef.current = ref)}
                 />
-
-                {showCenterLogo && (
-                  <View style={[styles.centerLogoWrap, { backgroundColor: bgColor }]}>
-                    <GetAiPilotVectorLogo size={38} color={fgColor} />
-                  </View>
-                )}
 
                 {/* Animated Emerald Corner Reticles */}
                 <View pointerEvents="none" style={styles.reticleBox}>
@@ -412,8 +395,8 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
                   ? '#143126'
                   : '#ECFDF5'
                 : isDark
-                ? '#222030'
-                : '#FFFFFF',
+                  ? '#222030'
+                  : '#FFFFFF',
               borderColor: isSaved ? '#0A4737' : colors.border,
             },
           ]}

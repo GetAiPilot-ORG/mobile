@@ -226,13 +226,13 @@ class SoundFeedbackService {
         try {
           switch (type) {
             case 'success':
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               break;
             case 'radar':
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
               break;
             default:
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               break;
           }
         } catch {
