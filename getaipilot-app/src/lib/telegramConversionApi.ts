@@ -118,9 +118,18 @@ export interface CampaignReport extends TrackingCampaign {
   ambiguous: number;
 }
 
+export interface ConversionDailyPoint {
+  day: string;
+  views: number;
+  clicks: number;
+  joins: number;
+  departures: number;
+}
+
 export interface ConversionReport {
   first_party_complete?: boolean;
   campaigns: CampaignReport[];
+  daily?: ConversionDailyPoint[];
   as_of: string;
   timezone: string;
   unknown_members: number;
