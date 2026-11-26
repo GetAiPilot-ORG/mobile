@@ -69,16 +69,41 @@ export default function LiquidWelcomeScreen() {
   const currentIndexRef = useRef(0);
   currentIndexRef.current = currentIndex;
 
-  // Unified horizontal scroll position: Slide 0 = 0, Slide 1 = -width, Slide 2 = -2*width
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const [touchY, setTouchY] = useState(height * 0.52);
+  const [animProgress, setAnimProgress] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [incomingSlideIndex, setIncomingSlideIndex] = useState<number | null>(null);
+
+  // Liquid Wave animation progress (0 = idle wave handle peeking, 1 = wave fully swept)
+  const waveAnim = useRef(new Animated.Value(0)).current;
   const isAnimatingRef = useRef(false);
 
   // Continuous organic floating & bobbing animations for center graphics
   const floatAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const sparkleAnim = useRef(new Animated.Value(0)).current;
+  const nudgeAnim = useRef(new Animated.Value(0)).current;
 
-  // Continuous 60fps organic loops for floating center elements
+  // Throttled SVG wave progress listener for 60fps rendering without JS thread lock
+  useEffect(() => {
+    let lastValue = 0;
+    let animFrameId: number | null = null;
+    const listenerId = waveAnim.addListener(({ value }) => {
+      lastValue = value;
+      if (animFrameId === null) {
+        animFrameId = requestAnimationFrame(() => {
+          setAnimProgress(lastValue);
+          animFrameId = null;
+        });
+      }
+    });
+    return () => {
+      waveAnim.removeListener(listenerId);
+      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+    };
+  }, [waveAnim]);
+
+  // Continuous 60fps organic loops for floating center elements & interactive cues
   useEffect(() => {
     // 1. Organic gentle bobbing loop
     const floatLoop = Animated.loop(
@@ -137,18 +162,42 @@ export default function LiquidWelcomeScreen() {
     );
     sparkleLoop.start();
 
+    // 4. Interactive nudge cue on the right-edge peek button (JS driven to keep consistent with waveAnim)
+    const nudgeLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(nudgeAnim, {
+          toValue: 1,
+          duration: 1300,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: false,
+        }),
+        Animated.timing(nudgeAnim, {
+          toValue: 0,
+          duration: 1300,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    nudgeLoop.start();
+
     return () => {
       floatLoop.stop();
       pulseLoop.stop();
       sparkleLoop.stop();
+      nudgeLoop.stop();
     };
-  }, [floatAnim, pulseAnim, sparkleAnim]);
+  }, [floatAnim, pulseAnim, sparkleAnim, nudgeAnim]);
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
     if (Platform.OS !== "web") {
-      Haptics.impactAsync(style).catch(() => { });
+      Haptics.impactAsync(style).catch(() => {});
     }
   };
+
+  const currentSlide = SLIDES[currentIndex];
+  const nextTargetIndex = (currentIndex + 1) % SLIDES.length;
+  const nextSlide = SLIDES[nextTargetIndex];
 
   // Complete tour and navigate
   const handleFinish = async () => {
@@ -156,7 +205,7 @@ export default function LiquidWelcomeScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await AsyncStorage.setItem(HAS_SEEN_TOUR_KEY, "true");
-    } catch { }
+    } catch {}
 
     if (authStatus === "authenticated") {
       router.replace("/(tabs)" as any);
@@ -165,39 +214,67 @@ export default function LiquidWelcomeScreen() {
     }
   };
 
-  // Smoothly scroll to target slide from the right side with background and elements 100% unified
-  const scrollToIndex = useCallback(
-    (targetIdx: number) => {
-      const clampedIdx = Math.max(0, Math.min(SLIDES.length - 1, targetIdx));
-      isAnimatingRef.current = true;
-
-      if (clampedIdx !== currentIndexRef.current) {
-        soundService.play(clampedIdx > currentIndexRef.current ? "pop" : "click");
-        triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-      }
-
-      Animated.timing(scrollX, {
-        toValue: -clampedIdx * width,
-        duration: 440,
-        easing: Easing.bezier(0.16, 1, 0.3, 1),
-        useNativeDriver: true,
-      }).start(() => {
-        setCurrentIndex(clampedIdx);
-        isAnimatingRef.current = false;
-      });
-    },
-    [width, scrollX]
-  );
-
+  // Perform the liquid wave sweep animation where background AND elements enter in locked step!
   const goToNextSlide = useCallback(() => {
-    if (currentIndex < SLIDES.length - 1) {
-      scrollToIndex(currentIndex + 1);
-    } else {
-      scrollToIndex(0);
-    }
-  }, [currentIndex, scrollToIndex]);
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
 
-  // PanResponder for 1:1 tactile horizontal dragging from the right side
+    const targetIdx = (currentIndexRef.current + 1) % SLIDES.length;
+    setIncomingSlideIndex(targetIdx);
+    setIsTransitioning(true);
+
+    soundService.play("pop");
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+
+    Animated.timing(waveAnim, {
+      toValue: 1,
+      duration: 440,
+      easing: Easing.bezier(0.18, 1, 0.32, 1),
+      useNativeDriver: false,
+    }).start(() => {
+      // 1. Update the index ref & React state so Layer 1 prepares the new slide
+      currentIndexRef.current = targetIdx;
+      setCurrentIndex(targetIdx);
+
+      // 2. Wait two animation frames for React Native to mount & paint Layer 1 underneath
+      // before resetting the wave and unmounting Layer 3. This eliminates 100% of the blink!
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          waveAnim.setValue(0);
+          setAnimProgress(0);
+          setIsTransitioning(false);
+          setIncomingSlideIndex(null);
+          isAnimatingRef.current = false;
+        });
+      });
+    });
+  }, [waveAnim]);
+
+  // Go to previous slide
+  const goToPrevSlide = useCallback(() => {
+    if (currentIndexRef.current === 0 || isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+
+    soundService.play("click");
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+
+    const targetIdx = currentIndexRef.current - 1;
+    currentIndexRef.current = targetIdx;
+    setCurrentIndex(targetIdx);
+    setIsTransitioning(false);
+    setIncomingSlideIndex(null);
+    waveAnim.setValue(0);
+    setAnimProgress(0);
+    isAnimatingRef.current = false;
+  }, [waveAnim]);
+
+  // Stable refs for PanResponder to always call the latest functions without stale closures
+  const goToNextSlideRef = useRef(goToNextSlide);
+  goToNextSlideRef.current = goToNextSlide;
+  const goToPrevSlideRef = useRef(goToPrevSlide);
+  goToPrevSlideRef.current = goToPrevSlide;
+
+  // PanResponder for interactive liquid swipe from right side & vertical scrolling
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -205,72 +282,111 @@ export default function LiquidWelcomeScreen() {
         return Math.abs(gestureState.dx) > 8 || Math.abs(gestureState.dy) > 10;
       },
       onPanResponderGrant: () => {
-        scrollX.stopAnimation();
+        const targetIdx = (currentIndexRef.current + 1) % SLIDES.length;
+        setIncomingSlideIndex(targetIdx);
+        setIsTransitioning(true);
       },
       onPanResponderMove: (_, gestureState) => {
         if (isAnimatingRef.current) return;
 
-        // Primary horizontal delta
-        const delta = Math.abs(gestureState.dx) >= Math.abs(gestureState.dy)
-          ? gestureState.dx
-          : gestureState.dy < 0
-            ? gestureState.dy
-            : gestureState.dy;
-
-        const base = -currentIndexRef.current * width;
-        let newX = base + delta;
-
-        // Rubber-band resistance at left/right boundaries
-        if (newX > 0) {
-          newX = delta * 0.32;
-        } else if (newX < -(SLIDES.length - 1) * width) {
-          const over = newX - -(SLIDES.length - 1) * width;
-          newX = -(SLIDES.length - 1) * width + over * 0.32;
+        if (gestureState.moveY) {
+          setTouchY(gestureState.moveY);
         }
 
-        scrollX.setValue(newX);
+        // Support horizontal swipe (dx < 0) AND vertical scroll (dy < 0)
+        const horizontalDist = -gestureState.dx;
+        const verticalDist = -gestureState.dy;
+        const activeDist = Math.max(horizontalDist, verticalDist * 0.85);
+
+        if (activeDist > 0) {
+          // Dragging left or scrolling up (expanding wave and pulling incoming slide together!)
+          const ratio = Math.min(1, Math.max(0, activeDist / (width * 0.72)));
+          waveAnim.setValue(ratio);
+        }
       },
       onPanResponderRelease: (_, gestureState) => {
         if (isAnimatingRef.current) return;
 
-        const isHorizontal = Math.abs(gestureState.dx) >= Math.abs(gestureState.dy);
-        const delta = isHorizontal ? gestureState.dx : gestureState.dy;
-        const velocity = isHorizontal ? gestureState.vx : gestureState.vy;
+        // Check horizontal swipe or vertical scroll advancement threshold
+        const shouldAdvance =
+          gestureState.dx < -width * 0.16 ||
+          gestureState.dy < -48 ||
+          gestureState.vx < -0.38 ||
+          gestureState.vy < -0.38;
 
-        // Swiping left (or up) pulls the next slide from the right side
-        if (delta < -45 || velocity < -0.38) {
-          scrollToIndex(currentIndexRef.current + 1);
-        } else if (delta > 45 || velocity > 0.38) {
-          scrollToIndex(currentIndexRef.current - 1);
+        const shouldGoBack =
+          gestureState.dx > width * 0.16 ||
+          gestureState.dy > 48 ||
+          gestureState.vx > 0.38 ||
+          gestureState.vy > 0.38;
+
+        if (shouldAdvance) {
+          goToNextSlideRef.current();
+        } else if (shouldGoBack && currentIndexRef.current > 0) {
+          setIsTransitioning(false);
+          setIncomingSlideIndex(null);
+          goToPrevSlideRef.current();
         } else {
-          scrollToIndex(currentIndexRef.current);
+          // Snap back
+          Animated.spring(waveAnim, {
+            toValue: 0,
+            friction: 7,
+            tension: 60,
+            useNativeDriver: false,
+          }).start(() => {
+            setIsTransitioning(false);
+            setIncomingSlideIndex(null);
+          });
         }
       },
     })
   ).current;
 
-  // Compute organic liquid SVG wave path for the right-edge peek handle
-  const computePeekWavePath = (tY: number) => {
+  // Compute organic liquid SVG wave path matching reference image bulge
+  const computeLiquidWavePath = (p: number, tY: number) => {
     const W = width;
     const H = height;
     const baseY = tY || H * 0.52;
-    const apexDepth = 42;
+
+    // Apex depth expands smoothly from 38px idle peek up to full screen width
+    const apexDepth = 38 + (W + 120) * p;
     const apexX = W - apexDepth;
-    const curveRadius = 140;
+
+    // Base edge starts flush at right edge and moves leftwards as wave sweeps
+    const baseDepth = (W + 80) * Math.max(0, (p - 0.08) / 0.92);
+    const baseX = W - baseDepth;
+
+    // Smooth curvature radius around the apex
+    const curveRadius = 140 + 180 * p;
     const topY = Math.max(0, baseY - curveRadius);
     const bottomY = Math.min(H, baseY + curveRadius);
 
     return `
-      M ${W} ${topY}
-      C ${W - 8} ${topY + 35},
-        ${apexX} ${baseY - 45},
+      M ${W} 0
+      L ${baseX} 0
+      L ${baseX} ${topY}
+      C ${baseX - (apexDepth - baseDepth) * 0.28} ${topY + (baseY - topY) * 0.45},
+        ${apexX} ${baseY - (baseY - topY) * 0.28},
         ${apexX} ${baseY}
-      C ${apexX} ${baseY + 45},
-        ${W - 8} ${bottomY - 35},
-        ${W} ${bottomY}
+      C ${apexX} ${baseY + (bottomY - baseY) * 0.28},
+        ${baseX - (apexDepth - baseDepth) * 0.28} ${bottomY - (bottomY - baseY) * 0.45},
+        ${baseX} ${bottomY}
+      L ${baseX} ${H}
+      L ${W} ${H}
       Z
     `;
   };
+
+  // Button handle position inside the apex curve
+  const handleApexDepth = 38 + (width + 120) * animProgress;
+  const handleX = width - handleApexDepth + 18;
+  const handleY = touchY || height * 0.52;
+
+  // Interactive nudge offset for the peek handle ( > )
+  const peekNudgeX = nudgeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -5],
+  });
 
   // Interpolated floating values for center graphics
   const centerBobY = floatAnim.interpolate({
@@ -310,11 +426,52 @@ export default function LiquidWelcomeScreen() {
     outputRange: [0.85, 1.2],
   });
 
-  // Dynamic slide color that morphs in real time with scrollX
-  const dynamicSlideColor = scrollX.interpolate({
-    inputRange: [-2 * width, -width, 0],
-    outputRange: [SLIDES[2].bgColor, SLIDES[1].bgColor, SLIDES[0].bgColor],
-    extrapolate: "clamp",
+  // Wave Handle Button TranslateX (moves in 100% lockstep with the screen on the exact same animated curve)
+  const waveButtonTranslateX = waveAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -(width + 80)],
+  });
+
+  // Bottom GET STARTED button subtle scale & bounce in lockstep with the screen
+  const bottomButtonScale = waveAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 0.95, 1],
+  });
+  const bottomButtonTranslateY = waveAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 3, 0],
+  });
+
+  const incomingColor = incomingSlideIndex !== null ? SLIDES[incomingSlideIndex].bgColor : nextSlide.bgColor;
+
+  // Dynamic slide color that morphs with wave progress
+  const dynamicSlideColor = waveAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [currentSlide.bgColor, incomingColor],
+  });
+
+  // Outgoing slide transforms (drifts left smoothly as wave expands)
+  const outgoingTranslateX = waveAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -width * 0.35],
+  });
+  const outgoingOpacity = waveAnim.interpolate({
+    inputRange: [0, 0.75, 1],
+    outputRange: [1, 0.45, 0],
+  });
+
+  // Incoming slide transforms (enters from the right side IN TANDEM WITH THE WAVE!)
+  const incomingTranslateX = waveAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [width, 0],
+  });
+  const incomingOpacity = waveAnim.interpolate({
+    inputRange: [0, 0.3, 1],
+    outputRange: [0, 0.85, 1],
+  });
+  const incomingScale = waveAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.94, 1],
   });
 
   // Render 3D-styled animated graphic stage matching reference screenshots
@@ -702,49 +859,10 @@ export default function LiquidWelcomeScreen() {
     }
   };
 
-  // Render unified slide page: background color and all elements are 100% bound together in the same container!
-  const renderSlidePage = (slide: SlideData, index: number) => {
-    const isLastSlide = index === SLIDES.length - 1;
-    const nextIdx = (index + 1) % SLIDES.length;
-    const nextSlideColor = SLIDES[nextIdx].bgColor;
-
+  // Render slide content (Header, 3D Graphic, Title, Subtitle, Stepper)
+  const renderSlideContent = (slide: SlideData, slideIdx: number) => {
     return (
-      <View
-        key={slide.id}
-        style={[
-          styles.slidePage,
-          {
-            backgroundColor: slide.bgColor,
-            width,
-            height,
-          },
-        ]}
-      >
-        {/* Right Edge Peek Wave Bump & Circular Arrow Button ( > ) (Showing next slide color on the right side) */}
-        {!isLastSlide && (
-          <View style={styles.peekWaveLayer} pointerEvents="box-none">
-            <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-              <Path d={computePeekWavePath(height * 0.52)} fill={nextSlideColor} />
-            </Svg>
-
-            <Pressable
-              style={[
-                styles.waveHandleBtn,
-                {
-                  right: 14,
-                  top: height * 0.52 - 22,
-                },
-              ]}
-              hitSlop={14}
-              onPress={goToNextSlide}
-            >
-              <View style={styles.waveHandleCircle}>
-                <Ionicons name="chevron-forward" size={19} color={nextSlideColor} />
-              </View>
-            </Pressable>
-          </View>
-        )}
-
+      <View style={styles.slideContentWrapper}>
         {/* Top Header Category Pill */}
         <View style={[styles.topHeader, { paddingTop: insets.top + 8 }]}>
           <View style={styles.appTag}>
@@ -767,7 +885,7 @@ export default function LiquidWelcomeScreen() {
           {/* Stepper Indicators */}
           <View style={styles.stepperRow}>
             {SLIDES.map((_, dotIdx) => {
-              const isActive = dotIdx === index;
+              const isActive = dotIdx === slideIdx;
               return (
                 <View
                   key={dotIdx}
@@ -796,26 +914,78 @@ export default function LiquidWelcomeScreen() {
     >
       <StatusBar style="light" />
 
-      {/* Unified Horizontal Track: Slides scroll in smoothly from the right side with background and elements together! */}
+      {/* Layer 1: CURRENT ACTIVE SLIDE (Slide A) */}
       <Animated.View
         style={[
-          styles.horizontalTrack,
+          StyleSheet.absoluteFill,
           {
-            width: width * SLIDES.length,
-            transform: [{ translateX: scrollX }],
+            backgroundColor: currentSlide.bgColor,
+            opacity: outgoingOpacity,
+            transform: [{ translateX: outgoingTranslateX }],
           },
         ]}
       >
-        {SLIDES.map((slide, index) => renderSlidePage(slide, index))}
+        {renderSlideContent(currentSlide, currentIndex)}
       </Animated.View>
 
-      {/* Permanently Fixed Bottom Bar with Dynamic Background Color Matching the Slide Screen Color */}
-      <Animated.View
+      {/* Layer 2: SVG LIQUID WAVE LAYER (Curved bulge sweeping across from right to left) */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          <Path d={computeLiquidWavePath(animProgress, touchY)} fill={incomingColor} />
+        </Svg>
+
+        {/* Circular Arrow Button ( > ) moving in 100% lockstep with the screen animation */}
+        <Animated.View
+          style={[
+            styles.waveHandleTouch,
+            {
+              top: handleY - 22,
+              transform: [{ translateX: waveButtonTranslateX }],
+            },
+          ]}
+        >
+          <Pressable hitSlop={14} onPress={goToNextSlide}>
+            <Animated.View
+              style={[
+                styles.waveHandleBtn,
+                {
+                  transform: [{ translateX: peekNudgeX }],
+                },
+              ]}
+            >
+              <View style={styles.waveHandleCircle}>
+                <Ionicons name="chevron-forward" size={19} color={incomingColor} />
+              </View>
+            </Animated.View>
+          </Pressable>
+        </Animated.View>
+      </View>
+
+      {/* Layer 3: INCOMING SLIDE (Slide B) - ENTERS WITH THE WAVE FROM THE RIGHT IN LOCKED STEP! */}
+      {incomingSlideIndex !== null && (
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              opacity: incomingOpacity,
+              transform: [
+                { translateX: incomingTranslateX },
+                { scale: incomingScale },
+              ],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          {renderSlideContent(SLIDES[incomingSlideIndex], incomingSlideIndex)}
+        </Animated.View>
+      )}
+
+      {/* Permanently Fixed Bottom Bar */}
+      <View
         style={[
           styles.fixedBottomBar,
           {
             paddingBottom: insets.bottom || 20,
-            backgroundColor: dynamicSlideColor,
           },
         ]}
       >
@@ -825,19 +995,23 @@ export default function LiquidWelcomeScreen() {
             void handleFinish();
           }}
         >
-          {/* Button Background Color ("behind color") dynamically matches the slide screen color with crisp white border matching the reference screenshot */}
+          {/* Permanent Black GET STARTED Button with synchronized transition feedback */}
           <Animated.View
             style={[
               styles.actionButton,
+              styles.actionButtonBlack,
               {
-                backgroundColor: dynamicSlideColor,
+                transform: [
+                  { scale: bottomButtonScale },
+                  { translateY: bottomButtonTranslateY },
+                ],
               },
             ]}
           >
             <Text style={styles.actionButtonText}>GET STARTED</Text>
           </Animated.View>
         </Pressable>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 }
@@ -847,13 +1021,10 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "hidden",
   },
-  horizontalTrack: {
-    flexDirection: "row",
+  slideContentWrapper: {
+    flex: 1,
+    width: "100%",
     height: "100%",
-  },
-  slidePage: {
-    position: "relative",
-    overflow: "hidden",
     justifyContent: "space-between",
   },
   topHeader: {
@@ -875,21 +1046,16 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  // Peek Wave Layer on Right Edge
-  peekWaveLayer: {
+  // Wave Handle Apex Button ( > )
+  waveHandleTouch: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 90,
+    right: 14,
+    zIndex: 999,
   },
   waveHandleBtn: {
-    position: "absolute",
     width: 44,
     height: 44,
     borderRadius: 22,
-    zIndex: 999,
     ...Platform.select({
       ios: {
         shadowColor: "#000000",
@@ -1360,6 +1526,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 28,
     paddingTop: 12,
+    backgroundColor: "transparent",
     zIndex: 998,
   },
   actionButtonPressable: {
@@ -1367,23 +1534,26 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: "100%",
-    paddingVertical: 14,
+    paddingVertical: 15,
     borderRadius: 14,
-    borderWidth: 1.8,
-    borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
       ios: {
         shadowColor: "#000000",
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.22,
+        shadowOpacity: 0.35,
         shadowRadius: 8,
       },
       android: {
         elevation: 6,
       },
     }),
+  },
+  actionButtonBlack: {
+    backgroundColor: "#000000",
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   actionButtonText: {
     fontSize: 14,
