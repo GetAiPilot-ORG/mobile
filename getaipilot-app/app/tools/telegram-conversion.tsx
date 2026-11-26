@@ -15,26 +15,43 @@ import {
   Switch,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
+import Svg, {
+  Circle as SvgCircle,
+  Defs,
+  Line as SvgLine,
+  LinearGradient as SvgGradient,
+  Path as SvgPath,
+  Rect as SvgRect,
+  Stop,
+} from "react-native-svg";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   Activity01Icon,
   Add01Icon,
+  ArrowLeft01Icon,
   ArrowRight01Icon,
   ArrowUpRight01Icon,
   BrowserIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
   Copy01Icon,
+  Edit02Icon,
+  Forward01Icon,
+  Layout01Icon,
   Link01Icon,
+  Megaphone01Icon,
   Rocket01Icon,
   Search01Icon,
   ShieldCheckIcon,
   TelegramIcon,
+  TelescopeIcon,
+  UserGroupIcon,
+  UserIcon,
 } from "@/constants/icons";
-import { Ionicons } from "@expo/vector-icons";
 import { AppColors, getColors, useTheme } from "@/theme";
 import { AppScreen } from "../../src/components/AppScreen";
 import { AppTopBar } from "../../src/components/AppTopBar";
@@ -49,6 +66,7 @@ import {
   fetchUserCreatedTemplates,
   fetchUserTelegramChannels,
   TelegramSetup,
+  TrackingCampaign,
   TrackingInventory,
   trackingRequest,
 } from "../../src/lib/telegramConversionApi";
@@ -108,6 +126,11 @@ export default function TelegramConversionScreen() {
   const [fallbackChannels, setFallbackChannels] = useState<AvailableChannel[]>([]);
   const [report, setReport] = useState<ConversionReport | null>(null);
   const [reportDays, setReportDays] = useState<7 | 30>(7);
+  const [chartSeries, setChartSeries] = useState<
+    "all" | "views" | "joins" | "leaves"
+  >("all");
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+  const { width: windowWidth } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyKey, setBusyKey] = useState("");
@@ -149,6 +172,9 @@ export default function TelegramConversionScreen() {
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
   const [originalTelegramUrl, setOriginalTelegramUrl] = useState("");
   const [joinRequest, setJoinRequest] = useState(false);
+  const [expandedInstallMap, setExpandedInstallMap] = useState<
+    Record<string, boolean>
+  >({});
 
   const loadData = useCallback(
     async (showLoader = false) => {
@@ -414,6 +440,33 @@ export default function TelegramConversionScreen() {
     showNotice("Copied", `${label} copied to clipboard.`);
   };
 
+  const normalizeTelegramDestination = (raw?: string | null): string => {
+    const trimmed = (raw || "").trim();
+    if (!trimmed) return "";
+    if (/^@([a-zA-Z0-9_]{3,})$/.test(trimmed)) {
+      return `https://t.me/${trimmed.slice(1)}`;
+    }
+    const withProto = /^https?:\/\//i.test(trimmed)
+      ? trimmed.replace(/^http:\/\//i, "https://")
+      : /^t\.me\/.+/i.test(trimmed)
+        ? `https://${trimmed}`
+        : trimmed;
+    try {
+      const url = new URL(withProto);
+      if (
+        url.protocol === "https:" &&
+        url.hostname.toLowerCase() === "t.me" &&
+        url.pathname &&
+        url.pathname !== "/"
+      ) {
+        return url.href;
+      }
+    } catch {
+      // ignore invalid placeholder URLs like "https://"
+    }
+    return "";
+  };
+
   const handleConnectTemplate = async (page: CreatedTemplatePage) => {
     const isBio = page.design_type === "bio";
     const saved = await runAction(
@@ -433,8 +486,9 @@ export default function TelegramConversionScreen() {
     );
     if (saved?.id) {
       setSelectedSiteId(saved.id);
-      if (page.telegram_url && !originalTelegramUrl) {
-        setOriginalTelegramUrl(page.telegram_url);
+      const cleanTarget = normalizeTelegramDestination(page.telegram_url);
+      if (cleanTarget && !normalizeTelegramDestination(originalTelegramUrl)) {
+        setOriginalTelegramUrl(cleanTarget);
       }
     }
   };
@@ -612,29 +666,91 @@ export default function TelegramConversionScreen() {
   };
 
   const handleCreateCampaign = async () => {
-    if (!campaignName.trim() || !selectedSiteId || !selectedConnectionId || !originalTelegramUrl.trim()) {
+    const verifiedSites = inventory.sites.filter((s) => Boolean(s.verified_at));
+    const effectiveSiteId =
+      verifiedSites.find((s) => s.id === selectedSiteId)?.id ||
+      (verifiedSites.length === 1 ? verifiedSites[0].id : "");
+    const effectiveConnectionId =
+      inventory.connections.find((c) => c.id === selectedConnectionId)?.id ||
+      (inventory.connections.length === 1 ? inventory.connections[0].id : "");
+
+    if (!effectiveSiteId) {
       showNotice(
-        "Incomplete Campaign",
-        "Select a verified page/website, a connected channel, campaign name, and your https://t.me/... link.",
+        "Verified Page Required",
+        "Verify and select a created design or website before creating a campaign.",
       );
       return;
     }
-    const saved = await runAction(
-      "create-campaign",
-      "campaign",
-      {
+    if (!effectiveConnectionId) {
+      showNotice(
+        "Telegram Channel Required",
+        "Connect and select a Telegram channel before creating a campaign.",
+      );
+      return;
+    }
+    if (!campaignName.trim()) {
+      showNotice("Campaign Name Required", "Enter a name for your campaign.");
+      return;
+    }
+    if (campaignName.trim().length > 120) {
+      showNotice(
+        "Campaign Name Too Long",
+        "Campaign name must be 120 characters or fewer.",
+      );
+      return;
+    }
+
+    const cleanTelegramUrl = normalizeTelegramDestination(originalTelegramUrl);
+    if (!cleanTelegramUrl) {
+      showNotice(
+        "Valid Telegram Link Required",
+        "Enter a valid destination link like https://t.me/yourchannel or https://t.me/+invite.",
+      );
+      return;
+    }
+    if (cleanTelegramUrl !== originalTelegramUrl.trim()) {
+      setOriginalTelegramUrl(cleanTelegramUrl);
+    }
+
+    setBusyKey("create-campaign");
+    try {
+      const created = await trackingRequest<TrackingCampaign>("campaign", {
         name: campaignName.trim(),
-        site_id: selectedSiteId,
-        connection_id: selectedConnectionId,
-        original_telegram_url: originalTelegramUrl.trim(),
+        site_id: effectiveSiteId,
+        connection_id: effectiveConnectionId,
+        original_telegram_url: cleanTelegramUrl,
         join_request: joinRequest,
-      },
-      "Campaign Created",
-      "Tap Activate & Generate Invite on the campaign below.",
-    );
-    if (saved?.id) {
+      });
+
+      let activatedInvite: string | null = null;
+      if (created?.id) {
+        try {
+          const act = await trackingRequest<{ invite_link?: string }>(
+            "activate",
+            { id: created.id },
+          );
+          activatedInvite = act?.invite_link || null;
+        } catch {
+          // Campaign remains in draft; user can tap Activate on the card below.
+        }
+      }
+
+      soundService.play("success");
       setCampaignName("");
+      await loadData(false);
       setActiveTab("analytics");
+
+      showNotice(
+        activatedInvite ? "Campaign Active" : "Campaign Created",
+        activatedInvite
+          ? "Your tracking campaign is active! Copy the Campaign Tracking URL and Telegram Invite Link below."
+          : "Campaign created below. Tap Activate & Generate Invite to generate your tracking invite link.",
+      );
+    } catch (e: any) {
+      soundService.play("click");
+      showNotice("Action Failed", e?.message || "Could not create campaign.");
+    } finally {
+      setBusyKey("");
     }
   };
 
@@ -656,6 +772,841 @@ export default function TelegramConversionScreen() {
       { views: 0, clicks: 0, joins: 0, active: 0, leaves: 0 },
     );
   }, [report]);
+
+  const dailyChartData = useMemo(() => {
+    const count = reportDays === 7 ? 7 : 14;
+    const byDay = new Map<
+      string,
+      { views: number; clicks: number; joins: number; departures: number }
+    >();
+    for (const item of report?.daily || []) {
+      const key = String(item.day || "").slice(0, 10);
+      if (!key) continue;
+      byDay.set(key, {
+        views: Number(item.views || 0),
+        clicks: Number(item.clicks || 0),
+        joins: Number(item.joins || 0),
+        departures: Number(item.departures || 0),
+      });
+    }
+
+    const fmtDay = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const fmtLabel = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      month: "short",
+      day: "numeric",
+    });
+
+    const points: {
+      day: string;
+      label: string;
+      views: number;
+      clicks: number;
+      joins: number;
+      departures: number;
+    }[] = [];
+
+    const now = Date.now();
+    for (let i = count - 1; i >= 0; i--) {
+      const d = new Date(now - i * 86_400_000);
+      const dayKey = fmtDay.format(d);
+      const existing = byDay.get(dayKey);
+      points.push({
+        day: dayKey,
+        label: i === 0 ? "Today" : fmtLabel.format(d),
+        views: existing?.views ?? 0,
+        clicks: existing?.clicks ?? 0,
+        joins: existing?.joins ?? 0,
+        departures: existing?.departures ?? 0,
+      });
+    }
+    return points;
+  }, [report?.daily, reportDays]);
+
+  const activeDayPoint = useMemo(() => {
+    if (dailyChartData.length === 0) return null;
+    if (
+      selectedDayIndex !== null &&
+      selectedDayIndex >= 0 &&
+      selectedDayIndex < dailyChartData.length
+    ) {
+      return dailyChartData[selectedDayIndex];
+    }
+    for (let i = dailyChartData.length - 1; i >= 0; i--) {
+      const p = dailyChartData[i];
+      if (p.views || p.clicks || p.joins || p.departures) return p;
+    }
+    return dailyChartData[dailyChartData.length - 1];
+  }, [dailyChartData, selectedDayIndex]);
+
+  const renderTrendChart = () => {
+    const chartWidth = Math.max(250, Math.min(windowWidth - 64, 520));
+    const chartHeight = 148;
+    const padX = 12;
+    const padTop = 14;
+    const padBottom = 10;
+    const plotW = chartWidth - padX * 2;
+    const plotH = chartHeight - padTop - padBottom;
+    const n = Math.max(dailyChartData.length, 1);
+
+    const valuesForSeries = dailyChartData.map((p) => {
+      if (chartSeries === "views") return p.views;
+      if (chartSeries === "joins") return p.joins;
+      if (chartSeries === "leaves") return p.departures;
+      return Math.max(p.views, p.clicks, p.joins, p.departures);
+    });
+    const maxVal = Math.max(1, ...valuesForSeries);
+
+    const getX = (idx: number) =>
+      n === 1 ? padX + plotW / 2 : padX + (idx / (n - 1)) * plotW;
+    const getY = (val: number) => padTop + plotH - (val / maxVal) * plotH;
+
+    const buildSmoothPath = (vals: number[]) => {
+      if (vals.length === 0) return "";
+      const pts = vals.map((v, i) => ({ x: getX(i), y: getY(v) }));
+      if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+      let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i];
+        const p1 = pts[i + 1];
+        const cx = (p0.x + p1.x) / 2;
+        d += ` C ${cx.toFixed(1)} ${p0.y.toFixed(1)}, ${cx.toFixed(1)} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+      }
+      return d;
+    };
+
+    const viewsPath = buildSmoothPath(dailyChartData.map((p) => p.views));
+    const joinsPath = buildSmoothPath(dailyChartData.map((p) => p.joins));
+    const leavesPath = buildSmoothPath(dailyChartData.map((p) => p.departures));
+
+    const primaryVals =
+      chartSeries === "joins"
+        ? dailyChartData.map((p) => p.joins)
+        : chartSeries === "leaves"
+          ? dailyChartData.map((p) => p.departures)
+          : dailyChartData.map((p) => p.views);
+    const primaryLine = buildSmoothPath(primaryVals);
+    const primaryArea =
+      dailyChartData.length > 1
+        ? `${primaryLine} L ${getX(n - 1).toFixed(1)} ${(padTop + plotH).toFixed(1)} L ${getX(0).toFixed(1)} ${(padTop + plotH).toFixed(1)} Z`
+        : "";
+
+    const primaryColor =
+      chartSeries === "joins"
+        ? "#10B981"
+        : chartSeries === "leaves"
+          ? "#EF4444"
+          : isDark
+            ? "#38BDF8"
+            : "#0284C7";
+
+    const barWidth = Math.max(6, Math.min(16, plotW / (n * 2.1)));
+
+    return (
+      <View style={styles.chartCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <View style={styles.chartIconBadge}>
+              <HugeiconsIcon
+                icon={Activity01Icon}
+                size={16}
+                color={isDark ? "#38BDF8" : "#0284C7"}
+                strokeWidth={2.1}
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionTitle}>Activity Trend</Text>
+              <Text style={styles.chartSub}>
+                Last {dailyChartData.length} days · Tap any day to inspect
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.countPill}>Peak {maxVal}</Text>
+        </View>
+
+        {/* Series Filter Pills */}
+        <View style={styles.chartFilterRow}>
+          {(
+            [
+              { key: "all", label: "All", dot: colors.primary },
+              { key: "views", label: "Views", dot: isDark ? "#38BDF8" : "#0284C7" },
+              { key: "joins", label: "Joins", dot: "#10B981" },
+              { key: "leaves", label: "Leaves", dot: "#EF4444" },
+            ] as const
+          ).map((item) => {
+            const active = chartSeries === item.key;
+            return (
+              <Pressable
+                key={item.key}
+                onPress={() => {
+                  soundService.play("click");
+                  setChartSeries(item.key);
+                }}
+                style={[
+                  styles.chartFilterChip,
+                  active && styles.chartFilterChipActive,
+                ]}
+              >
+                <View style={[styles.legendDot, { backgroundColor: item.dot }]} />
+                <Text
+                  style={[
+                    styles.chartFilterText,
+                    active && styles.chartFilterTextActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* SVG Chart */}
+        <View style={styles.svgChartWrap}>
+          <Svg width={chartWidth} height={chartHeight}>
+            <Defs>
+              <SvgGradient id="gapChartFill" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor={primaryColor} stopOpacity={0.28} />
+                <Stop offset="100%" stopColor={primaryColor} stopOpacity={0.01} />
+              </SvgGradient>
+            </Defs>
+
+            {/* Horizontal reference gridlines */}
+            {[0, 0.5, 1].map((ratio) => {
+              const y = padTop + plotH * ratio;
+              return (
+                <SvgLine
+                  key={ratio}
+                  x1={padX}
+                  y1={y}
+                  x2={chartWidth - padX}
+                  y2={y}
+                  stroke={isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0"}
+                  strokeWidth={1}
+                  strokeDasharray="4,4"
+                />
+              );
+            })}
+
+            {/* Background volume bars */}
+            {dailyChartData.map((p, idx) => {
+              const val =
+                chartSeries === "joins"
+                  ? p.joins
+                  : chartSeries === "leaves"
+                    ? p.departures
+                    : chartSeries === "views"
+                      ? p.views
+                      : Math.max(p.views, p.clicks, p.joins);
+              const barH = Math.max(3, (val / maxVal) * plotH);
+              const x = getX(idx) - barWidth / 2;
+              const y = padTop + plotH - barH;
+              const isSelected = activeDayPoint?.day === p.day;
+              return (
+                <SvgRect
+                  key={p.day}
+                  x={x}
+                  y={y}
+                  width={barWidth}
+                  height={barH}
+                  rx={4}
+                  fill={primaryColor}
+                  opacity={isSelected ? 0.34 : 0.14}
+                />
+              );
+            })}
+
+            {/* Area fill */}
+            {primaryArea ? (
+              <SvgPath d={primaryArea} fill="url(#gapChartFill)" />
+            ) : null}
+
+            {/* Primary & secondary curves */}
+            {chartSeries === "all" ? (
+              <>
+                <SvgPath
+                  d={viewsPath}
+                  fill="none"
+                  stroke={isDark ? "#38BDF8" : "#0284C7"}
+                  strokeWidth={2.5}
+                />
+                <SvgPath
+                  d={joinsPath}
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth={2.5}
+                />
+                <SvgPath
+                  d={leavesPath}
+                  fill="none"
+                  stroke="#EF4444"
+                  strokeWidth={1.75}
+                  strokeDasharray="3,3"
+                />
+              </>
+            ) : (
+              <SvgPath
+                d={primaryLine}
+                fill="none"
+                stroke={primaryColor}
+                strokeWidth={2.75}
+              />
+            )}
+
+            {/* Data point dots */}
+            {dailyChartData.map((p, idx) => {
+              const isSelected = activeDayPoint?.day === p.day;
+              const cx = getX(idx);
+              const cy =
+                chartSeries === "joins"
+                  ? getY(p.joins)
+                  : chartSeries === "leaves"
+                    ? getY(p.departures)
+                    : getY(p.views);
+              return (
+                <SvgCircle
+                  key={`pt-${p.day}`}
+                  cx={cx}
+                  cy={cy}
+                  r={isSelected ? 5 : 3}
+                  fill={isSelected ? "#FFFFFF" : primaryColor}
+                  stroke={primaryColor}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
+                />
+              );
+            })}
+          </Svg>
+
+          {/* Interactive X-axis tap targets */}
+          <View style={[styles.chartAxisRow, { width: chartWidth }]}>
+            {dailyChartData.map((p, idx) => {
+              const showLabel =
+                dailyChartData.length <= 7 ||
+                idx === 0 ||
+                idx === dailyChartData.length - 1 ||
+                idx % 3 === 0;
+              const isSelected = activeDayPoint?.day === p.day;
+              return (
+                <Pressable
+                  key={`ax-${p.day}`}
+                  style={styles.chartAxisTap}
+                  onPress={() => {
+                    soundService.play("click");
+                    setSelectedDayIndex(idx);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.chartAxisText,
+                      isSelected && styles.chartAxisTextActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {showLabel || isSelected ? p.label : "·"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Selected Day Breakdown Strip */}
+        {activeDayPoint ? (
+          <View style={styles.dayInspector}>
+            <Text style={styles.dayInspectorDate}>{activeDayPoint.label}</Text>
+            <View style={styles.dayInspectorPills}>
+              <Text style={[styles.dayMetricTag, { color: isDark ? "#38BDF8" : "#0284C7" }]}>
+                {activeDayPoint.views} views
+              </Text>
+              <Text style={[styles.dayMetricTag, { color: "#8B5CF6" }]}>
+                {activeDayPoint.clicks} clicks
+              </Text>
+              <Text style={[styles.dayMetricTag, { color: "#10B981" }]}>
+                {activeDayPoint.joins} joins
+              </Text>
+              <Text style={[styles.dayMetricTag, { color: "#EF4444" }]}>
+                {activeDayPoint.departures} leaves
+              </Text>
+            </View>
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
+  const renderFunnelCard = () => {
+    const base = Math.max(reportTotals.views, reportTotals.joins, 1);
+    const ctr = reportTotals.views
+      ? Math.round((reportTotals.clicks / reportTotals.views) * 100)
+      : 0;
+    const joinRate = reportTotals.views
+      ? Math.round((reportTotals.joins / reportTotals.views) * 100)
+      : 0;
+    const retention = reportTotals.joins
+      ? Math.round((reportTotals.active / reportTotals.joins) * 100)
+      : 0;
+
+    const stages = [
+      {
+        label: "Landing Page Views",
+        count: reportTotals.views,
+        pct: Math.round((reportTotals.views / base) * 100),
+        tag: "100% base",
+        color: isDark ? "#38BDF8" : "#0284C7",
+      },
+      {
+        label: "Telegram Button Clicks",
+        count: reportTotals.clicks,
+        pct: Math.round((reportTotals.clicks / base) * 100),
+        tag: `${ctr}% CTR`,
+        color: "#8B5CF6",
+      },
+      {
+        label: "Verified Channel Joins",
+        count: reportTotals.joins,
+        pct: Math.round((reportTotals.joins / base) * 100),
+        tag: `${joinRate}% conv`,
+        color: "#10B981",
+      },
+      {
+        label: "Active Retained Members",
+        count: reportTotals.active,
+        pct: Math.round((reportTotals.active / base) * 100),
+        tag: reportTotals.joins ? `${retention}% kept` : "0% kept",
+        color: "#4F46E5",
+      },
+    ];
+
+    return (
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <HugeiconsIcon
+              icon={ShieldCheckIcon}
+              size={17}
+              color="#10B981"
+              strokeWidth={2}
+            />
+            <Text style={styles.sectionTitle}>Conversion Funnel</Text>
+          </View>
+          {reportTotals.leaves > 0 ? (
+            <View style={styles.leavePillBadge}>
+              <Text style={styles.leavePillBadgeText}>
+                {reportTotals.leaves} left
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.verifiedBadge}>
+              <Text style={styles.verifiedBadgeText}>0 churn</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.funnelList}>
+          {stages.map((st) => (
+            <View key={st.label} style={styles.funnelItem}>
+              <View style={styles.funnelTopRow}>
+                <Text style={styles.funnelLabel}>{st.label}</Text>
+                <View style={styles.funnelRightMeta}>
+                  <Text style={styles.funnelTag}>{st.tag}</Text>
+                  <Text style={styles.funnelCount}>{st.count}</Text>
+                </View>
+              </View>
+              <View style={styles.funnelTrack}>
+                <View
+                  style={[
+                    styles.funnelFill,
+                    {
+                      width: `${Math.max(st.count > 0 ? 6 : 0, Math.min(100, st.pct))}%`,
+                      backgroundColor: st.color,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderCampaignCard = (c: TrackingCampaign) => {
+    const site = inventory.sites.find((s) => s.id === c.site_id);
+    const conn = inventory.connections.find((ch) => ch.id === c.connection_id);
+    const perf = report?.campaigns.find((r) => r.id === c.id);
+    const campaignUrl = site ? `${site.url}?gap_campaign=${c.public_key}` : "";
+    const isExternal = Boolean(site && !site.landing_page_id);
+    const showInstall = expandedInstallMap[c.id] === true;
+    const buttonHtml = `<a href="${c.invite_link || c.original_telegram_url}"\n   data-gap-telegram="join-community">Join Telegram</a>`;
+
+    return (
+      <View key={c.id} style={styles.campaignCard}>
+        {/* Header Strip */}
+        <View style={styles.campaignHeaderRow}>
+          <View
+            style={[
+              styles.campaignIconWrap,
+              isExternal && styles.campaignIconWrapExt,
+            ]}
+          >
+            <HugeiconsIcon
+              icon={isExternal ? BrowserIcon : TelegramIcon}
+              size={17}
+              color={isExternal ? "#6366F1" : isDark ? "#38BDF8" : "#0284C7"}
+              strokeWidth={2}
+            />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.itemTitle} numberOfLines={1}>
+              {c.name}
+            </Text>
+            <Text style={styles.itemUrl} numberOfLines={1}>
+              {site?.name || "Unknown page"} · {conn?.title || "Telegram channel"}
+            </Text>
+          </View>
+          <View
+            style={
+              c.status === "active"
+                ? styles.verifiedBadge
+                : c.status === "paused"
+                  ? styles.pendingBadge
+                  : styles.unverifiedBadge
+            }
+          >
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor:
+                    c.status === "active"
+                      ? "#10B981"
+                      : c.status === "paused"
+                        ? "#F59E0B"
+                        : "#94A3B8",
+                },
+              ]}
+            />
+            <Text
+              style={
+                c.status === "active"
+                  ? styles.verifiedBadgeText
+                  : c.status === "paused"
+                    ? styles.pendingBadgeText
+                    : styles.unverifiedBadgeText
+              }
+            >
+              {c.status}
+            </Text>
+          </View>
+        </View>
+
+        {/* Tinted 5-Metric Strip */}
+        {perf && (
+          <View style={styles.campaignMetricsStrip}>
+            {[
+              { label: "Views", val: perf.views, tint: isDark ? "rgba(56,189,248,0.12)" : "#F0F9FF", color: isDark ? "#38BDF8" : "#0284C7" },
+              { label: "Clicks", val: perf.clicks, tint: isDark ? "rgba(139,92,246,0.14)" : "#F5F3FF", color: "#7C3AED" },
+              { label: "Joins", val: perf.acquisitions, tint: isDark ? "rgba(16,185,129,0.14)" : "#ECFDF5", color: "#059669" },
+              { label: "Active", val: perf.active, tint: isDark ? "rgba(99,102,241,0.14)" : "#EEF2FF", color: "#4F46E5" },
+              { label: "Leaves", val: perf.leave_events, tint: isDark ? "rgba(239,68,68,0.14)" : "#FEF2F2", color: isDark ? "#FCA5A5" : "#DC2626" },
+            ].map((m) => (
+              <View
+                key={m.label}
+                style={[styles.campaignMetricPill, { backgroundColor: m.tint }]}
+              >
+                <Text style={[styles.campaignMetricVal, { color: m.color }]}>
+                  {m.val}
+                </Text>
+                <Text style={styles.campaignMetricLbl}>{m.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Stylish Link Cards */}
+        <View style={styles.linkCardsStack}>
+          {/* 1. Ad / Bio Tracking Link */}
+          {campaignUrl ? (
+            <View style={styles.linkCardAds}>
+              <View style={styles.linkCardTop}>
+                <View style={styles.linkBadgeAds}>
+                  <HugeiconsIcon
+                    icon={Link01Icon}
+                    size={11}
+                    color={isDark ? "#7DD3FC" : "#0369A1"}
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.linkBadgeAdsText}>
+                    Ad & Bio Tracking URL
+                  </Text>
+                </View>
+                <View style={styles.linkBtnGroup}>
+                  <Pressable
+                    style={styles.linkIconBtn}
+                    onPress={() => Linking.openURL(campaignUrl).catch(() => {})}
+                  >
+                    <HugeiconsIcon
+                      icon={ArrowUpRight01Icon}
+                      size={13}
+                      color={colors.text}
+                      strokeWidth={2.1}
+                    />
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.copyPillAds,
+                      copiedKey === `url-${c.id}` && styles.copyPillDone,
+                    ]}
+                    onPress={() =>
+                      void handleCopy(
+                        `url-${c.id}`,
+                        campaignUrl,
+                        "Campaign tracking URL",
+                      )
+                    }
+                  >
+                    <HugeiconsIcon
+                      icon={copiedKey === `url-${c.id}` ? CheckmarkCircle01Icon : Copy01Icon}
+                      size={12}
+                      color="#FFFFFF"
+                      strokeWidth={2.2}
+                    />
+                    <Text style={styles.copyPillText}>
+                      {copiedKey === `url-${c.id}` ? "Copied" : "Copy URL"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+              <Text style={styles.linkCardHint}>
+                Use this link in your Meta/Google Ads or bio
+              </Text>
+              <View style={styles.linkUrlPill}>
+                <Text style={styles.linkUrlText} numberOfLines={2} selectable>
+                  {campaignUrl}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* 2. Tracked Telegram Invite Link */}
+          {c.invite_link ? (
+            <View style={styles.linkCardInvite}>
+              <View style={styles.linkCardTop}>
+                <View style={styles.linkBadgeInvite}>
+                  <HugeiconsIcon
+                    icon={TelegramIcon}
+                    size={11}
+                    color={isDark ? "#6EE7B7" : "#047857"}
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.linkBadgeInviteText}>
+                    Join Button Invite Link
+                  </Text>
+                </View>
+                <Pressable
+                  style={[
+                    styles.copyPillInvite,
+                    copiedKey === `inv-${c.id}` && styles.copyPillDone,
+                  ]}
+                  onPress={() =>
+                    void handleCopy(
+                      `inv-${c.id}`,
+                      c.invite_link!,
+                      "Telegram invite link",
+                    )
+                  }
+                >
+                  <HugeiconsIcon
+                    icon={copiedKey === `inv-${c.id}` ? CheckmarkCircle01Icon : Copy01Icon}
+                    size={12}
+                    color="#FFFFFF"
+                    strokeWidth={2.2}
+                  />
+                  <Text style={styles.copyPillText}>
+                    {copiedKey === `inv-${c.id}` ? "Copied" : "Copy Invite"}
+                  </Text>
+                </Pressable>
+              </View>
+              <Text style={styles.linkCardHint}>
+                Paste inside your landing page's Join Telegram button
+              </Text>
+              <View style={styles.linkUrlPill}>
+                <Text style={styles.linkUrlText} numberOfLines={1} selectable>
+                  {c.invite_link}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.linkCardWarn}>
+              <Text style={styles.warnText}>
+                Generate a unique Telegram invite link to start counting joins.
+              </Text>
+              {c.status !== "archived" ? (
+                <Pressable
+                  style={[
+                    styles.primaryBtnSmall,
+                    { alignSelf: "flex-start" },
+                    busyKey === `act-${c.id}` && { opacity: 0.7 },
+                  ]}
+                  disabled={!!busyKey}
+                  onPress={() =>
+                    void runAction(
+                      `act-${c.id}`,
+                      "activate",
+                      { id: c.id },
+                      "Campaign Activated",
+                      "Unique Telegram invite link generated and active.",
+                    )
+                  }
+                >
+                  <Text style={styles.primaryBtnSmallText}>
+                    Activate & Generate Invite
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          )}
+        </View>
+
+        {/* Collapsible Script & Button HTML Drawer */}
+        {showInstall && (
+          <View style={styles.terminalBox}>
+            <View style={styles.codeBoxHeader}>
+              <Text style={styles.terminalLabel}>
+                {isExternal
+                  ? "Website Measurement Script (Required)"
+                  : "Measurement Script"}
+              </Text>
+              <Pressable
+                style={styles.terminalCopyBtn}
+                onPress={() =>
+                  void handleCopy(
+                    `script-${c.id}`,
+                    buildInstallSnippet(c.public_key),
+                    "Installation script",
+                  )
+                }
+              >
+                <Text style={styles.terminalCopyText}>
+                  {copiedKey === `script-${c.id}` ? "✓ Copied" : "Copy Script"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.terminalCode} selectable>
+              {buildInstallSnippet(c.public_key)}
+            </Text>
+
+            <View style={[styles.codeBoxHeader, { marginTop: 10 }]}>
+              <Text style={styles.terminalLabel}>Telegram Button HTML</Text>
+              <Pressable
+                style={styles.terminalCopyBtn}
+                onPress={() =>
+                  void handleCopy(`btn-${c.id}`, buttonHtml, "Button HTML")
+                }
+              >
+                <Text style={styles.terminalCopyText}>
+                  {copiedKey === `btn-${c.id}` ? "✓ Copied" : "Copy Button"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={styles.terminalCode} selectable>
+              {buttonHtml}
+            </Text>
+          </View>
+        )}
+
+        {/* Footer Actions */}
+        <View style={styles.itemActions}>
+          {c.status !== "archived" &&
+            (c.status === "active" ? (
+              <Pressable
+                style={styles.ghostBtn}
+                disabled={!!busyKey}
+                onPress={() =>
+                  void runAction(
+                    `pause-${c.id}`,
+                    "pause",
+                    { id: c.id },
+                    "Campaign Paused",
+                    "Tracking paused while keeping the invite active.",
+                  )
+                }
+              >
+                <Text style={styles.ghostBtnText}>Pause</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[
+                  styles.primaryBtnSmall,
+                  busyKey === `act-${c.id}` && { opacity: 0.7 },
+                ]}
+                disabled={!!busyKey}
+                onPress={() =>
+                  void runAction(
+                    `act-${c.id}`,
+                    "activate",
+                    { id: c.id },
+                    "Campaign Activated",
+                    "Unique Telegram invite link generated and active.",
+                  )
+                }
+              >
+                <Text style={styles.primaryBtnSmallText}>
+                  {c.invite_link ? "Resume" : "Activate & Get Link"}
+                </Text>
+              </Pressable>
+            ))}
+
+          <Pressable
+            style={styles.ghostBtn}
+            onPress={() =>
+              setExpandedInstallMap((prev) => ({
+                ...prev,
+                [c.id]: !showInstall,
+              }))
+            }
+          >
+            <Text style={styles.ghostBtnText}>
+              {showInstall
+                ? "Hide Script"
+                : isExternal
+                  ? "Setup Script"
+                  : "Script & HTML"}
+            </Text>
+          </Pressable>
+
+          {c.status !== "archived" && (
+            <Pressable
+              style={styles.dangerBtnSmall}
+              disabled={!!busyKey}
+              onPress={() =>
+                confirmAction(
+                  "Archive Campaign",
+                  `Archive "${c.name}"? Historical metrics are preserved.`,
+                  () => {
+                    void runAction(
+                      `arch-${c.id}`,
+                      "archive",
+                      { id: c.id },
+                      "Campaign Archived",
+                      "Historical tracking records are preserved.",
+                    );
+                  },
+                )
+              }
+            >
+              <Text style={styles.dangerBtnSmallText}>Archive</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <AppScreen safeArea={false} backgroundColor={colors.background}>
@@ -707,15 +1658,30 @@ export default function TelegramConversionScreen() {
           {/* Graphic Feature Badges */}
           <View style={styles.heroPillRow}>
             <View style={styles.heroFeaturePill}>
-              <Ionicons name="flash" size={11} color={isDark ? "#38BDF8" : "#0284C7"} />
+              <HugeiconsIcon
+                icon={Rocket01Icon}
+                size={11}
+                color={isDark ? "#38BDF8" : "#0284C7"}
+                strokeWidth={2}
+              />
               <Text style={styles.heroFeaturePillText}>Auto-Track</Text>
             </View>
             <View style={styles.heroFeaturePill}>
-              <Ionicons name="shield-checkmark" size={11} color="#059669" />
+              <HugeiconsIcon
+                icon={ShieldCheckIcon}
+                size={11}
+                color="#059669"
+                strokeWidth={2}
+              />
               <Text style={styles.heroFeaturePillText}>Verified Joins</Text>
             </View>
             <View style={styles.heroFeaturePill}>
-              <Ionicons name="stats-chart" size={11} color="#7C3AED" />
+              <HugeiconsIcon
+                icon={Activity01Icon}
+                size={11}
+                color="#7C3AED"
+                strokeWidth={2}
+              />
               <Text style={styles.heroFeaturePillText}>Real-Time ROI</Text>
             </View>
           </View>
@@ -734,16 +1700,17 @@ export default function TelegramConversionScreen() {
                 }}
                 style={[styles.segmentBtn, active && styles.segmentBtnActive]}
               >
-                <Ionicons
-                  name={tabKey === "setup" ? "layers-outline" : "bar-chart-outline"}
+                <HugeiconsIcon
+                  icon={tabKey === "setup" ? Layout01Icon : Activity01Icon}
                   size={14}
                   color={active ? colors.text : colors.textSecondary}
-                  style={{ marginRight: 6 }}
+                  strokeWidth={2}
                 />
                 <Text
                   style={[
                     styles.segmentBtnText,
                     active && styles.segmentBtnTextActive,
+                    { marginLeft: 6 },
                   ]}
                 >
                   {tabKey === "setup" ? "Setup Wizard" : "Analytics"}
@@ -756,9 +1723,21 @@ export default function TelegramConversionScreen() {
         {errorMsg ? (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>{errorMsg}</Text>
-            <Pressable onPress={() => void loadData(true)}>
-              <Text style={styles.errorRetry}>Retry</Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              {errorMsg.toLowerCase().includes("sign in") ? (
+                <Pressable
+                  onPress={async () => {
+                    await useAuthStore.getState().logout();
+                    router.replace("/(auth)/login" as any);
+                  }}
+                >
+                  <Text style={styles.errorRetry}>Sign In</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={() => void loadData(true)}>
+                <Text style={styles.errorRetry}>Retry</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
 
@@ -825,7 +1804,7 @@ export default function TelegramConversionScreen() {
                     ]}
                   >
                     {step1Done ? (
-                      <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>✓</Text>
                     ) : (
                       <Text
                         style={[
@@ -885,7 +1864,7 @@ export default function TelegramConversionScreen() {
                     ]}
                   >
                     {step2Done ? (
-                      <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>✓</Text>
                     ) : (
                       <Text
                         style={[
@@ -945,7 +1924,7 @@ export default function TelegramConversionScreen() {
                     ]}
                   >
                     {step3Done ? (
-                      <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>✓</Text>
                     ) : (
                       <Text
                         style={[
@@ -1027,21 +2006,36 @@ export default function TelegramConversionScreen() {
               {/* Graphic Setup Pipeline */}
               <View style={styles.pipelineBar}>
                 <View style={[styles.pipelineStep, inventory.telegram.identity ? styles.pipelineStepActive : null]}>
-                  <Ionicons name="person" size={12} color={inventory.telegram.identity ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary} />
+                  <HugeiconsIcon
+                    icon={UserIcon}
+                    size={12}
+                    color={inventory.telegram.identity ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary}
+                    strokeWidth={2}
+                  />
                   <Text style={[styles.pipelineStepText, inventory.telegram.identity ? styles.pipelineStepTextActive : null]}>
                     Account
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={11} color={colors.cardBorder} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>›</Text>
                 <View style={[styles.pipelineStep, inventory.telegram.is_admin ? styles.pipelineStepActive : null]}>
-                  <Ionicons name="shield-checkmark" size={12} color={inventory.telegram.is_admin ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary} />
+                  <HugeiconsIcon
+                    icon={ShieldCheckIcon}
+                    size={12}
+                    color={inventory.telegram.is_admin ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary}
+                    strokeWidth={2}
+                  />
                   <Text style={[styles.pipelineStepText, inventory.telegram.is_admin ? styles.pipelineStepTextActive : null]}>
                     Bot Admin
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={11} color={colors.cardBorder} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>›</Text>
                 <View style={[styles.pipelineStep, inventory.connections.length > 0 ? styles.pipelineStepActive : null]}>
-                  <Ionicons name="megaphone" size={12} color={inventory.connections.length > 0 ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary} />
+                  <HugeiconsIcon
+                    icon={Megaphone01Icon}
+                    size={12}
+                    color={inventory.connections.length > 0 ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary}
+                    strokeWidth={2}
+                  />
                   <Text style={[styles.pipelineStepText, inventory.connections.length > 0 ? styles.pipelineStepTextActive : null]}>
                     Channel
                   </Text>
@@ -1053,14 +2047,14 @@ export default function TelegramConversionScreen() {
                 <View style={styles.identityCard}>
                   <View style={styles.titleBadgeRow}>
                     <View style={styles.identityAvatarWrap}>
-                      <Ionicons name="person" size={16} color={colors.primary} />
+                      <HugeiconsIcon icon={UserIcon} size={16} color={colors.primary} strokeWidth={2} />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.identityTitle} numberOfLines={1}>
                         {inventory.telegram.identity.display_name}
                       </Text>
                       <View style={styles.verifiedChip}>
-                        <Ionicons name="checkmark-circle" size={11} color="#059669" />
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={11} color="#059669" strokeWidth={2.2} />
                         <Text style={styles.verifiedChipText}>Verified Account</Text>
                       </View>
                     </View>
@@ -1097,10 +2091,11 @@ export default function TelegramConversionScreen() {
                       />
                     ) : (
                       <>
-                        <Ionicons
-                          name="link"
+                        <HugeiconsIcon
+                          icon={Link01Icon}
                           size={16}
                           color={colors.primaryForeground}
+                          strokeWidth={2}
                         />
                         <Text style={styles.primaryBtnText}>
                           {activeLink
@@ -1167,16 +2162,17 @@ export default function TelegramConversionScreen() {
                       botMode === m && styles.segmentBtnActive,
                     ]}
                   >
-                    <Ionicons
-                      name={m === "shared" ? "flash-outline" : "key-outline"}
+                    <HugeiconsIcon
+                      icon={m === "shared" ? Rocket01Icon : ShieldCheckIcon}
                       size={13}
                       color={botMode === m ? (isDark ? "#38BDF8" : "#0284C7") : colors.textSecondary}
-                      style={{ marginRight: 5 }}
+                      strokeWidth={2}
                     />
                     <Text
                       style={[
                         styles.segmentBtnText,
                         botMode === m && styles.segmentBtnTextActive,
+                        { marginLeft: 5 },
                       ]}
                     >
                       {m === "shared" ? "Instant Shared Bot" : "Dedicated Bot"}
@@ -1338,7 +2334,7 @@ export default function TelegramConversionScreen() {
                       </>
                     ) : (
                       <View style={styles.emptyGraphicBox}>
-                        <Ionicons name="megaphone-outline" size={24} color={colors.primary} />
+                        <HugeiconsIcon icon={Megaphone01Icon} size={24} color={colors.primary} strokeWidth={1.8} />
                         <Text style={styles.emptyGraphicTitle}>No Synced Channels</Text>
                         <Text style={styles.emptyGraphicSub}>Select a channel via Telegram or add manually</Text>
                       </View>
@@ -1366,10 +2362,11 @@ export default function TelegramConversionScreen() {
                     >
                       <View style={styles.accordionHeaderLeft}>
                         <View style={styles.accordionIconBox}>
-                          <Ionicons
-                            name="create-outline"
+                          <HugeiconsIcon
+                            icon={Edit02Icon}
                             size={15}
                             color={colors.primary}
+                            strokeWidth={2}
                           />
                         </View>
                         <View style={{ flex: 1 }}>
@@ -1382,11 +2379,9 @@ export default function TelegramConversionScreen() {
                         </View>
                       </View>
                       <View style={styles.accordionChevronBox}>
-                        <Ionicons
-                          name={manualAccordionOpen ? "chevron-up" : "chevron-down"}
-                          size={16}
-                          color={colors.textSecondary}
-                        />
+                        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.textSecondary }}>
+                          {manualAccordionOpen ? "▴" : "▾"}
+                        </Text>
                       </View>
                     </Pressable>
 
@@ -1657,11 +2652,11 @@ export default function TelegramConversionScreen() {
                   </Text>
                   <View style={styles.featurePillRow}>
                     <View style={styles.microPill}>
-                      <Ionicons name="flash" size={9} color="#059669" />
+                      <HugeiconsIcon icon={Rocket01Icon} size={9} color="#059669" strokeWidth={2} />
                       <Text style={styles.microPillText}>Zero DNS</Text>
                     </View>
                     <View style={styles.microPill}>
-                      <Ionicons name="checkmark-circle" size={9} color="#059669" />
+                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={9} color="#059669" strokeWidth={2} />
                       <Text style={styles.microPillText}>Auto-Track</Text>
                     </View>
                   </View>
@@ -1727,11 +2722,11 @@ export default function TelegramConversionScreen() {
                   </Text>
                   <View style={styles.featurePillRow}>
                     <View style={styles.microPill}>
-                      <Ionicons name="globe-outline" size={9} color="#0284C7" />
+                      <HugeiconsIcon icon={BrowserIcon} size={9} color="#0284C7" strokeWidth={2} />
                       <Text style={styles.microPillText}>Any Site</Text>
                     </View>
                     <View style={styles.microPill}>
-                      <Ionicons name="code-slash" size={9} color="#0284C7" />
+                      <HugeiconsIcon icon={Link01Icon} size={9} color="#0284C7" strokeWidth={2} />
                       <Text style={styles.microPillText}>Snippet</Text>
                     </View>
                   </View>
@@ -1789,7 +2784,7 @@ export default function TelegramConversionScreen() {
                           style={styles.primaryBtnSmall}
                           onPress={() => router.push("/tools/landing-templates" as any)}
                         >
-                          <Ionicons name="add" size={14} color="#FFFFFF" />
+                          <HugeiconsIcon icon={Add01Icon} size={14} color="#FFFFFF" strokeWidth={2} />
                           <Text style={styles.primaryBtnSmallText}>
                             Create Funnel
                           </Text>
@@ -1801,7 +2796,7 @@ export default function TelegramConversionScreen() {
                             setWebsiteType("external");
                           }}
                         >
-                          <Ionicons name="globe-outline" size={13} color={colors.text} />
+                          <HugeiconsIcon icon={BrowserIcon} size={13} color={colors.text} strokeWidth={2} />
                           <Text style={styles.outlineBtnSmallText}>
                             Use External Site
                           </Text>
@@ -1911,9 +2906,9 @@ export default function TelegramConversionScreen() {
                                   <Text style={styles.itemUrl} numberOfLines={1}>
                                     {designUrl}
                                   </Text>
-                                  {page.telegram_url ? (
+                                  {normalizeTelegramDestination(page.telegram_url) ? (
                                     <Text style={styles.itemMeta} numberOfLines={1}>
-                                      Target: {page.telegram_url}
+                                      Target: {normalizeTelegramDestination(page.telegram_url)}
                                     </Text>
                                   ) : null}
                                 </View>
@@ -1962,8 +2957,12 @@ export default function TelegramConversionScreen() {
                                       onPress={() => {
                                         if (connectedSite) {
                                           setSelectedSiteId(connectedSite.id);
-                                          if (page.telegram_url) {
-                                            setOriginalTelegramUrl(page.telegram_url);
+                                          const cleanTarget =
+                                            normalizeTelegramDestination(
+                                              page.telegram_url,
+                                            );
+                                          if (cleanTarget) {
+                                            setOriginalTelegramUrl(cleanTarget);
                                           }
                                           showNotice(
                                             "Design Selected",
@@ -2236,7 +3235,7 @@ export default function TelegramConversionScreen() {
                     setSetupStep(1);
                   }}
                 >
-                  <Ionicons name="arrow-back" size={16} color={colors.text} />
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={16} color={colors.text} strokeWidth={2} />
                   <Text style={styles.wizardBackBtnText}>Back</Text>
                 </Pressable>
 
@@ -2263,6 +3262,7 @@ export default function TelegramConversionScreen() {
                 STEP 3: CREATE TRACKING CAMPAIGN
                 ═══════════════════════════════════════════════════════════════════════ */}
             {setupStep === 3 && (
+              <>
               <View style={styles.sectionCard}>
               <View style={styles.stepHeaderRow}>
                 <View style={styles.stepBadge}>
@@ -2324,7 +3324,7 @@ export default function TelegramConversionScreen() {
                 <View style={styles.flowConnector}>
                   <View style={styles.flowLine} />
                   <View style={styles.flowConnectorBadge}>
-                    <Ionicons name="flash" size={11} color="#FFFFFF" />
+                    <HugeiconsIcon icon={Link01Icon} size={11} color="#FFFFFF" strokeWidth={2.2} />
                   </View>
                   <View style={styles.flowLine} />
                 </View>
@@ -2470,14 +3470,10 @@ export default function TelegramConversionScreen() {
                   }
                   onPress={() => void handleCreateCampaign()}
                 >
-                  <HugeiconsIcon
-                    icon={Link01Icon}
-                    size={16}
-                    color={colors.primaryForeground}
-                    strokeWidth={2.2}
-                  />
                   <Text style={styles.primaryBtnText}>
-                    Create Tracking Campaign & Generate Link
+                    {busyKey === "create-campaign"
+                      ? "Creating & Generating Link..."
+                      : "Create Campaign & Get Link"}
                   </Text>
                 </Pressable>
 
@@ -2488,14 +3484,45 @@ export default function TelegramConversionScreen() {
                     setSetupStep(2);
                   }}
                 >
-                  <Ionicons name="arrow-back" size={15} color={colors.textSecondary} />
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={15} color={colors.textSecondary} strokeWidth={2} />
                   <Text style={styles.wizardBackBtnCenterText}>
                     Back to Step 2 (Destination)
                   </Text>
                 </Pressable>
               </View>
             </View>
-          )}
+
+            {/* 5. CAMPAIGNS & TRACKING LINKS (VISIBLE RIGHT AFTER CREATION) */}
+            {inventory.campaigns.length > 0 && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <HugeiconsIcon
+                      icon={Activity01Icon}
+                      size={18}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.sectionTitle}>
+                      Campaigns & Tracking Links
+                    </Text>
+                  </View>
+                  <Text style={styles.countPill}>
+                    {inventory.campaigns.length}
+                  </Text>
+                </View>
+                <Text style={styles.sectionDesc}>
+                  Share the Campaign Tracking URL in your ads or bio. Every
+                  click swaps to your tracked Telegram invite link and counts
+                  verified channel joins.
+                </Text>
+                <View style={styles.listStack}>
+                  {inventory.campaigns.map(renderCampaignCard)}
+                </View>
+              </View>
+            )}
+            </>
+            )}
 
             {/* Created Designs Dropdown Modal */}
             <Modal
@@ -2789,20 +3816,33 @@ export default function TelegramConversionScreen() {
 
             <View style={styles.kpiGrid}>
               {[
-                { label: "Page Views", value: reportTotals.views, icon: "eye-outline", color: isDark ? "#38BDF8" : "#0284C7" },
-                { label: "TG Clicks", value: reportTotals.clicks, icon: "finger-print-outline", color: "#8B5CF6" },
-                { label: "Verified Joins", value: reportTotals.joins, icon: "shield-checkmark-outline", color: "#10B981" },
-                { label: "Active Members", value: reportTotals.active, icon: "people-outline", color: "#F59E0B" },
+                { label: "Page Views", value: reportTotals.views, icon: TelescopeIcon, color: isDark ? "#38BDF8" : "#0284C7" },
+                { label: "TG Clicks", value: reportTotals.clicks, icon: Link01Icon, color: "#8B5CF6" },
+                { label: "Verified Joins", value: reportTotals.joins, icon: ShieldCheckIcon, color: "#10B981" },
+                { label: "Active Members", value: reportTotals.active, icon: UserGroupIcon, color: "#F59E0B" },
+                { label: "Channel Leaves", value: reportTotals.leaves, icon: Forward01Icon, color: isDark ? "#FCA5A5" : "#DC2626" },
+                {
+                  label: "Retention Rate",
+                  value: reportTotals.joins
+                    ? `${Math.round((reportTotals.active / reportTotals.joins) * 100)}%`
+                    : "—",
+                  icon: Activity01Icon,
+                  color: "#10B981",
+                },
               ].map((stat) => (
                 <View key={stat.label} style={styles.kpiCard}>
                   <View style={styles.kpiHeaderRow}>
                     <Text style={styles.kpiLabel}>{stat.label}</Text>
-                    <Ionicons name={stat.icon as any} size={15} color={stat.color} />
+                    <HugeiconsIcon icon={stat.icon} size={15} color={stat.color} strokeWidth={2} />
                   </View>
                   <Text style={styles.kpiValue}>{stat.value}</Text>
                 </View>
               ))}
             </View>
+
+            {renderTrendChart()}
+
+            {renderFunnelCard()}
 
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
@@ -2828,147 +3868,7 @@ export default function TelegramConversionScreen() {
                 </View>
               ) : (
                 <View style={styles.listStack}>
-                  {inventory.campaigns.map((c) => {
-                    const site = inventory.sites.find((s) => s.id === c.site_id);
-                    const perf = report?.campaigns.find((r) => r.id === c.id);
-                    const campaignUrl = site
-                      ? `${site.url}?gap_campaign=${c.public_key}`
-                      : "";
-                    const isExternal = site && !site.landing_page_id;
-
-                    return (
-                      <View key={c.id} style={styles.itemCard}>
-                        <View style={styles.titleBadgeRow}>
-                          <Text style={styles.itemTitle} numberOfLines={1}>
-                            {c.name}
-                          </Text>
-                          <View
-                            style={
-                              c.status === "active"
-                                ? styles.verifiedBadge
-                                : styles.unverifiedBadge
-                            }
-                          >
-                            <Text
-                              style={
-                                c.status === "active"
-                                  ? styles.verifiedBadgeText
-                                  : styles.unverifiedBadgeText
-                              }
-                            >
-                              {c.status}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <Text style={styles.itemUrl} numberOfLines={1}>
-                          {site?.name || "Unknown page"}
-                        </Text>
-                        {c.invite_link ? (
-                          <Text style={styles.itemMeta} numberOfLines={1}>
-                            Invite: {c.invite_link}
-                          </Text>
-                        ) : null}
-
-                        {perf && (
-                          <View style={styles.miniMetricsRow}>
-                            <View style={styles.metricPill}>
-                              <Ionicons name="eye-outline" size={11} color={colors.textSecondary} />
-                              <Text style={styles.miniMetric}>{perf.views}</Text>
-                            </View>
-                            <View style={styles.metricPill}>
-                              <Ionicons name="finger-print-outline" size={11} color={colors.textSecondary} />
-                              <Text style={styles.miniMetric}>{perf.clicks}</Text>
-                            </View>
-                            <View style={styles.metricPill}>
-                              <Ionicons name="shield-checkmark-outline" size={11} color="#059669" />
-                              <Text style={[styles.miniMetric, { color: "#059669", fontWeight: "700" }]}>{perf.acquisitions}</Text>
-                            </View>
-                          </View>
-                        )}
-
-                        <View style={styles.itemActions}>
-                          {c.status === "active" ? (
-                            <Pressable
-                              style={styles.ghostBtn}
-                              disabled={!!busyKey}
-                              onPress={() =>
-                                void runAction(
-                                  `pause-${c.id}`,
-                                  "pause",
-                                  { id: c.id },
-                                  "Campaign Paused",
-                                  "Tracking paused while keeping the invite active.",
-                                )
-                              }
-                            >
-                              <Text style={styles.ghostBtnText}>Pause</Text>
-                            </Pressable>
-                          ) : c.status !== "archived" ? (
-                            <Pressable
-                              style={styles.primaryBtnSmall}
-                              disabled={!!busyKey}
-                              onPress={() =>
-                                void runAction(
-                                  `act-${c.id}`,
-                                  "activate",
-                                  { id: c.id },
-                                  "Campaign Activated",
-                                  "Unique Telegram invite link generated and active.",
-                                )
-                              }
-                            >
-                              <Text style={styles.primaryBtnSmallText}>
-                                {c.invite_link ? "Resume" : "Activate"}
-                              </Text>
-                            </Pressable>
-                          ) : null}
-
-                          {campaignUrl ? (
-                            <Pressable
-                              style={styles.ghostBtn}
-                              onPress={() =>
-                                void handleCopy(
-                                  `url-${c.id}`,
-                                  campaignUrl,
-                                  "Campaign URL",
-                                )
-                              }
-                            >
-                              <HugeiconsIcon
-                                icon={Copy01Icon}
-                                size={13}
-                                color={colors.text}
-                                strokeWidth={2}
-                              />
-                              <Text style={styles.ghostBtnText}>Copy URL</Text>
-                            </Pressable>
-                          ) : null}
-
-                          {isExternal ? (
-                            <Pressable
-                              style={styles.ghostBtn}
-                              onPress={() =>
-                                void handleCopy(
-                                  `script-${c.id}`,
-                                  buildInstallSnippet(c.public_key),
-                                  "Install Script",
-                                )
-                              }
-                            >
-                              <HugeiconsIcon
-                                icon={Copy01Icon}
-                                size={13}
-                                color={colors.text}
-                                strokeWidth={2}
-                              />
-                              <Text style={styles.ghostBtnText}>Copy Script</Text>
-                            </Pressable>
-                          ) : null}
-                        </View>
-                      </View>
-                    );
-                  })}
+                  {inventory.campaigns.map(renderCampaignCard)}
                 </View>
               )}
             </View>
@@ -3044,6 +3944,7 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
     },
     segmentBtn: {
       flex: 1,
+      flexDirection: "row",
       paddingVertical: 9,
       borderRadius: 9,
       alignItems: "center",
@@ -3620,8 +4521,11 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
     },
     miniMetricsRow: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 2,
+      flexWrap: "wrap",
+      columnGap: 12,
+      rowGap: 4,
+      marginTop: 4,
+      marginBottom: 2,
     },
     miniMetric: {
       fontSize: 11.5,
@@ -4153,6 +5057,33 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
       marginTop: 2,
       flexWrap: "wrap",
     },
+    codeBox: {
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: isDark ? "#12101A" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0",
+      gap: 4,
+    },
+    codeBoxHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    codeBoxLabel: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+    identityCard: {
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "#A7F3D0",
+      gap: 2,
+    },
     heroFeaturePill: {
       flexDirection: "row",
       alignItems: "center",
@@ -4437,5 +5368,373 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
       paddingVertical: 2,
       borderRadius: 5,
       backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
+    },
+    miniMetricLeave: {
+      color: isDark ? "#FCA5A5" : "#DC2626",
+    },
+
+    // Charts & Funnel
+    chartCard: {
+      borderRadius: 18,
+      padding: 15,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.cardBorder,
+      gap: 10,
+    },
+    chartIconBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.16)" : "#E0F2FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    chartSub: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    chartFilterRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+    },
+    chartFilterChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0",
+      backgroundColor: isDark ? "#181622" : "#F8FAFC",
+    },
+    chartFilterChipActive: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(56, 189, 248, 0.14)" : "#EFF6FF",
+    },
+    legendDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+    },
+    chartFilterText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    chartFilterTextActive: {
+      color: colors.text,
+      fontWeight: "700",
+    },
+    svgChartWrap: {
+      alignItems: "center",
+      paddingTop: 4,
+    },
+    chartAxisRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 4,
+      paddingHorizontal: 4,
+    },
+    chartAxisTap: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 4,
+    },
+    chartAxisText: {
+      fontSize: 9.5,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    chartAxisTextActive: {
+      color: colors.primary,
+      fontWeight: "800",
+    },
+    dayInspector: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 6,
+      paddingHorizontal: 11,
+      paddingVertical: 8,
+      borderRadius: 11,
+      backgroundColor: isDark ? "#181622" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0",
+    },
+    dayInspectorDate: {
+      fontSize: 11.5,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    dayInspectorPills: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
+    dayMetricTag: {
+      fontSize: 11,
+      fontWeight: "700",
+    },
+    leavePillBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(239,68,68,0.18)" : "#FEE2E2",
+    },
+    leavePillBadgeText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: isDark ? "#FCA5A5" : "#DC2626",
+    },
+    funnelList: {
+      gap: 10,
+      marginTop: 2,
+    },
+    funnelItem: {
+      gap: 5,
+    },
+    funnelTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    funnelLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    funnelRightMeta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    funnelTag: {
+      fontSize: 10.5,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    funnelCount: {
+      fontSize: 12.5,
+      fontWeight: "800",
+      color: colors.text,
+      minWidth: 18,
+      textAlign: "right",
+    },
+    funnelTrack: {
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9",
+      overflow: "hidden",
+    },
+    funnelFill: {
+      height: "100%",
+      borderRadius: 4,
+    },
+
+    // Attractive Campaign & Link Cards
+    campaignCard: {
+      borderRadius: 16,
+      padding: 13,
+      backgroundColor: isDark ? "#181622" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0",
+      gap: 10,
+    },
+    campaignHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    campaignIconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(56,189,248,0.16)" : "#E0F2FE",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    campaignIconWrapExt: {
+      backgroundColor: isDark ? "rgba(99,102,241,0.18)" : "#EEF2FF",
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    campaignMetricsStrip: {
+      flexDirection: "row",
+      gap: 6,
+    },
+    campaignMetricPill: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 7,
+      paddingHorizontal: 4,
+      borderRadius: 10,
+      gap: 1,
+    },
+    campaignMetricVal: {
+      fontSize: 13.5,
+      fontWeight: "800",
+    },
+    campaignMetricLbl: {
+      fontSize: 9.5,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    linkCardsStack: {
+      gap: 8,
+    },
+    linkCardAds: {
+      borderRadius: 12,
+      padding: 10,
+      backgroundColor: isDark ? "rgba(14, 165, 233, 0.1)" : "#F0F9FF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(56, 189, 248, 0.28)" : "#BAE6FD",
+      gap: 6,
+    },
+    linkCardInvite: {
+      borderRadius: 12,
+      padding: 10,
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.1)" : "#ECFDF5",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.28)" : "#A7F3D0",
+      gap: 6,
+    },
+    linkCardWarn: {
+      borderRadius: 12,
+      padding: 10,
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.1)" : "#FFFBEB",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A",
+      gap: 8,
+    },
+    linkCardTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    linkBadgeAds: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 7,
+      backgroundColor: isDark ? "rgba(56,189,248,0.18)" : "#E0F2FE",
+    },
+    linkBadgeAdsText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: isDark ? "#7DD3FC" : "#0369A1",
+    },
+    linkBadgeInvite: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 7,
+      backgroundColor: isDark ? "rgba(16,185,129,0.2)" : "#D1FAE5",
+    },
+    linkBadgeInviteText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: isDark ? "#6EE7B7" : "#047857",
+    },
+    linkBtnGroup: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    linkIconBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.12)" : "#CBD5E1",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    copyPillAds: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: "#0284C7",
+    },
+    copyPillInvite: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: "#059669",
+    },
+    copyPillDone: {
+      backgroundColor: "#047857",
+    },
+    copyPillText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: "#FFFFFF",
+    },
+    linkCardHint: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    linkUrlPill: {
+      borderRadius: 8,
+      paddingHorizontal: 9,
+      paddingVertical: 7,
+      backgroundColor: isDark ? "rgba(0,0,0,0.25)" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.08)",
+    },
+    linkUrlText: {
+      fontSize: 11.5,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: colors.text,
+    },
+    terminalBox: {
+      borderRadius: 12,
+      padding: 12,
+      backgroundColor: "#0F172A",
+      borderWidth: 1,
+      borderColor: "#1E293B",
+      gap: 6,
+    },
+    terminalLabel: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: "#94A3B8",
+    },
+    terminalCopyBtn: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: "#1E293B",
+    },
+    terminalCopyText: {
+      fontSize: 10.5,
+      fontWeight: "700",
+      color: "#38BDF8",
+    },
+    terminalCode: {
+      fontSize: 11,
+      lineHeight: 16,
+      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+      color: "#E2E8F0",
     },
   });
