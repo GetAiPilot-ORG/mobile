@@ -422,6 +422,27 @@ export default function LoginScreen() {
                   : "Sign in with Password"}
               </Text>
             </Pressable>
+
+            {/* Explore App Tour link */}
+            <Pressable
+              style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 8 }}
+              onPress={() => {
+                triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/welcome" as any);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons name="compass-outline" size={14} color={colors.textSecondary} />
+              <Text
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: "600",
+                  color: colors.textSecondary,
+                }}
+              >
+                Explore App Tour
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

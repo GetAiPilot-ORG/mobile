@@ -22,7 +22,9 @@ import { NotificationProvider } from "../src/contexts/NotificationContext";
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext";
 import { RazorpayProvider } from "../src/contexts/RazorpayContext";
 import { ThemeProvider, useTheme, getColors } from "@/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "../src/core/store/authStore";
+import { HAS_SEEN_TOUR_KEY } from "./welcome";
 import { supabase } from "@/lib/supabase";
 import { captureReferralParam, handlePendingReferral } from "../src/services/referralService";
 import { ThemedDialogProvider } from "../src/contexts/ThemedDialogContext";
@@ -169,9 +171,17 @@ function AuthRouteGuard() {
       (s) => s === "verify-email" || s === "callback",
     );
     const inOnboarding = segments.some((s) => s === "onboarding");
+    const inWelcome = segments.some((s) => s === "welcome");
 
-    const timer = setTimeout(() => {
-      if (authStatus === "unauthenticated" && !inAuthGroup) {
+    const timer = setTimeout(async () => {
+      if (authStatus === "unauthenticated" && !inAuthGroup && !inWelcome) {
+        // First-time app visitors explore the welcome onboarding tour
+        const hasSeenTour = await AsyncStorage.getItem(HAS_SEEN_TOUR_KEY).catch(() => null);
+        if (!hasSeenTour) {
+          router.replace("/welcome" as any);
+          return;
+        }
+
         if (__DEV__) {
           console.log(
             "[AuthGuard] Unauthenticated user on protected route -> navigating to login",
@@ -281,6 +291,13 @@ function ThemedNavigationStack() {
       <Stack.Screen
         name="(auth)/callback"
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="welcome"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
       />
       <Stack.Screen
         name="onboarding"
