@@ -87,13 +87,12 @@ export const Chatbot: React.FC = () => {
     opacity: opacity.value,
   }));
 
-  // Hide on auth & onboarding routes
+  // Hide on auth, onboarding & welcome routes
   const segments = useSegments();
-  const currentSegment = segments[0] as string | undefined;
-  const isAuthOrOnboarding =
-    currentSegment === '(auth)' || currentSegment === 'onboarding';
+  const isExcludedRoute =
+    segments.some((s) => s === '(auth)' || s === 'onboarding' || s === 'welcome');
 
-  if (isAuthOrOnboarding) {
+  if (isExcludedRoute) {
     return null;
   }
 
