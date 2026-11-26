@@ -96,7 +96,7 @@ config.resolver.blockList = [
 
 const finalConfig = withNativeWind(config, { input: './src/global.css' });
 
-// Ensure maxWorkers is strictly 1 or 2 on Windows to prevent EMFILE bursts
-finalConfig.maxWorkers = process.platform === 'win32' ? 1 : 2;
+// Use 2-4 workers so Metro bundles fast without overwhelming Windows file handles
+finalConfig.maxWorkers = Math.max(2, Math.min(4, Math.floor(os.cpus().length / 2)));
 
 module.exports = finalConfig;

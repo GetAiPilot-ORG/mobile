@@ -19,12 +19,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  Mail01Icon,
-  CheckmarkCircle01Icon,
-  ArrowRight01Icon,
-  ArrowLeft01Icon,
-} from '@hugeicons/core-free-icons';
+import Mail01Icon from '@hugeicons/core-free-icons/Mail01Icon';
+import CheckmarkCircle01Icon from '@hugeicons/core-free-icons/CheckmarkCircle01Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
 
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';

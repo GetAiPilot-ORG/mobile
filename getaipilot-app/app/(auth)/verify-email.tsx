@@ -23,15 +23,13 @@ import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  Mail01Icon,
-  CheckmarkCircle01Icon,
-  Copy01Icon,
-  ArrowRight01Icon,
-  ArrowLeft01Icon,
-  SparklesIcon,
-  ShieldCheckIcon,
-} from '@hugeicons/core-free-icons';
+import Mail01Icon from '@hugeicons/core-free-icons/Mail01Icon';
+import CheckmarkCircle01Icon from '@hugeicons/core-free-icons/CheckmarkCircle01Icon';
+import Copy01Icon from '@hugeicons/core-free-icons/Copy01Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
+import SparklesIcon from '@hugeicons/core-free-icons/SparklesIcon';
+import ShieldCheckIcon from '@hugeicons/core-free-icons/ShieldCheckIcon';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

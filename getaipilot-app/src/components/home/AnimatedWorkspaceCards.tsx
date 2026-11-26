@@ -2,12 +2,10 @@ import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import {
-  ArrowRight01Icon,
-  Layout01Icon,
-  File01Icon,
-  Link01Icon,
-} from '@hugeicons/core-free-icons';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import Layout01Icon from '@hugeicons/core-free-icons/Layout01Icon';
+import File01Icon from '@hugeicons/core-free-icons/File01Icon';
+import Link01Icon from '@hugeicons/core-free-icons/Link01Icon';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { HOME_SPACING, HOME_RADIUS } from '@/theme/homeTokens';
 
