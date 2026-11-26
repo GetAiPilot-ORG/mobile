@@ -19,6 +19,7 @@ export interface TrackingSite {
   name: string;
   url: string;
   landing_page_id: string | null;
+  bio_page_id?: string | null;
   verified_at: string | null;
   verification_token: string;
 }

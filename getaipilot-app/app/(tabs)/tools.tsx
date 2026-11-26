@@ -204,7 +204,6 @@ const ALL_10_FREE_TOOLS: ToolItem[] = [
     badgeBgDark: "rgba(129, 140, 248, 0.22)",
     badgeColorLight: "#4338CA",
     badgeColorDark: "#A5B4FC",
-    highlighted: true,
   },
 ];
 
