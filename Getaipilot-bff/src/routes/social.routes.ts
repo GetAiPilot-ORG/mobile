@@ -224,6 +224,58 @@ export async function socialRoutes(fastify: FastifyInstance) {
     return reply.send(trends);
   });
 
+  fastify.get('/social/trends/hot-topics', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const query = request.query as { geo?: string; region?: string };
+    const result = await SocialAdapter.getTrendHotTopics(user, query);
+    return reply.send(result);
+  });
+
+  fastify.post('/social/trends/remix', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.remixTrend(user, (request.body || {}) as any);
+    return reply.send(result);
+  });
+
+  fastify.get('/social/trends/preferences', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.getTrendPreferences(user);
+    return reply.send(result);
+  });
+
+  fastify.post('/social/trends/preferences', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.saveTrendPreferences(user, (request.body || {}) as any);
+    return reply.send(result);
+  });
+
+  fastify.delete('/social/trends/preferences', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.resetTrendPreferences(user);
+    return reply.send(result);
+  });
+
+  fastify.get('/social/trends/search-history', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const result = await SocialAdapter.getTrendSearchHistory(user);
+    return reply.send(result);
+  });
+
+  fastify.post('/social/trends/search-history', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { query?: string };
+    const result = await SocialAdapter.recordTrendSearch(user, body.query || '');
+    return reply.send(result);
+  });
+
+  fastify.delete('/social/trends/search-history', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
+    const user = request.user as JWTPayload;
+    const body = (request.body || {}) as { query?: string };
+    const q = (request.query as any)?.query || body.query || '';
+    const result = await SocialAdapter.deleteTrendSearch(user, q);
+    return reply.send(result);
+  });
+
   // 6. Entitlements
   fastify.get('/social/entitlements', { preHandler: [authenticateToken, requirePermission('social.read')] }, async (request, reply) => {
     const user = request.user as JWTPayload;

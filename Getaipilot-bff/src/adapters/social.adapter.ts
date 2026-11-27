@@ -1104,10 +1104,15 @@ export class SocialAdapter {
     query?: {
       page?: number;
       limit?: number;
+      cursor?: string;
       type?: string;
       category?: string;
       region?: string;
       seen?: string;
+      search?: string;
+      topic?: string;
+      topics?: string;
+      searches?: string;
       interests?: string;
     }
   ) {
@@ -1127,6 +1132,83 @@ export class SocialAdapter {
       page: query?.page || 1,
       ...res,
     };
+  }
+
+  public static async getTrendHotTopics(
+    user: JWTPayload,
+    query?: { geo?: string; region?: string }
+  ) {
+    return await this.requestUpstream('/api/trends/hot-topics', {
+      user,
+      params: query,
+    });
+  }
+
+  public static async remixTrend(
+    user: JWTPayload,
+    body: {
+      title?: string;
+      caption?: string;
+      source_platform?: string;
+      source_url?: string;
+      niche?: string;
+      target_platform?: string;
+    }
+  ) {
+    return await this.requestUpstream('/api/trends/remix', {
+      method: 'POST',
+      user,
+      body,
+    });
+  }
+
+  public static async getTrendPreferences(user: JWTPayload) {
+    return await this.requestUpstream('/api/trends/preferences', { user });
+  }
+
+  public static async saveTrendPreferences(
+    user: JWTPayload,
+    body: {
+      selectedTopicIds?: string[];
+      interests?: string;
+      work?: string;
+      goal?: string;
+      onboarded?: boolean;
+      recentSearches?: string[];
+    }
+  ) {
+    return await this.requestUpstream('/api/trends/preferences', {
+      method: 'POST',
+      user,
+      body,
+    });
+  }
+
+  public static async resetTrendPreferences(user: JWTPayload) {
+    return await this.requestUpstream('/api/trends/preferences', {
+      method: 'DELETE',
+      user,
+    });
+  }
+
+  public static async getTrendSearchHistory(user: JWTPayload) {
+    return await this.requestUpstream('/api/trends/search-history', { user });
+  }
+
+  public static async recordTrendSearch(user: JWTPayload, queryText: string) {
+    return await this.requestUpstream('/api/trends/search-history', {
+      method: 'POST',
+      user,
+      body: { query: queryText },
+    });
+  }
+
+  public static async deleteTrendSearch(user: JWTPayload, queryText: string) {
+    return await this.requestUpstream('/api/trends/search-history', {
+      method: 'DELETE',
+      user,
+      body: { query: queryText },
+    });
   }
 
   // --- 7. Entitlements & Billing ---

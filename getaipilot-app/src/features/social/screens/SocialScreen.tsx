@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -89,6 +91,25 @@ export const SocialScreen: React.FC = () => {
   >(undefined);
   const [planModalVisible, setPlanModalVisible] = useState(false);
   const [lockedFeatureName, setLockedFeatureName] = useState("Social Pilot");
+  const trendsLoadMoreRef = useRef<(() => void) | null>(null);
+
+  const registerTrendsLoadMore = useCallback((fn: (() => void) | null) => {
+    trendsLoadMoreRef.current = fn;
+  }, []);
+
+  const handleMainScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (activeTab !== 'trends') return;
+      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+      if (!contentSize?.height || !layoutMeasurement?.height) return;
+      const distanceFromBottom =
+        contentSize.height - (contentOffset.y + layoutMeasurement.height);
+      if (distanceFromBottom < 420) {
+        trendsLoadMoreRef.current?.();
+      }
+    },
+    [activeTab]
+  );
 
   const openLockModal = (name: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -480,6 +501,8 @@ export const SocialScreen: React.FC = () => {
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.scrollContent}
+        onScroll={handleMainScroll}
+        scrollEventThrottle={150}
         refreshControl={
           <RefreshControl
             refreshing={isOverviewRefetching || isPostsRefetching}
@@ -535,6 +558,7 @@ export const SocialScreen: React.FC = () => {
             trendsLoading={trendsLoading}
             trendsList={trendsList}
             onRefreshTrends={refetchTrends}
+            onRegisterLoadMore={registerTrendsLoadMore}
             onUseTrendInPost={(trend) => {
               if (!hasSocial) {
                 openLockModal("AI Trend-to-Post Creation");
