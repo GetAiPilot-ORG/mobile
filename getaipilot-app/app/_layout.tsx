@@ -190,8 +190,8 @@ function AuthRouteGuard() {
         router.replace("/(auth)/login" as any);
       } else if (authStatus === "authenticated") {
         if (inAuthGroup || inOnboarding) {
-          if (onboardingCompleted === false && isPendingAuthScreen) {
-            // Strictly brand-new unverified signups transitioning to onboarding
+          if (onboardingCompleted === false) {
+            // New users who haven't completed onboarding must complete it first
             if (!inOnboarding) {
               router.replace("/onboarding" as any);
             }

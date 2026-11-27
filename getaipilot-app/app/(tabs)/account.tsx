@@ -851,41 +851,47 @@ export default function AccountScreen() {
           }
         >
           {/* Account Profile Card (Header) */}
-          <AccountHeader
-            displayName={displayName}
-            email={user?.email || phone || 'User'}
-            phone={phone}
-            backupEmail={businessEmail}
-            initials={initials}
-            avatarUrl={avatarUrl || profile?.avatar_url}
-            isUploadingAvatar={isUploadingAvatar}
-            isAdmin={Boolean(isAdmin || profile?.is_admin)}
-            isActive={Boolean(isActive || subData?.subscription_status === 'active')}
-            planLabel={isActive ? (planLabel || 'Core') : 'Free'}
-            quotaPercent={68}
-            renewalDateText={`Renews in ${daysRemaining} days`}
-            memberSince="Oct 2024"
-            connectedAppsCount={5}
-            deviceCount={deviceSessionsResponse?.activeDeviceCount ?? 1}
-            isDark={isDark}
-            onEditAvatar={() => setIsAvatarSheetOpen(true)}
-            onEditProfile={() => setIsEditSheetOpen(true)}
-            onPressPlan={() => router.push('/account/plans' as any)}
-            onPressDevices={() => setActiveTab('security')}
-            onPressApps={() => router.push('/(tabs)/products' as any)}
-          />
+          {(() => {
+            const rawProfileEmail = profile?.email && !((profile.email.endsWith('@getaipilot.com') && /^[0-9a-f-]{36}@/i.test(profile.email)) || profile.email.endsWith('@truecaller.getaipilot.in')) ? profile.email : '';
+            const rawUserEmail = user?.email && !((user.email.endsWith('@getaipilot.com') && /^[0-9a-f-]{36}@/i.test(user.email)) || user.email.endsWith('@truecaller.getaipilot.in')) ? user.email : '';
+            const resolvedAccountEmail = rawProfileEmail || rawUserEmail;
+            return (
+              <>
+                <AccountHeader
+                  displayName={displayName}
+                  email={resolvedAccountEmail || phone || 'User'}
+                  phone={phone}
+                  backupEmail={businessEmail}
+                  initials={initials}
+                  avatarUrl={avatarUrl || profile?.avatar_url}
+                  isUploadingAvatar={isUploadingAvatar}
+                  isAdmin={Boolean(isAdmin || profile?.is_admin)}
+                  isActive={Boolean(isActive || subData?.subscription_status === 'active')}
+                  planLabel={isActive ? (planLabel || 'Core') : 'Free'}
+                  quotaPercent={68}
+                  renewalDateText={`Renews in ${daysRemaining} days`}
+                  memberSince="Oct 2024"
+                  connectedAppsCount={5}
+                  deviceCount={deviceSessionsResponse?.activeDeviceCount ?? 1}
+                  isDark={isDark}
+                  onEditAvatar={() => setIsAvatarSheetOpen(true)}
+                  onEditProfile={() => setIsEditSheetOpen(true)}
+                  onPressPlan={() => router.push('/account/plans' as any)}
+                  onPressDevices={() => setActiveTab('security')}
+                  onPressApps={() => router.push('/(tabs)/products' as any)}
+                />
 
-          {/* Fixed Segmented Tab Bar (Non-scrollable) */}
-          <AccountTabsNav
-            activeTab={activeTab}
-            onChangeTab={setActiveTab}
-            isDark={isDark}
-          />
+                {/* Fixed Segmented Tab Bar (Non-scrollable) */}
+                <AccountTabsNav
+                  activeTab={activeTab}
+                  onChangeTab={setActiveTab}
+                  isDark={isDark}
+                />
 
-          {/* TAB 1: PROFILE / OVERVIEW */}
-          {activeTab === 'overview' && (
-            <OverviewTab
-              email={user?.email || '—'}
+                {/* TAB 1: PROFILE / OVERVIEW */}
+                {activeTab === 'overview' && (
+                  <OverviewTab
+                    email={resolvedAccountEmail || '—'}
               phone={phone}
               isActive={Boolean(isActive || subData?.subscription_status === 'active')}
               isAdmin={Boolean(isAdmin || profile?.is_admin)}
@@ -903,6 +909,9 @@ export default function AccountScreen() {
               isDark={isDark}
             />
           )}
+              </>
+            );
+          })()}
 
           {/* TAB 2: SECURITY */}
           {activeTab === 'security' && (

@@ -32,6 +32,7 @@ import { AnimatedAiLogo } from '../src/components/home/AnimatedAiLogo';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useAuthStore } from '../src/core/store/authStore';
 import { supabase } from '../src/lib/supabase';
+import { formatToE164 } from '../src/lib/phoneUtils';
 import { isValidEmail } from '../src/lib/validators';
 import { getPendingReferralCode, handlePendingReferral } from '../src/services/referralService';
 
@@ -78,27 +79,34 @@ export default function OnboardingScreen() {
   const [slideAnim] = useState(() => new Animated.Value(0));
 
   // Form Fields matching website onboarding & DB schema
+  const isUuidString = (val?: string) =>
+    Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim()));
+
   const [firstName, setFirstName] = useState(() => {
     const raw = (user as any)?.user_metadata?.first_name || '';
-    if (raw) return raw;
+    if (raw && !isUuidString(raw)) return raw;
     const fn = (user as any)?.user_metadata?.full_name || '';
-    return fn.split(' ')[0] || '';
+    const first = fn.split(' ')[0] || '';
+    return isUuidString(first) ? '' : first;
   });
   const [lastName, setLastName] = useState(() => {
     const raw = (user as any)?.user_metadata?.last_name || '';
-    if (raw) return raw;
+    if (raw && !isUuidString(raw)) return raw;
     const fn = (user as any)?.user_metadata?.full_name || '';
     return fn.split(' ').slice(1).join(' ') || '';
   });
   const userEmail = user?.email || '';
   const isTruecaller = userEmail.endsWith('@truecaller.getaipilot.in');
-  const isPhoneOrTruecaller = !userEmail || isTruecaller || !!(user as any)?.phone;
+  const isSyntheticBffEmail =
+    userEmail.endsWith('@getaipilot.com') && /^[0-9a-f-]{36}@/i.test(userEmail);
+  const hasRealEmail = Boolean(userEmail && !isTruecaller && !isSyntheticBffEmail);
+  const isPhoneOrTruecaller = !hasRealEmail || !!(user as any)?.phone;
 
-  const [email, setEmail] = useState(() => (user?.email && !isTruecaller ? user.email : ''));
+  const [email, setEmail] = useState(() => (hasRealEmail ? userEmail : ''));
   const [state, setState] = useState('');
   const [phone, setPhone] = useState((user as any)?.phone || '');
   const [businessName, setBusinessName] = useState('');
-  const [businessEmail, setBusinessEmail] = useState(() => (user?.email && !isTruecaller ? user.email : ''));
+  const [businessEmail, setBusinessEmail] = useState(() => (hasRealEmail ? userEmail : ''));
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [teamSize, setTeamSize] = useState(TEAM_SIZES[0]);
   const [loading, setLoading] = useState(false);
@@ -401,6 +409,12 @@ export default function OnboardingScreen() {
       }
 
       const cachedPushToken = await AsyncStorage.getItem('@getaipilot_expo_push_token');
+      const rawPhone = phone.trim();
+      const normalizedOnboardingPhone = rawPhone
+        ? rawPhone.startsWith('+')
+          ? `+${rawPhone.replace(/\D/g, '')}`
+          : formatToE164(rawPhone, '91')
+        : '';
 
       const { error: updateError } = await supabase
         .from('profiles')
@@ -417,7 +431,8 @@ export default function OnboardingScreen() {
             state: state.trim() || null,
             category: accountType === 'business' ? category : null,
             team_size: accountType === 'business' ? teamSize : '1',
-            phone: phone.trim() || null,
+            phone: normalizedOnboardingPhone || rawPhone || null,
+            mobile_number: normalizedOnboardingPhone || rawPhone || null,
             push_token: notificationsEnabled ? cachedPushToken : null,
             referral_code: referralCode,
             onboarding_completed: true,
@@ -428,13 +443,63 @@ export default function OnboardingScreen() {
 
       if (updateError) throw updateError;
 
-      // Update email in auth.users if user joined via Phone or Truecaller (matching bot-dashboard)
-      if (targetEmail && isPhoneOrTruecaller && targetEmail !== (activeUserEmail || '').toLowerCase()) {
+      const onboardingAuthMetadata = {
+        first_name: firstName.trim() || null,
+        last_name: lastName.trim() || null,
+        full_name: fullName,
+        email: targetEmail || activeUserEmail || null,
+        phone: normalizedOnboardingPhone || rawPhone || null,
+        mobile_number: normalizedOnboardingPhone || rawPhone || null,
+        account_type: accountType,
+        business_name: accountType === 'business' ? (businessName.trim() || null) : null,
+        business_email: accountType === 'business' ? (targetEmail || null) : null,
+        state: state.trim() || null,
+        category: accountType === 'business' ? category : null,
+        team_size: accountType === 'business' ? teamSize : '1',
+        onboarding_completed: true,
+      };
+
+      // Sync all onboarding details into auth.users user_metadata
+      try {
+        await supabase.auth.updateUser({
+          data: onboardingAuthMetadata,
+        });
+      } catch (metaErr) {
+        console.warn('[Onboarding] Notice updating auth user metadata:', metaErr);
+      }
+
+      // Sync phone & email directly onto auth.users so WhatsApp OTP login works immediately
+      try {
+        await supabase.rpc('sync_onboarding_auth_user', {
+          p_email: targetEmail || activeUserEmail || null,
+          p_phone: normalizedOnboardingPhone || rawPhone || null,
+          p_metadata: onboardingAuthMetadata,
+        });
+      } catch (rpcSyncErr) {
+        console.warn('[Onboarding] sync_onboarding_auth_user notice:', rpcSyncErr);
+      }
+
+      // Sync email on auth.users when user added/changed email during onboarding
+      if (targetEmail && targetEmail !== (activeUserEmail || '').toLowerCase()) {
         try {
           await supabase.auth.updateUser({ email: targetEmail });
           console.log('[Onboarding] Updated auth user email to:', targetEmail);
         } catch (authEmailErr) {
           console.warn('[Onboarding] Notice updating auth user email:', authEmailErr);
+        }
+      }
+
+      // Sync phone on auth.users when user added/changed phone during onboarding
+      if (normalizedOnboardingPhone) {
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          const currentAuthPhone = authData?.user?.phone || '';
+          if (currentAuthPhone.replace(/\D/g, '') !== normalizedOnboardingPhone.replace(/\D/g, '')) {
+            await supabase.auth.updateUser({ phone: normalizedOnboardingPhone });
+            console.log('[Onboarding] Updated auth user phone to:', normalizedOnboardingPhone);
+          }
+        } catch (authPhoneErr) {
+          console.warn('[Onboarding] Notice updating auth user phone:', authPhoneErr);
         }
       }
 
