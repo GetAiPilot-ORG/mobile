@@ -29,30 +29,42 @@ interface SlideData {
   subtitle: string;
   bgColor: string;
   image: any;
+  aspectRatio: number;
+  heightRatio?: number;
+  paddingLeft?: number;
 }
 
-// User-specified color palette: #746df9, #fe45b5, #fead77
+// User-specified color palette: #746df9, #e545feff, #bf1162ff
 const SLIDES: SlideData[] = [
   {
     id: "messaging",
     title: "Best Digital Solution",
     subtitle: "Automate WhatsApp, Telegram & AI voice agents to convert visitors into customers.",
     bgColor: "#746df9", // Electric Violet / Purple-Blue
-    image: require("../assets/images/products/whatsapp.webp"),
+    image: require("../assets/images/welcome-slide-1.png"),
+    aspectRatio: 396 / 752,
+    heightRatio: 0.54,
+    paddingLeft: 24,
   },
   {
     id: "goal",
     title: "Achieve Your Goal",
     subtitle: "Capture every lead, track deals through visual stages, and close sales faster.",
-    bgColor: "#fe45b5", // Vibrant Magenta / Hot Pink
-    image: require("../assets/images/products/crm.webp"),
+    bgColor: "#bf1162ff", // Vibrant Magenta / Hot Pink
+    image: require("../assets/images/welcome-slide-2.png"),
+    aspectRatio: 576 / 770,
+    heightRatio: 0.46, // Calibrated height so the wider robot image and head align flush-left
+    paddingLeft: 20,
   },
   {
     id: "growth",
     title: "Increase Your Value",
     subtitle: "Launch high-converting landing funnels, bio sites, and custom branded QR codes.",
-    bgColor: "#fead77", // Warm Sunset Peach
-    image: require("../assets/images/products/social.webp"),
+    bgColor: "#e545feff", // Warm Sunset Peach
+    image: require("../assets/images/welcome-slide-3.png"),
+    aspectRatio: 474 / 732,
+    heightRatio: 0.52,
+    paddingLeft: 24,
   },
 ];
 
@@ -124,7 +136,7 @@ export default function LiquidWelcomeScreen() {
 
   const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
     if (Platform.OS !== "web") {
-      Haptics.impactAsync(style).catch(() => {});
+      Haptics.impactAsync(style).catch(() => { });
     }
   };
 
@@ -138,7 +150,7 @@ export default function LiquidWelcomeScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await AsyncStorage.setItem(HAS_SEEN_TOUR_KEY, "true");
-    } catch {}
+    } catch { }
 
     if (authStatus === "authenticated") {
       router.replace("/(tabs)" as any);
@@ -373,41 +385,56 @@ export default function LiquidWelcomeScreen() {
     outputRange: [0.94, 1],
   });
 
-  // Render slide content (Top-left Title & Subtitle, Center Static Image, Centered Stepper)
+  // Render slide content (Top Bar, Top-left Title & Subtitle, Center Static Image, Centered Stepper)
   const renderSlideContent = (slide: SlideData, slideIdx: number) => {
     return (
       <View style={styles.slideContentWrapper}>
+        {/* Top Bar: Counter (01 / 03), Segmented Bars, and Skip button */}
+        <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+          <Text style={styles.counterText}>{`0${slideIdx + 1} / 0${SLIDES.length}`}</Text>
+          <View style={styles.progressSegmentsRow}>
+            {SLIDES.map((_, pIdx) => (
+              <View
+                key={pIdx}
+                style={[
+                  styles.progressSegment,
+                  pIdx <= slideIdx ? styles.progressSegmentActive : styles.progressSegmentInactive,
+                ]}
+              />
+            ))}
+          </View>
+          <Pressable onPress={() => void handleFinish()} hitSlop={12}>
+            <Text style={styles.skipText}>Skip</Text>
+          </Pressable>
+        </View>
+
         {/* Top-Left Title and Subtitle */}
-        <View style={[styles.topHeader, { paddingTop: insets.top + 20 }]}>
+        <View style={styles.topHeader}>
           <Text style={styles.titleText}>{slide.title}</Text>
           <Text style={styles.subtitleText}>{slide.subtitle}</Text>
         </View>
 
-        {/* Center Static Image (Clean image only, no animation) */}
-        <View style={styles.centerStage}>
+        {/* Left-Aligned & Enlarged Static 3D Image */}
+        <View
+          style={[
+            styles.centerStage,
+            {
+              paddingBottom: (insets.bottom || 20) + 72,
+              paddingLeft: slide.paddingLeft ?? 24,
+            },
+          ]}
+        >
           <Image
             source={slide.image}
-            style={styles.centerImage}
+            style={[
+              styles.centerImage,
+              {
+                height: Math.min(height * (slide.heightRatio ?? 0.54), 480),
+                aspectRatio: slide.aspectRatio,
+              },
+            ]}
             resizeMode="contain"
           />
-        </View>
-
-        {/* Horizontally Centered Scroll Indicator */}
-        <View style={[styles.stepperContainer, { paddingBottom: (insets.bottom || 20) + 76 }]}>
-          <View style={styles.stepperRow}>
-            {SLIDES.map((_, dotIdx) => {
-              const isActive = dotIdx === slideIdx;
-              return (
-                <View
-                  key={dotIdx}
-                  style={[
-                    styles.stepperDot,
-                    isActive ? styles.stepperDotActive : styles.stepperDotInactive,
-                  ]}
-                />
-              );
-            })}
-          </View>
         </View>
       </View>
     );
@@ -520,7 +547,7 @@ export default function LiquidWelcomeScreen() {
               },
             ]}
           >
-            <Text style={styles.actionButtonText}>GET STARTED</Text>
+            <Text style={styles.actionButtonText}>Get Started →</Text>
           </Animated.View>
         </Pressable>
       </View>
@@ -538,6 +565,43 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     justifyContent: "space-between",
+  },
+  topBar: {
+    paddingHorizontal: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  counterText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  progressSegmentsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+    marginHorizontal: 16,
+  },
+  progressSegment: {
+    flex: 1,
+    height: 3,
+    borderRadius: 1.5,
+  },
+  progressSegmentActive: {
+    backgroundColor: "#FFFFFF",
+  },
+  progressSegmentInactive: {
+    backgroundColor: "rgba(255, 255, 255, 0.28)",
+  },
+  skipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    opacity: 0.88,
   },
   topHeader: {
     paddingHorizontal: 28,
@@ -560,16 +624,14 @@ const styles = StyleSheet.create({
     maxWidth: "92%",
   },
 
-  // Center Stage with static clean image
+  // Center Stage with left-aligned enlarged image
   centerStage: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
-    paddingHorizontal: 24,
   },
   centerImage: {
-    width: 260,
-    height: 260,
+    alignSelf: "flex-start",
   },
 
   // Wave Handle Apex Button ( > )
@@ -601,32 +663,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  // Centered Stepper / Scroll Indicators
-  stepperContainer: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepperRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    gap: 6,
-  },
-  stepperDot: {
-    height: 5,
-    borderRadius: 2.5,
-  },
-  stepperDotActive: {
-    width: 28,
-    backgroundColor: "#FFFFFF",
-  },
-  stepperDotInactive: {
-    width: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.38)",
   },
 
   // Permanently Fixed Bottom Bar
@@ -667,9 +703,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.2)",
   },
   actionButtonText: {
-    fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 1.4,
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.5,
     color: "#FFFFFF",
   },
 });
