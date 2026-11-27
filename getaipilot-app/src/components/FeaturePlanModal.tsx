@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Platform,
   TouchableWithoutFeedback,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -56,7 +57,7 @@ export const FeaturePlanModal: React.FC<FeaturePlanModalProps> = ({
   const activeBenefits = benefits && benefits.length > 0 ? benefits : defaultBenefits;
 
   const handleUpgrade = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     onClose();
     // Route to plans screen with category filter
     const targetCategory = category === 'all-in-one' ? 'all-in-one' : category;
@@ -81,7 +82,7 @@ export const FeaturePlanModal: React.FC<FeaturePlanModalProps> = ({
               <Pressable
                 style={[styles.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
                   onClose();
                 }}
               >
@@ -128,26 +129,24 @@ export const FeaturePlanModal: React.FC<FeaturePlanModalProps> = ({
 
               {/* Actions */}
               <View style={styles.actionsRow}>
-                <Pressable
-                  style={({ pressed }) => [
+                <TouchableOpacity
+                  style={[
                     styles.upgradeBtn,
                     { backgroundColor: catMeta.color },
-                    pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
                   ]}
                   onPress={handleUpgrade}
                 >
                   <Ionicons name="sparkles" size={16} color="#FFFFFF" />
                   <Text style={styles.upgradeBtnText}>View Plans & Upgrade</Text>
                   <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
-                </Pressable>
+                </TouchableOpacity>
 
                 <Pressable
-                  style={({ pressed }) => [
+                  style={[
                     styles.maybeLaterBtn,
-                    pressed && { opacity: 0.7 },
                   ]}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
                     onClose();
                   }}
                 >
