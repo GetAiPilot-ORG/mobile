@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import {
   Animated,
   Easing,
@@ -34,7 +34,6 @@ interface SlideData {
   paddingLeft?: number;
 }
 
-// User-specified color palette: #746df9, #e545feff, #bf1162ff
 const SLIDES: SlideData[] = [
   {
     id: "messaging",
@@ -50,7 +49,7 @@ const SLIDES: SlideData[] = [
     id: "goal",
     title: "Achieve Your Goal",
     subtitle: "Capture every lead, track deals through visual stages, and close sales faster.",
-    bgColor: "#bf1162ff", // Vibrant Magenta / Hot Pink
+    bgColor: "#3cb3a7ff", // Vibrant Magenta / Hot Pink
     image: require("../assets/images/welcome-slide-2.png"),
     aspectRatio: 576 / 770,
     heightRatio: 0.46, // Calibrated height so the wider robot image and head align flush-left
@@ -60,11 +59,11 @@ const SLIDES: SlideData[] = [
     id: "growth",
     title: "Increase Your Value",
     subtitle: "Launch high-converting landing funnels, bio sites, and custom branded QR codes.",
-    bgColor: "#e545feff", // Warm Sunset Peach
+    bgColor: "#373f94ff", // Warm Sunset Peach
     image: require("../assets/images/welcome-slide-3.png"),
-    aspectRatio: 474 / 732,
-    heightRatio: 0.52,
-    paddingLeft: 24,
+    aspectRatio: 1040 / 1659,
+    heightRatio: 1.5,
+    paddingLeft: 8,
   },
 ];
 
@@ -159,12 +158,12 @@ export default function LiquidWelcomeScreen() {
     }
   }, [authStatus, router]);
 
-  // When reaching the third screen (index 2), automatically navigate to login screen
+  // When reaching the third screen (index 2), automatically navigate to login screen after 3.5s
   useEffect(() => {
     if (currentIndex === SLIDES.length - 1 && !isTransitioning) {
       const timer = setTimeout(() => {
         void handleFinish();
-      }, 1000);
+      }, 3500);
       return () => clearTimeout(timer);
     }
   }, [currentIndex, isTransitioning, handleFinish]);
@@ -429,7 +428,7 @@ export default function LiquidWelcomeScreen() {
             style={[
               styles.centerImage,
               {
-                height: Math.min(height * (slide.heightRatio ?? 0.54), 480),
+                height: Math.min(height * (slide.heightRatio ?? 0.54), height * 0.72),
                 aspectRatio: slide.aspectRatio,
               },
             ]}
