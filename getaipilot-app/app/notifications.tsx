@@ -435,7 +435,7 @@ function SwipeableNotificationCard({
                       source={
                         notifImageUrl && notifImageUrl.startsWith('http')
                           ? { uri: notifImageUrl }
-                          : require('../assets/images/logo-white-bg.webp')
+                          : require('../assets/images/logo-white-bg.png')
                       }
                       style={styles.notificationRightImage}
                       resizeMode="contain"

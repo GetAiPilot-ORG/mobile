@@ -17,29 +17,43 @@ export interface SocialAccount {
 
 export interface TrendItem {
   id: string;
-  source_platform: 'youtube' | 'unsplash' | 'pexels' | 'gnews' | 'google_trends' | 'reddit' | string;
+  source_platform: 'youtube' | 'unsplash' | 'pexels' | 'gnews' | 'google_trends' | 'reddit' | 'pinterest' | 'instagram' | 'socialpilot' | string;
+  target_platform?: string;
   source_url?: string;
   embed_html?: string | null;
   thumbnail_url?: string;
   full_image_url?: string;
   video_url?: string;
+  video_id?: string;
+  is_short?: boolean;
   duration?: number;
   title?: string;
   caption?: string;
   creator?: string | null;
   creator_url?: string;
-  content_type?: 'visual' | 'reel_video' | 'video' | 'news' | 'trend_query' | 'article' | string;
+  content_type?: 'visual' | 'reel_video' | 'video' | 'news' | 'trend_query' | 'article' | 'short' | string;
   color?: string;
   aspect_ratio?: string;
   engagement_score?: number;
+  matched_topic?: string;
+  topic_emoji?: string;
+  related_queries?: string[];
   metrics?: {
     views?: number;
+    viewCount?: number;
     likes?: number;
+    likeCount?: number;
     shares?: number;
     comments?: number;
+    commentCount?: number;
+    saveCount?: number;
+    saves?: number;
+    repostCount?: number;
+    reposts?: number;
     duration?: string;
     quality?: string;
     searchVolume?: number;
+    formattedTraffic?: string;
     rank?: number;
     source?: string;
     [key: string]: any;
@@ -52,13 +66,56 @@ export interface TrendItem {
   category?: string;
 }
 
+export interface TrendPreferences {
+  selectedTopicIds: string[];
+  interests: string;
+  work: string;
+  goal: string;
+  recentSearches: string[];
+  onboarded: boolean;
+  isCustomized?: boolean;
+  hasInterests?: boolean;
+}
+
+export interface HotTopicItem {
+  query: string;
+  volume?: string | number;
+  source?: string;
+}
+
+export interface TrendRemixData {
+  viral_hooks?: { style: string; hook: string }[];
+  reel_script?: {
+    title: string;
+    estimated_duration?: string;
+    hook: string;
+    body_points?: string[];
+    call_to_action?: string;
+  };
+  thread_angle?: {
+    opening_post: string;
+    key_insights?: string[];
+    closing_post?: string;
+  };
+  carousel_concept?: {
+    topic: string;
+    slides?: { slide: number; heading: string; text: string }[];
+  };
+  ready_to_post_caption?: string;
+}
+
 export interface TrendFeedResponse {
   success: boolean;
   items: TrendItem[];
   nextCursor?: string | null;
+  hasMore?: boolean;
   page: number;
   totalCandidateCount?: number;
   cached?: boolean;
+  isPersonalized?: boolean;
+  activeTopic?: { id: string; label: string; emoji?: string } | null;
+  topics?: { id: string; label: string; emoji?: string }[];
+  recentSearches?: string[];
 }
 
 export interface ScheduledPost {

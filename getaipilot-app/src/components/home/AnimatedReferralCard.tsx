@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { GiftIcon } from '@hugeicons/core-free-icons';
+import GiftIcon from '@hugeicons/core-free-icons/GiftIcon';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';

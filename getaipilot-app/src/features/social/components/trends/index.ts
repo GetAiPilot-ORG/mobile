@@ -1,6 +1,9 @@
 export * from './trendUtils';
 export * from './useSavedTrends';
+export * from './PlatformBrandIcons';
 export * from './TrendCard';
 export * from './TrendDetailModal';
 export * from './TrendGridSkeleton';
-
+export * from './CreatorInterestModal';
+export * from './TrendRemixModal';
+export * from './SavedIdeasModal';
