@@ -230,11 +230,58 @@ export const SocialOverviewTab: React.FC<SocialOverviewTabProps> = ({
     // onOpenConnectModal();
   };
   if (overviewLoading && !overviewData) return <SocialScreenSkeleton />;
-  if (overviewError && !overviewData) return <ProductEmpty title="Couldn't load your workspace" description={overviewError.message || 'Check your connection and try again.'} action="Try again" onAction={onRetryOverview} />;
+  const hasPartialWorkspaceData = connectedList.length > 0 || postsList.length > 0 || queueList.length > 0;
+  if (overviewError && !overviewData && !hasPartialWorkspaceData) {
+    return (
+      <ProductEmpty
+        title="Couldn't load your workspace"
+        description={overviewError.message || 'Check your connection and try again.'}
+        action="Try again"
+        onAction={onRetryOverview}
+      />
+    );
+  }
   const activity = (overviewData?.operations?.recentActivity?.length ? overviewData.operations.recentActivity : postsList).slice(0, 4);
   const instagram = connectedList.filter((account) => (account.provider || account.platform) === 'instagram');
   const growth = overviewData?.instagramGrowth;
   return <View>
+    {overviewError && !overviewData && hasPartialWorkspaceData ? (
+      <View
+        style={{
+          marginBottom: 14,
+          padding: 12,
+          borderRadius: 14,
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
+            Live overview metrics unavailable
+          </Text>
+          <Text style={{ fontSize: 12, color: colors.textSecondary }} numberOfLines={2}>
+            {overviewError.message || 'Check your connection and try again.'}
+          </Text>
+        </View>
+        <Pressable
+          cssInterop={false}
+          onPress={onRetryOverview}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            borderRadius: 999,
+            backgroundColor: colors.accent,
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>Retry</Text>
+        </Pressable>
+      </View>
+    ) : null}
     <ProductHeading title={"Your content,\nyour next chapter."} action="Create a post" isLocked={isLocked} onAction={onOpenCreateModal} />
     <ProductSection title="Your channels" action="Manage" onAction={onOpenAccountsModal}>
       {!connectedList.length ? (

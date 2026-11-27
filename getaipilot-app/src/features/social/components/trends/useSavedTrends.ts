@@ -3,25 +3,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { TrendItem } from '../../types';
 
-const STORAGE_KEY = '@socialpilot_saved_trends_v1';
+const LEGACY_STORAGE_KEY = '@socialpilot_saved_trends_v1';
 
-export function useSavedTrends() {
+export function useSavedTrends(userKey = 'anon') {
+  const storageKey = `@socialpilot_saved_trends_v2_${userKey || 'anon'}`;
   const [savedTrends, setSavedTrends] = useState<TrendItem[]>([]);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from AsyncStorage on mount
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        let raw = await AsyncStorage.getItem(storageKey);
+        if (!raw) {
+          raw = await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+        }
         if (raw && isMounted) {
           const parsed: TrendItem[] = JSON.parse(raw);
           if (Array.isArray(parsed)) {
             setSavedTrends(parsed);
             setSavedIds(new Set(parsed.map((item) => item.id).filter(Boolean)));
           }
+        } else if (isMounted) {
+          setSavedTrends([]);
+          setSavedIds(new Set());
         }
       } catch (err) {
         console.warn('[useSavedTrends] Failed to load saved trends:', err);
@@ -32,23 +38,25 @@ export function useSavedTrends() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [storageKey]);
 
-  // Save to AsyncStorage whenever state changes
-  const persistTrends = useCallback(async (updated: TrendItem[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch (err) {
-      console.warn('[useSavedTrends] Failed to persist saved trends:', err);
-    }
-  }, []);
+  const persistTrends = useCallback(
+    async (updated: TrendItem[]) => {
+      try {
+        await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (err) {
+        console.warn('[useSavedTrends] Failed to persist saved trends:', err);
+      }
+    },
+    [storageKey],
+  );
 
   const isSaved = useCallback(
     (id: string) => {
       if (!id) return false;
       return savedIds.has(id);
     },
-    [savedIds]
+    [savedIds],
   );
 
   const toggleSave = useCallback(
@@ -60,11 +68,9 @@ export function useSavedTrends() {
       let currentlySaved = false;
 
       if (savedIds.has(trend.id)) {
-        // Remove
         nextSaved = savedTrends.filter((item) => item.id !== trend.id);
         currentlySaved = false;
       } else {
-        // Add
         nextSaved = [trend, ...savedTrends];
         currentlySaved = true;
       }
@@ -74,7 +80,7 @@ export function useSavedTrends() {
       await persistTrends(nextSaved);
       return currentlySaved;
     },
-    [savedIds, savedTrends, persistTrends]
+    [savedIds, savedTrends, persistTrends],
   );
 
   const removeSaved = useCallback(
@@ -86,8 +92,17 @@ export function useSavedTrends() {
       setSavedIds(new Set(nextSaved.map((item) => item.id).filter(Boolean)));
       await persistTrends(nextSaved);
     },
-    [savedTrends, persistTrends]
+    [savedTrends, persistTrends],
   );
+
+  const clearAllSaved = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSavedTrends([]);
+    setSavedIds(new Set());
+    try {
+      await AsyncStorage.removeItem(storageKey);
+    } catch {}
+  }, [storageKey]);
 
   return {
     savedTrends,
@@ -97,6 +112,6 @@ export function useSavedTrends() {
     isSaved,
     toggleSave,
     removeSaved,
+    clearAllSaved,
   };
 }
-

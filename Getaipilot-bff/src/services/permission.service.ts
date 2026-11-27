@@ -53,7 +53,10 @@ export class PermissionService {
       'whatsapp.broadcast',
       'whatsapp.credits',
       'voice.read',
+      'social.read',
+      'social.post',
       'social.inbox',
+      'telegram.read',
       'tools.use',
     ],
   };
