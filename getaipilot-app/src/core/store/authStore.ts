@@ -8,6 +8,57 @@ import { getPendingReferralCode, handlePendingReferral } from "../../services/re
 
 const CACHED_USER_KEY = "@gap_cached_user";
 
+function isSyntheticBffEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return (
+    (email.endsWith("@getaipilot.com") && /^[0-9a-f-]{36}@/i.test(email)) ||
+    email.endsWith("@truecaller.getaipilot.in")
+  );
+}
+
+function isUuidString(val?: string | null): boolean {
+  if (!val) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
+}
+
+async function resolveProfileFallbacks(
+  userId: string,
+  rawEmail?: string | null,
+  rawName?: string | null,
+  rawPhone?: string | null
+): Promise<{ email: string; name: string; phone?: string }> {
+  let email = rawEmail && !isSyntheticBffEmail(rawEmail) ? rawEmail : "";
+  let name = rawName && !isUuidString(rawName) ? rawName : "";
+  let phone = rawPhone || undefined;
+
+  if (!email || !name || !phone) {
+    try {
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("email, phone, mobile_number, full_name")
+        .eq("id", userId)
+        .maybeSingle();
+      if (p) {
+        if (!email && p.email && !isSyntheticBffEmail(p.email)) {
+          email = p.email;
+        }
+        if (!name && p.full_name && !isUuidString(p.full_name)) {
+          name = p.full_name;
+        }
+        if (!phone) {
+          phone = p.phone || p.mobile_number || undefined;
+        }
+      }
+    } catch {}
+  }
+
+  if (!name) {
+    name = (email ? email.split("@")[0] : "") || phone || "User";
+  }
+
+  return { email, name, phone };
+}
+
 export interface User {
   id: string;
   email: string;
@@ -95,13 +146,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
         return false;
       }
 
-      // 1. Instant check from local cache
+      // 1. Instant check from per-user local cache
       try {
-        const globalCached = await AsyncStorage.getItem("@onboarding_completed_global");
-        if (globalCached === "true") {
-          set({ onboardingCompleted: true });
-          return true;
-        }
         const cached = await AsyncStorage.getItem(`onboarding_completed_${uid}`);
         if (cached === "true") {
           set({ onboardingCompleted: true });
@@ -129,13 +175,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
           data?.account_type ||
           data?.business_name ||
           data?.full_name ||
-          data?.first_name ||
-          data != null
+          data?.first_name
         );
 
         if (isComplete) {
           await AsyncStorage.setItem(`onboarding_completed_${uid}`, "true").catch(() => {});
           await AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+        } else {
+          await AsyncStorage.removeItem("@onboarding_completed_global").catch(() => {});
         }
 
         set({ onboardingCompleted: isComplete });
@@ -258,25 +305,31 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
 
         const fallbackUser = session.user;
+        const resolved = await resolveProfileFallbacks(
+          meData?.id || fallbackUser?.id || "user",
+          meData?.email || fallbackUser?.email,
+          meData?.name || fallbackUser?.user_metadata?.full_name,
+          meData?.phone || fallbackUser?.phone
+        );
+
         const userObj: User = meData
           ? {
               id: meData.id,
-              email: meData.email,
-              name: meData.name,
+              email: resolved.email,
+              name: resolved.name,
               role: meData.role,
               organizationId: meData.organizationId,
               permissions: meData.permissions,
+              phone: resolved.phone,
             }
           : {
               id: fallbackUser?.id || "user",
-              email: fallbackUser?.email || "",
-              name:
-                fallbackUser?.user_metadata?.full_name ||
-                fallbackUser?.email?.split("@")[0] ||
-                "User",
+              email: resolved.email,
+              name: resolved.name,
               role: (fallbackUser?.app_metadata?.role as any) || "Agent",
               organizationId: "",
               permissions: ["*"],
+              phone: resolved.phone,
               user_metadata: fallbackUser?.user_metadata,
             };
 
@@ -292,10 +345,12 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isAuthenticated: true,
           isLoading: false,
           authStatus: "authenticated",
-          onboardingCompleted: true,
+          onboardingCompleted: isOnboarded,
         });
-        AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
-        AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+        if (isOnboarded) {
+          AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+          AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+        }
 
         // Auto-link any pending referral code captured on phone
         getPendingReferralCode().then((code) => {
@@ -345,6 +400,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
           CACHED_USER_KEY,
           "@getaipilot_expo_push_token",
           "@getaipilot_push_token_synced_user",
+          "@onboarding_completed_global",
         ]).catch(() => {});
         set({
           user: null,
@@ -384,27 +440,36 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
         try {
           const me = await apiClient.get<any>("/mobile/v1/auth/me");
+          const resolved = await resolveProfileFallbacks(
+            me.id,
+            me.email,
+            me.name,
+            me.phone
+          );
           const userObj: User = {
             id: me.id,
-            email: me.email,
-            name: me.name,
+            email: resolved.email,
+            name: resolved.name,
             role: me.role,
             organizationId: me.organizationId,
             permissions: me.permissions,
+            phone: resolved.phone,
           };
           AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(
             () => {},
           );
           const isOnboarded = await get().checkOnboardingStatus(userObj.id);
-          AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
-          AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+          if (isOnboarded) {
+            AsyncStorage.setItem(`onboarding_completed_${userObj.id}`, "true").catch(() => {});
+            AsyncStorage.setItem("@onboarding_completed_global", "true").catch(() => {});
+          }
           set({
             user: userObj,
             tenantMapping: me.tenantMapping,
             isAuthenticated: true,
             isLoading: false,
             authStatus: "authenticated",
-            onboardingCompleted: true,
+            onboardingCompleted: isOnboarded,
           });
           return;
         } catch (apiErr: any) {

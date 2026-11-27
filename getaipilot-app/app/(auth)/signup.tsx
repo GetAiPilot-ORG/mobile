@@ -27,6 +27,9 @@ import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
 import { supabase } from '../../src/lib/supabase';
 import { isValidEmail } from '../../src/lib/validators';
 import { useAuthStore } from '../../src/core/store/authStore';
+import { PhoneInputField } from '../../src/components/auth/PhoneInputField';
+import { WhatsAppOtpVerification } from '../../src/components/auth/WhatsAppOtpVerification';
+import { sendWhatsAppOtp, verifyWhatsAppOtp } from '../../src/lib/phoneAuthService';
 import { useTheme, getColors } from '@/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { savePendingReferralCode, getPendingReferralCode } from '../../src/services/referralService';
@@ -41,8 +44,13 @@ export default function SignupScreen() {
   const colors = getColors(isDark);
   const syncSession = useAuthStore((s) => s.syncSession);
 
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phoneRaw, setPhoneRaw] = useState('');
+  const [normalizedPhone, setNormalizedPhone] = useState('');
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(
@@ -73,6 +81,72 @@ export default function SignupScreen() {
   const isFormValid =
     email.trim().length > 0 &&
     password.length >= 6;
+
+  const handleSendPhoneOtp = async () => {
+    Keyboard.dismiss();
+    setFeedback(null);
+
+    if (!isPhoneValid || !normalizedPhone) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setFeedback({ type: 'error', message: 'Please enter a valid phone number.' });
+      return;
+    }
+
+    setLoading(true);
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+
+    const res = await sendWhatsAppOtp(normalizedPhone, { mode: 'signup' });
+    setLoading(false);
+
+    if (!res.success) {
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setFeedback({
+        type: 'error',
+        message: res.error || 'Failed to send verification code. Please try again.',
+      });
+    } else {
+      setOtpSent(true);
+      setFeedback(null);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (code: string) => {
+    Keyboard.dismiss();
+    setFeedback(null);
+    setLoading(true);
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+
+    const res = await verifyWhatsAppOtp(normalizedPhone, code);
+    if (!res.success) {
+      setLoading(false);
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setFeedback({
+        type: 'error',
+        message: res.error || 'Invalid verification code. Please try again.',
+      });
+      return;
+    }
+
+    try {
+      if (res.session) {
+        await syncSession(res.session);
+      }
+      setLoading(false);
+      const isOnboarded = useAuthStore.getState().onboardingCompleted;
+      if (isOnboarded === false) {
+        router.replace('/onboarding' as any);
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
+      setFeedback({
+        type: 'error',
+        message: err?.message || 'Failed to complete sign up. Please try again.',
+      });
+    }
+  };
 
   const handleSignup = async () => {
     Keyboard.dismiss();
@@ -270,6 +344,156 @@ export default function SignupScreen() {
             </View>
           )}
 
+          {/* Authentication Method Selector: [ Email ] [ WhatsApp OTP ] */}
+          {!otpSent && (
+            <View style={[styles.methodSwitcher, isDark && styles.methodSwitcherDark]}>
+              <Pressable
+                style={[
+                  styles.methodTab,
+                  authMethod === 'email' &&
+                    (isDark ? styles.methodTabActiveDark : styles.methodTabActive),
+                ]}
+                onPress={() => {
+                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                  setAuthMethod('email');
+                  setFeedback(null);
+                }}
+              >
+                <Ionicons
+                  name="mail-outline"
+                  size={15}
+                  color={
+                    authMethod === 'email'
+                      ? isDark
+                        ? '#FFFFFF'
+                        : '#17171C'
+                      : isDark
+                      ? '#9CA3AF'
+                      : '#6B7280'
+                  }
+                />
+                <Text
+                  style={[
+                    styles.methodTabText,
+                    isDark && styles.methodTabTextDark,
+                    authMethod === 'email' &&
+                      (isDark ? styles.methodTabTextActiveDark : styles.methodTabTextActive),
+                  ]}
+                >
+                  Email
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.methodTab,
+                  authMethod === 'phone' &&
+                    (isDark ? styles.methodTabActiveDark : styles.methodTabActive),
+                ]}
+                onPress={() => {
+                  triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+                  setAuthMethod('phone');
+                  setFeedback(null);
+                }}
+              >
+                <Ionicons
+                  name="logo-whatsapp"
+                  size={15}
+                  color={
+                    authMethod === 'phone'
+                      ? '#059669'
+                      : isDark
+                      ? '#9CA3AF'
+                      : '#6B7280'
+                  }
+                />
+                <Text
+                  style={[
+                    styles.methodTabText,
+                    isDark && styles.methodTabTextDark,
+                    authMethod === 'phone' &&
+                      (isDark ? styles.methodTabTextActiveDark : styles.methodTabTextActive),
+                  ]}
+                >
+                  WhatsApp OTP
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          {otpSent ? (
+            <WhatsAppOtpVerification
+              phone={normalizedPhone}
+              onVerify={handleVerifyPhoneOtp}
+              onResend={handleSendPhoneOtp}
+              onChangePhone={() => {
+                setOtpSent(false);
+                setFeedback(null);
+              }}
+              loading={loading}
+              isDark={isDark}
+              buttonLabel="Verify & Create Account"
+            />
+          ) : authMethod === 'phone' ? (
+            <>
+              <View style={{ marginBottom: 10 }}>
+                <PhoneInputField
+                  value={phoneRaw}
+                  onChange={(raw, normalized, isValid) => {
+                    setPhoneRaw(raw);
+                    setNormalizedPhone(normalized);
+                    setIsPhoneValid(isValid);
+                    if (feedback) setFeedback(null);
+                  }}
+                  disabled={loading}
+                  isDark={isDark}
+                  placeholderColor={isDark ? '#636366' : '#8E8E93'}
+                  onSubmitEditing={handleSendPhoneOtp}
+                />
+              </View>
+
+              <View style={styles.whatsappHintRow}>
+                <Ionicons
+                  name="logo-whatsapp"
+                  size={14}
+                  color={isDark ? '#34D399' : '#059669'}
+                />
+                <Text style={[styles.whatsappHintText, isDark && styles.whatsappHintTextDark]}>
+                  We'll send a 6-digit verification code to your WhatsApp.
+                </Text>
+              </View>
+
+              <Text style={[styles.termsText, isDark && styles.termsTextDark]}>
+                By signing up, you agree to GetAiPilot's{' '}
+                <Text style={styles.termsHighlight}>Terms of Service</Text> and{' '}
+                <Text style={styles.termsHighlight}>Privacy Policy</Text>.
+              </Text>
+
+              <Pressable
+                style={[
+                  styles.primaryButton,
+                  !isPhoneValid && styles.primaryButtonDisabled,
+                  loading && { opacity: 0.8 },
+                ]}
+                onPress={handleSendPhoneOtp}
+                disabled={!isPhoneValid || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text
+                    style={[
+                      styles.primaryButtonText,
+                      !isPhoneValid && styles.primaryButtonTextDisabled,
+                    ]}
+                  >
+                    Sign up with WhatsApp
+                  </Text>
+                )}
+              </Pressable>
+            </>
+          ) : (
+            <>
           {/* Grouped iOS Input Fields Card */}
           <View style={[styles.inputGroup, isDark && styles.inputGroupDark]}>
             {/* Field 1: Email Address */}
@@ -355,6 +579,8 @@ export default function SignupScreen() {
               </Text>
             )}
           </Pressable>
+            </>
+          )}
 
           {/* Secondary Action Button ("Log in instead") */}
           <Pressable
@@ -698,5 +924,67 @@ const styles = StyleSheet.create({
   referralCodeHighlight: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontWeight: '800',
+  },
+  methodSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: '#EAE7F5',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+    gap: 4,
+  },
+  methodSwitcherDark: {
+    backgroundColor: '#1F1C29',
+  },
+  methodTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 11,
+  },
+  methodTabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  methodTabActiveDark: {
+    backgroundColor: '#2C283A',
+  },
+  methodTabText: {
+    fontSize: 13.5,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  methodTabTextDark: {
+    color: '#9CA3AF',
+  },
+  methodTabTextActive: {
+    color: '#17171C',
+    fontWeight: '600',
+  },
+  methodTabTextActiveDark: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  whatsappHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 4,
+    marginBottom: 16,
+  },
+  whatsappHintText: {
+    fontSize: 12.5,
+    color: '#6B7280',
+    flex: 1,
+  },
+  whatsappHintTextDark: {
+    color: '#9CA3AF',
   },
 });
