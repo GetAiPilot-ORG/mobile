@@ -236,17 +236,27 @@ export const useAuthStore = create<AuthState>((set, get) => {
           await authStorage.setTokens(accessToken, refreshToken);
         }
 
-        const userObj: User = bffData?.user || {
-          id: supabaseAuth.data.user?.id || "user",
-          email: supabaseAuth.data.user?.email || email,
-          name:
-            supabaseAuth.data.user?.user_metadata?.full_name ||
-            email.split("@")[0],
-          role: "Agent",
-          organizationId: "",
-          permissions: ["*"],
-          user_metadata: supabaseAuth.data.user?.user_metadata,
-        };
+        const authPhone =
+          supabaseAuth.data.user?.phone ||
+          (supabaseAuth.data.user?.user_metadata?.phone as string | undefined);
+
+        const userObj: User = bffData?.user
+          ? {
+              ...bffData.user,
+              phone: bffData.user.phone || authPhone,
+            }
+          : {
+              id: supabaseAuth.data.user?.id || "user",
+              email: supabaseAuth.data.user?.email || email,
+              name:
+                supabaseAuth.data.user?.user_metadata?.full_name ||
+                email.split("@")[0],
+              role: "Agent",
+              organizationId: "",
+              permissions: ["*"],
+              phone: authPhone,
+              user_metadata: supabaseAuth.data.user?.user_metadata,
+            };
 
         AsyncStorage.setItem(CACHED_USER_KEY, JSON.stringify(userObj)).catch(
           () => {},

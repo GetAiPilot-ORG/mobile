@@ -448,7 +448,7 @@ export class HubAdapter {
   }
 
   /**
-   * Fetches full profile record bypassing RLS
+   * Fetches full profile record bypassing RLS, enriching phone from auth.users if missing
    */
   public static async getUserProfileDetails(userId: string) {
     const client = this.adminClient;
@@ -461,6 +461,23 @@ export class HubAdapter {
     if (error) {
       console.warn(`[HubAdapter] Failed to fetch full profile for ${userId}:`, error.message);
     }
+
+    if (profile && !profile.phone && !profile.mobile_number) {
+      try {
+        const { data: authData } = await client.auth.admin.getUserById(userId);
+        const authPhone = authData?.user?.phone || (authData?.user?.user_metadata?.phone as string | undefined);
+        if (authPhone) {
+          return {
+            ...profile,
+            phone: authPhone,
+            mobile_number: authPhone,
+          };
+        }
+      } catch (authErr: any) {
+        console.warn(`[HubAdapter] Failed to enrich auth phone for ${userId}:`, authErr?.message);
+      }
+    }
+
     return profile;
   }
 

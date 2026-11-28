@@ -162,23 +162,44 @@ export default function AccountScreen() {
     loadBiometrics();
   }, [activeTab]);
 
-  // Fetch Profile (RLS-safe via BFF with Supabase fallback)
+  // Fetch Profile (RLS-safe via BFF with Supabase fallback + auth.users phone fallback)
   const { data: profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useQuery<Profile | null>({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      let resolvedProfile: Profile | null = null;
       try {
         const p = await apiClient.get<Profile>('/mobile/v1/user/profile');
-        if (p && p.id) return p;
+        if (p && p.id) resolvedProfile = p;
       } catch (e) {
         console.warn('[AccountScreen] Profile BFF error:', e);
       }
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-      return data as Profile;
+
+      if (!resolvedProfile) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        resolvedProfile = data as Profile;
+      }
+
+      // Web app stores verified phone on auth.users.phone; if public.profiles lacks it, fall back to Supabase Auth user
+      if (resolvedProfile && !resolvedProfile.phone && !resolvedProfile.mobile_number) {
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          const authPhone = authData?.user?.phone || (authData?.user?.user_metadata?.phone as string | undefined);
+          if (authPhone) {
+            resolvedProfile = {
+              ...resolvedProfile,
+              phone: authPhone,
+              mobile_number: authPhone,
+            };
+          }
+        } catch {}
+      }
+
+      return resolvedProfile;
     },
     enabled: !!user?.id,
   });
