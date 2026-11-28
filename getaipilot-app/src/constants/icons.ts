@@ -29,10 +29,13 @@ import Mail01Icon from '@hugeicons/core-free-icons/Mail01Icon';
 import Megaphone01Icon from '@hugeicons/core-free-icons/Megaphone01Icon';
 import Message01Icon from '@hugeicons/core-free-icons/Message01Icon';
 import PaintBrush01Icon from '@hugeicons/core-free-icons/PaintBrush01Icon';
+import PinterestIcon from '@hugeicons/core-free-icons/PinterestIcon';
 import QrCode01Icon from '@hugeicons/core-free-icons/QrCode01Icon';
+import RefreshCwIcon from '@hugeicons/core-free-icons/RefreshCwIcon';
 import Rocket01Icon from '@hugeicons/core-free-icons/Rocket01Icon';
 import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
 import ShieldCheckIcon from '@hugeicons/core-free-icons/ShieldCheckIcon';
+import ShuffleIcon from '@hugeicons/core-free-icons/ShuffleIcon';
 import SmartPhone01Icon from '@hugeicons/core-free-icons/SmartPhone01Icon';
 import SmileIcon from '@hugeicons/core-free-icons/SmileIcon';
 import TelegramIcon from '@hugeicons/core-free-icons/TelegramIcon';
@@ -42,6 +45,7 @@ import UserGroupIcon from '@hugeicons/core-free-icons/UserGroupIcon';
 import UserIcon from '@hugeicons/core-free-icons/UserIcon';
 import VoiceToTextIcon from '@hugeicons/core-free-icons/VoiceToTextIcon';
 import WhatsappIcon from '@hugeicons/core-free-icons/WhatsappIcon';
+import YoutubeIcon from '@hugeicons/core-free-icons/YoutubeIcon';
 import CreditCardIcon from '@hugeicons/core-free-icons/CreditCardIcon';
 import Share01Icon from '@hugeicons/core-free-icons/Share01Icon';
 import HomeWifiIcon from '@hugeicons/core-free-icons/HomeWifiIcon';
@@ -80,11 +84,14 @@ export {
   Megaphone01Icon,
   Message01Icon,
   PaintBrush01Icon,
+  PinterestIcon,
   QrCode01Icon,
+  RefreshCwIcon,
   Rocket01Icon,
   Search01Icon,
   Share01Icon,
   ShieldCheckIcon,
+  ShuffleIcon,
   SmartPhone01Icon,
   SmileIcon,
   TelegramIcon,
@@ -94,4 +101,5 @@ export {
   UserIcon,
   VoiceToTextIcon,
   WhatsappIcon,
+  YoutubeIcon,
 };

@@ -10,20 +10,53 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import {
+  Activity01Icon,
+  ArrowUpRight01Icon,
+  BrowserIcon,
+  BubbleChatIcon,
+  Cancel01Icon,
+  CheckmarkCircle01Icon,
+  Copy01Icon,
+  Edit02Icon,
+  Folder01Icon,
+  Forward01Icon,
+  InstagramIcon,
+  Rocket01Icon,
+  Search01Icon,
+  Share01Icon,
+  TelescopeIcon,
+} from '@/constants/icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { TrendItem } from '../../types';
-import { formatCompact, getPlatformMeta } from './trendUtils';
+import { PinterestBrandIcon, YouTubeShortsBrandIcon } from './PlatformBrandIcons';
+import {
+  formatCompact,
+  formatTimeAgo,
+  getBestMediaUrl,
+  getPlatformMeta,
+} from './trendUtils';
 
 interface TrendDetailModalProps {
   visible: boolean;
   trend: TrendItem | null;
   onClose: () => void;
   onUseIdea: (trend: TrendItem) => void;
+  onRemix?: (trend: TrendItem) => void;
   isSaved: boolean;
   onToggleSave: (trend: TrendItem) => void;
   isDark: boolean;
+}
+
+function getPlatformIcon(platformRaw: string = '') {
+  const p = (platformRaw || '').toLowerCase();
+  if (p.includes('instagram')) return InstagramIcon;
+  if (p.includes('google_trends') || p.includes('trend')) return Activity01Icon;
+  if (p.includes('gnews') || p.includes('news')) return BrowserIcon;
+  if (p.includes('youtube') || p.includes('pexels')) return Forward01Icon;
+  return TelescopeIcon;
 }
 
 export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
@@ -31,6 +64,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
   trend,
   onClose,
   onUseIdea,
+  onRemix,
   isSaved,
   onToggleSave,
   isDark,
@@ -40,15 +74,22 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
 
   if (!trend) return null;
 
-  const platform = getPlatformMeta(trend.source_platform || trend.platform);
-  const mediaUrl = trend.full_image_url || trend.thumbnail_url;
+  const rawPlatform = (trend.source_platform || trend.platform || '').toLowerCase();
+  const platform = getPlatformMeta(rawPlatform);
+  const platformIcon = getPlatformIcon(rawPlatform);
+  const mediaUrl = getBestMediaUrl(trend);
   const duration = trend.metrics?.duration || (trend.duration ? `${trend.duration}s` : null);
   const quality = trend.metrics?.quality;
   const sourceName = trend.metrics?.source || trend.creator;
+  const isShort =
+    Boolean(trend.is_short) ||
+    String(trend.source_url || '').includes('/shorts/');
 
   const views = trend.metrics?.views;
   const likes = trend.metrics?.likes;
   const comments = trend.metrics?.comments;
+  const saves = trend.metrics?.saves;
+  const reposts = trend.metrics?.reposts;
   const searchVolume = trend.metrics?.searchVolume;
   const rank = trend.metrics?.rank;
 
@@ -99,21 +140,50 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               ]}
             />
             <View style={styles.topControlRow}>
-              {/* Platform pill on left */}
-              <View
-                style={[
-                  styles.platformPill,
-                  { backgroundColor: platform.bg },
-                ]}
-              >
-                <Ionicons name={platform.icon} size={13} color={platform.color} />
-                <Text style={[styles.platformPillText, { color: platform.color }]}>
-                  {platform.label}
-                </Text>
-                {Boolean(quality) && (
-                  <Text style={[styles.qualityText, { color: platform.color }]}>
-                    • {quality?.toUpperCase()}
+              {/* Platform + Matched Topic pills on left */}
+              <View style={styles.leftBadgesRow}>
+                <View
+                  style={[
+                    styles.platformPill,
+                    { backgroundColor: platform.bg },
+                  ]}
+                >
+                  {rawPlatform.includes('pinterest') ? (
+                    <PinterestBrandIcon size={13} />
+                  ) : rawPlatform.includes('youtube') ? (
+                    <YouTubeShortsBrandIcon size={13} />
+                  ) : (
+                    <HugeiconsIcon icon={platformIcon} size={13} color={platform.color} />
+                  )}
+                  <Text style={[styles.platformPillText, { color: platform.color }]}>
+                    {isShort ? 'YouTube Short' : platform.label}
                   </Text>
+                  {Boolean(quality) && (
+                    <Text style={[styles.qualityText, { color: platform.color }]}>
+                      • {quality?.toUpperCase()}
+                    </Text>
+                  )}
+                </View>
+
+                {Boolean(trend.matched_topic) && (
+                  <View
+                    style={[
+                      styles.matchedPill,
+                      {
+                        backgroundColor: isDark ? 'rgba(112,85,232,0.2)' : '#F0ECFF',
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.matchedPillText,
+                        { color: isDark ? '#C4B5FD' : '#6D28D9' },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {trend.matched_topic}
+                    </Text>
+                  </View>
                 )}
               </View>
 
@@ -138,8 +208,8 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                     },
                   ]}
                 >
-                  <Ionicons
-                    name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                  <HugeiconsIcon
+                    icon={isSaved ? CheckmarkCircle01Icon : Folder01Icon}
                     size={17}
                     color={isSaved ? '#E83E91' : isDark ? '#F5F3FB' : '#20212B'}
                   />
@@ -158,8 +228,8 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                     },
                   ]}
                 >
-                  <Ionicons
-                    name="close"
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
                     size={18}
                     color={isDark ? '#F5F3FB' : '#20212B'}
                   />
@@ -174,7 +244,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
             contentContainerStyle={styles.scrollBody}
           >
             {/* 1. Large Hero Media Preview */}
-            {Boolean(mediaUrl) && !imgError ? (
+            {mediaUrl && !imgError ? (
               <View
                 style={[
                   styles.mediaWrapper,
@@ -189,14 +259,14 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                 />
                 {Boolean(duration) && (
                   <View style={styles.mediaDurationBadge}>
-                    <Ionicons name="play" size={10} color="#FFFFFF" />
+                    <HugeiconsIcon icon={Forward01Icon} size={10} color="#FFFFFF" />
                     <Text style={styles.mediaDurationText}>{duration}</Text>
                   </View>
                 )}
               </View>
             ) : null}
 
-            {/* 2. Full Content Title */}
+            {/* 2. Full Content Title & Caption */}
             <Text
               style={[
                 styles.detailTitle,
@@ -206,8 +276,21 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               {trend.title || trend.caption || 'Trending Content'}
             </Text>
 
+            {Boolean(trend.caption) &&
+              Boolean(trend.title) &&
+              trend.caption !== trend.title && (
+                <Text
+                  style={[
+                    styles.detailCaption,
+                    { color: isDark ? '#CBD5E1' : '#475569' },
+                  ]}
+                >
+                  {trend.caption}
+                </Text>
+              )}
+
             {/* Creator Attribution */}
-            {Boolean(sourceName) && (
+            {(Boolean(sourceName) || Boolean(trend.source_url)) && (
               <View style={styles.creatorInfoRow}>
                 <View
                   style={[
@@ -216,7 +299,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                   ]}
                 >
                   <Text style={styles.creatorInitial}>
-                    {((sourceName ? sourceName[0] : 'C')).toUpperCase()}
+                    {(sourceName ? sourceName[0] : platform.label[0] || 'C').toUpperCase()}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -227,7 +310,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                     ]}
                     numberOfLines={1}
                   >
-                    {sourceName}
+                    {sourceName || platform.label}
                   </Text>
                   <Text
                     style={[
@@ -235,7 +318,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                       { color: isDark ? '#9CA3AF' : '#73798B' },
                     ]}
                   >
-                    {platform.label} Creator
+                    {platform.label} • {formatTimeAgo(trend.published_at)}
                   </Text>
                 </View>
                 {Boolean(trend.source_url) && (
@@ -256,10 +339,10 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                         { color: isDark ? '#B9A8FF' : '#7055E8' },
                       ]}
                     >
-                      Original Link
+                      Original
                     </Text>
-                    <Ionicons
-                      name="open-outline"
+                    <HugeiconsIcon
+                      icon={ArrowUpRight01Icon}
                       size={12}
                       color={isDark ? '#B9A8FF' : '#7055E8'}
                     />
@@ -280,7 +363,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
             >
               {views != null && (
                 <View style={styles.metricCard}>
-                  <Ionicons name="eye-outline" size={16} color="#EC4899" />
+                  <HugeiconsIcon icon={TelescopeIcon} size={16} color="#EC4899" />
                   <Text
                     style={[
                       styles.metricValue,
@@ -294,7 +377,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               )}
               {likes != null && (
                 <View style={styles.metricCard}>
-                  <Ionicons name="heart-outline" size={16} color="#EF4444" />
+                  <HugeiconsIcon icon={Activity01Icon} size={16} color="#EF4444" />
                   <Text
                     style={[
                       styles.metricValue,
@@ -308,7 +391,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               )}
               {comments != null && (
                 <View style={styles.metricCard}>
-                  <Ionicons name="chatbubble-outline" size={16} color="#3B82F6" />
+                  <HugeiconsIcon icon={BubbleChatIcon} size={16} color="#3B82F6" />
                   <Text
                     style={[
                       styles.metricValue,
@@ -320,23 +403,51 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                   <Text style={styles.metricLabel}>Comments</Text>
                 </View>
               )}
-              {searchVolume != null && (
+              {saves != null && (
                 <View style={styles.metricCard}>
-                  <Ionicons name="search-outline" size={16} color="#8B5CF6" />
+                  <HugeiconsIcon icon={Folder01Icon} size={16} color="#F59E0B" />
                   <Text
                     style={[
                       styles.metricValue,
                       { color: isDark ? '#F5F3FB' : '#20212B' },
                     ]}
                   >
-                    {formatCompact(Number(searchVolume))}
+                    {formatCompact(Number(saves))}
+                  </Text>
+                  <Text style={styles.metricLabel}>Saves</Text>
+                </View>
+              )}
+              {reposts != null && (
+                <View style={styles.metricCard}>
+                  <HugeiconsIcon icon={Share01Icon} size={16} color="#10B981" />
+                  <Text
+                    style={[
+                      styles.metricValue,
+                      { color: isDark ? '#F5F3FB' : '#20212B' },
+                    ]}
+                  >
+                    {formatCompact(Number(reposts))}
+                  </Text>
+                  <Text style={styles.metricLabel}>Reposts</Text>
+                </View>
+              )}
+              {searchVolume != null && (
+                <View style={styles.metricCard}>
+                  <HugeiconsIcon icon={Search01Icon} size={16} color="#8B5CF6" />
+                  <Text
+                    style={[
+                      styles.metricValue,
+                      { color: isDark ? '#F5F3FB' : '#20212B' },
+                    ]}
+                  >
+                    {formatCompact(Number(searchVolume)) || String(searchVolume)}
                   </Text>
                   <Text style={styles.metricLabel}>Search Vol</Text>
                 </View>
               )}
               {rank != null && (
                 <View style={styles.metricCard}>
-                  <Ionicons name="trending-up-outline" size={16} color="#10B981" />
+                  <HugeiconsIcon icon={Activity01Icon} size={16} color="#10B981" />
                   <Text
                     style={[
                       styles.metricValue,
@@ -350,7 +461,46 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               )}
             </View>
 
-            {/* 4. Hashtags / Niche Tags */}
+            {/* 4. Rising Search Queries */}
+            {Array.isArray(trend.related_queries) && trend.related_queries.length > 0 && (
+              <View style={styles.tagsContainer}>
+                <Text
+                  style={[
+                    styles.sectionHeading,
+                    { color: isDark ? '#9CA3AF' : '#73798B' },
+                  ]}
+                >
+                  RISING KEYWORDS
+                </Text>
+                <View style={styles.tagChipsWrap}>
+                  {trend.related_queries.map((q, i) => (
+                    <Pressable
+                      key={i}
+                      cssInterop={false}
+                      onPress={() => copyToClipboard(String(q))}
+                      style={({ pressed }) => [
+                        styles.tagChip,
+                        {
+                          backgroundColor: isDark ? '#1E293B' : '#EEF2FF',
+                          opacity: pressed ? 0.75 : 1,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.tagChipText,
+                          { color: isDark ? '#93C5FD' : '#4338CA' },
+                        ]}
+                      >
+                        {String(q)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* 5. Hashtags / Niche Tags */}
             {Array.isArray(trend.niche_tags) && trend.niche_tags.length > 0 && (
               <View style={styles.tagsContainer}>
                 <Text
@@ -359,7 +509,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                     { color: isDark ? '#9CA3AF' : '#73798B' },
                   ]}
                 >
-                  DISCOVERABLE TAGS
+                  DISCOVERABLE TAGS (TAP TO COPY)
                 </Text>
                 <View style={styles.tagChipsWrap}>
                   {trend.niche_tags.map((tag, i) => (
@@ -389,7 +539,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               </View>
             )}
 
-            {/* 5. AI Post Creation Workflow Options */}
+            {/* 6. AI Content Engine Workflow Options */}
             <View
               style={[
                 styles.aiBox,
@@ -400,7 +550,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               ]}
             >
               <View style={styles.aiBoxHeader}>
-                <Ionicons name="sparkles" size={17} color="#7055E8" />
+                <HugeiconsIcon icon={Rocket01Icon} size={17} color="#7055E8" />
                 <Text
                   style={[
                     styles.aiBoxTitle,
@@ -416,10 +566,29 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                   { color: isDark ? '#9CA3AF' : '#73798B' },
                 ]}
               >
-                Turn this trending format into a broadcast across your connected Instagram, Facebook, and Threads channels.
+                Generate 3 viral hooks, a full Reel script, Twitter thread, carousel, and caption — or open directly in Composer.
               </Text>
 
-              {/* Action Buttons */}
+              {onRemix && (
+                <Pressable
+                  cssInterop={false}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    onClose();
+                    onRemix(trend);
+                  }}
+                  style={({ pressed }) => [
+                    styles.primaryAiBtn,
+                    { opacity: pressed ? 0.85 : 1 },
+                  ]}
+                >
+                  <HugeiconsIcon icon={Rocket01Icon} size={16} color="#FFFFFF" />
+                  <Text style={styles.primaryAiBtnText}>
+                    Remix Idea with AI (Hooks & Script)
+                  </Text>
+                </Pressable>
+              )}
+
               <View style={styles.aiActionRow}>
                 <Pressable
                   cssInterop={false}
@@ -428,12 +597,19 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                     onUseIdea(trend);
                   }}
                   style={({ pressed }) => [
-                    styles.primaryAiBtn,
-                    { opacity: pressed ? 0.85 : 1 },
+                    styles.secondaryAiBtn,
+                    {
+                      flex: 1,
+                      backgroundColor: isDark ? '#1C1A25' : '#FFFFFF',
+                      borderColor: isDark ? 'rgba(112,85,232,0.35)' : '#DDD6FE',
+                      opacity: pressed ? 0.85 : 1,
+                    },
                   ]}
                 >
-                  <Ionicons name="create-outline" size={15} color="#FFFFFF" />
-                  <Text style={styles.primaryAiBtnText}>Use Idea in Post</Text>
+                  <HugeiconsIcon icon={Edit02Icon} size={14} color="#7055E8" />
+                  <Text style={[styles.secondaryAiBtnText, { color: '#7055E8' }]}>
+                    Use in Post
+                  </Text>
                 </Pressable>
 
                 <Pressable
@@ -448,8 +624,8 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
                     },
                   ]}
                 >
-                  <Ionicons
-                    name={copied ? 'checkmark' : 'copy-outline'}
+                  <HugeiconsIcon
+                    icon={copied ? CheckmarkCircle01Icon : Copy01Icon}
                     size={14}
                     color={copied ? '#16A34A' : isDark ? '#F5F3FB' : '#20212B'}
                   />
@@ -465,8 +641,7 @@ export const TrendDetailModal: React.FC<TrendDetailModalProps> = ({
               </View>
             </View>
 
-            {/* Spacer for bottom safe area */}
-            <View style={{ height: 40 }} />
+            <View style={{ height: 36 }} />
           </ScrollView>
         </View>
       </View>
@@ -508,6 +683,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
+  },
+  leftBadgesRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
   },
   platformPill: {
     flexDirection: 'row',
@@ -525,6 +708,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  matchedPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    maxWidth: 140,
+  },
+  matchedPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -541,7 +734,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 6,
     paddingBottom: 30,
-    gap: 16,
+    gap: 14,
   },
   mediaWrapper: {
     width: '100%',
@@ -576,6 +769,10 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     fontWeight: '700',
     letterSpacing: -0.3,
+  },
+  detailCaption: {
+    fontSize: 13,
+    lineHeight: 19,
   },
   creatorInfoRow: {
     flexDirection: 'row',
@@ -624,9 +821,9 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
-    minWidth: 80,
+    minWidth: 74,
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
   },
   metricValue: {
     fontSize: 15,
@@ -682,10 +879,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 4,
   },
   primaryAiBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -704,7 +899,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    height: 42,
+    height: 40,
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
@@ -714,4 +909,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

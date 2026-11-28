@@ -45,7 +45,31 @@ export interface TrackingCampaign {
   invite_link: string | null;
   original_telegram_url: string;
   join_request: boolean;
+  meta_account_id?: string | null;
+  meta_campaign_id?: string | null;
   created_at: string;
+}
+
+export interface MetaAccount {
+  id: string;
+  account_id: string;
+  name: string;
+  currency: string;
+  timezone: string;
+  status: string;
+  last_synced_at: string | null;
+  last_error_code: string | null;
+}
+
+export interface MetaReport {
+  campaign_id: string;
+  currency: string;
+  timezone: string;
+  status: string;
+  complete: boolean;
+  spend: number;
+  link_clicks: number;
+  last_synced_at: string | null;
 }
 
 export interface TelegramSetup {
@@ -93,6 +117,7 @@ export interface AvailableChannel {
 export interface TrackingInventory {
   telegram: TelegramSetup;
   operations: { pending: number; dead: number };
+  meta_accounts?: MetaAccount[];
   sites: TrackingSite[];
   connections: TrackingConnection[];
   available_channels?: AvailableChannel[];
@@ -401,20 +426,115 @@ export async function fetchUserTelegramChannels(
   return Array.from(map.values());
 }
 
+function calendarDateInZone(date: Date, timezone = "Asia/Kolkata"): string {
+  try {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+        .formatToParts(date)
+        .filter((p) => p.type !== "literal")
+        .map((p) => [p.type, p.value]),
+    );
+    if (parts.year && parts.month && parts.day) {
+      return `${parts.year}-${parts.month}-${parts.day}`;
+    }
+  } catch {
+    // Fallback for engines without IANA zone support
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+function zonedMidnight(dateStr: string, timezone = "Asia/Kolkata"): Date {
+  const target = Date.parse(`${dateStr}T00:00:00Z`);
+  if (!Number.isFinite(target)) return new Date();
+  try {
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    });
+    let candidate = target;
+    for (let i = 0; i < 4; i++) {
+      const parts = Object.fromEntries(
+        formatter
+          .formatToParts(new Date(candidate))
+          .filter((p) => p.type !== "literal")
+          .map((p) => [p.type, p.value]),
+      );
+      const shown = Date.UTC(
+        +parts.year,
+        +parts.month - 1,
+        +parts.day,
+        +parts.hour,
+        +parts.minute,
+        +parts.second,
+      );
+      const adjustment = target - shown;
+      if (adjustment === 0) return new Date(candidate);
+      candidate += adjustment;
+    }
+  } catch {
+    // Fall back to UTC boundary
+  }
+  return new Date(target);
+}
+
+export function getDateRange(
+  days = 7,
+  timezone = "Asia/Kolkata",
+): { from: string; to: string } {
+  const endKey = calendarDateInZone(new Date(), timezone);
+  const end = new Date(`${endKey}T12:00:00Z`);
+  end.setUTCHours(0, 0, 0, 0);
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - Math.max(1, days) + 1);
+  return {
+    from: start.toISOString().slice(0, 10),
+    to: end.toISOString().slice(0, 10),
+  };
+}
+
 export async function fetchConversionReport(
   days = 7,
   campaignId = "",
+  timezone = "Asia/Kolkata",
 ): Promise<ConversionReport | null> {
-  const to = new Date();
-  const from = new Date(to.getTime() - days * 86_400_000);
+  const { from: fromKey, to: toKey } = getDateRange(days, timezone);
+  const next = new Date(`${toKey}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const from = zonedMidnight(fromKey, timezone);
+  const to = zonedMidnight(next.toISOString().slice(0, 10), timezone);
   const { data, error } = await supabase.rpc("tci_report", {
     p_from: from.toISOString(),
     p_to: to.toISOString(),
     p_campaign: campaignId || null,
-    p_timezone: "Asia/Kolkata",
+    p_timezone: timezone,
   });
   if (error) return null;
   return data as unknown as ConversionReport;
+}
+
+export async function fetchMetaReport(
+  from: string,
+  to: string,
+  campaignId = "",
+): Promise<MetaReport[]> {
+  const { data, error } = await supabase.rpc("tci_meta_report", {
+    p_from: from,
+    p_to: to,
+    p_campaign: campaignId || null,
+  });
+  if (error || !Array.isArray(data)) return [];
+  return data as unknown as MetaReport[];
 }
 
 export function buildInstallSnippet(publicKey: string): string {

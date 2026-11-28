@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { supabase } from '../../lib/supabase';
 import { authStorage } from '../storage/authStorage';
 
 /**
@@ -56,6 +57,76 @@ interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   skipAuth?: boolean;
   _isRetry?: boolean;
+  _hasFallenBack?: boolean;
+  _permissionRetried?: boolean;
+}
+
+let skipLocalBffUntil = 0;
+let supabaseOverrideUntil = 0;
+let supabaseTokenPromise: Promise<string | null> | null = null;
+
+function isJwtValidSoon(token: string, minRemainingSeconds = 30): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const decoded =
+      typeof globalThis.atob === 'function' ? globalThis.atob(padded) : '';
+    if (!decoded) return true;
+    const payload = JSON.parse(decoded);
+    if (typeof payload.exp !== 'number') return true;
+    return payload.exp > Math.floor(Date.now() / 1000) + minRemainingSeconds;
+  } catch {
+    return true;
+  }
+}
+
+async function getActiveSupabaseAccessToken(): Promise<string | null> {
+  if (supabaseTokenPromise) {
+    return await supabaseTokenPromise;
+  }
+
+  supabaseTokenPromise = (async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const currentToken = data?.session?.access_token;
+      if (currentToken && isJwtValidSoon(currentToken)) {
+        return currentToken;
+      }
+      if (data?.session?.refresh_token) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        return refreshed?.session?.access_token || null;
+      }
+      return currentToken || null;
+    } catch {
+      return null;
+    } finally {
+      supabaseTokenPromise = null;
+    }
+  })();
+
+  return await supabaseTokenPromise;
+}
+
+function isNetworkFailureMessage(message?: string): boolean {
+  const errMsg = (message || '').toLowerCase();
+  return (
+    errMsg.includes('network request failed') ||
+    errMsg.includes('failed to fetch') ||
+    errMsg.includes('fetch failed') ||
+    errMsg.includes('connectexception') ||
+    errMsg.includes('networkerror') ||
+    errMsg.includes('noroutetohost') ||
+    errMsg.includes('unreachable')
+  );
+}
+
+function getFallbackBaseUrl(currentBase: string): string | null {
+  const fallbackBase = currentBase.includes('app.getaipilot.com')
+    ? getLocalDevBffUrl()
+    : 'https://app.getaipilot.com';
+  return fallbackBase && fallbackBase !== currentBase ? fallbackBase : null;
 }
 
 class ApiClient {
@@ -75,8 +146,35 @@ class ApiClient {
     return this.baseUrl;
   }
 
+  private createFallbackClient(fallbackBase: string): ApiClient {
+    const fallbackClient = new ApiClient(fallbackBase);
+    if (this.onUnauthorizedCallback) {
+      fallbackClient.setOnUnauthorized(this.onUnauthorizedCallback);
+    }
+    return fallbackClient;
+  }
+
   public async request<T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { params, skipAuth, _isRetry, headers: customHeaders, ...restOptions } = options;
+    const {
+      params,
+      skipAuth,
+      _isRetry,
+      _hasFallenBack,
+      _permissionRetried,
+      headers: customHeaders,
+      ...restOptions
+    } = options;
+
+    // If local dev BFF recently refused connections, go straight to fallback briefly to avoid noisy 401/refresh misses
+    if (!_hasFallenBack && !this.baseUrl.includes('app.getaipilot.com') && Date.now() < skipLocalBffUntil) {
+      const fallbackBase = getFallbackBaseUrl(this.baseUrl);
+      if (fallbackBase) {
+        return await this.createFallbackClient(fallbackBase).request<T>(endpoint, {
+          ...options,
+          _hasFallenBack: true,
+        });
+      }
+    }
 
     let url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
@@ -100,10 +198,15 @@ class ApiClient {
       ...(customHeaders as Record<string, string>),
     };
 
-    if (!skipAuth) {
+    if (!skipAuth && !headers['Authorization']) {
       const token = await authStorage.getAccessToken();
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        if (Date.now() < supabaseOverrideUntil) {
+          const sbToken = await getActiveSupabaseAccessToken();
+          headers['Authorization'] = `Bearer ${sbToken || token}`;
+        } else {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
       } else {
         throw new Error('Not authenticated: No active session');
       }
@@ -117,6 +220,9 @@ class ApiClient {
 
       // 401 Unauthorized handling with single refresh mutex
       if (response.status === 401 && !skipAuth && !_isRetry) {
+        if (_permissionRetried) {
+          supabaseOverrideUntil = 0;
+        }
         if (__DEV__) console.log(`[ApiClient] 401 on ${endpoint} -> Initiating token refresh`);
         const refreshed = await this.executeSingleRefresh();
         if (refreshed) {
@@ -139,61 +245,78 @@ class ApiClient {
       }
 
       // If 404 on current base URL, fallback between production and local dev server
-      if (response.status === 404 && !_isRetry) {
-        const fallbackBase = this.baseUrl.includes('app.getaipilot.com')
-          ? getLocalDevBffUrl()
-          : 'https://app.getaipilot.com';
+      if (response.status === 404 && !_hasFallenBack) {
+        const fallbackBase = getFallbackBaseUrl(this.baseUrl);
 
-        if (fallbackBase && fallbackBase !== this.baseUrl) {
+        if (fallbackBase) {
           if (__DEV__) {
             console.log(
               `[ApiClient] Route 404 on ${this.baseUrl}${endpoint} -> Auto-retrying on ${fallbackBase}${endpoint}`
             );
           }
           try {
-            const fallbackClient = new ApiClient(fallbackBase);
-            return await fallbackClient.request<T>(endpoint, {
+            return await this.createFallbackClient(fallbackBase).request<T>(endpoint, {
               ...options,
-              _isRetry: true,
+              _hasFallenBack: true,
             });
-          } catch {
-            // Keep original response error handling if fallback also fails
+          } catch (fallbackError: any) {
+            if (!isNetworkFailureMessage(fallbackError?.message)) {
+              throw fallbackError;
+            }
           }
         }
       }
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        throw new Error(errorBody.message || `HTTP ${response.status}: ${response.statusText}`);
+        const errMessage = errorBody.message || `HTTP ${response.status}: ${response.statusText}`;
+
+        // Remote BFF JWTs for 'Agent' accounts can lack social.read/social.post; Hub Supabase tokens carry full user context
+        if (
+          response.status === 403 &&
+          !skipAuth &&
+          !_permissionRetried &&
+          typeof errMessage === 'string' &&
+          errMessage.toLowerCase().includes('missing required permission')
+        ) {
+          const sbToken = await getActiveSupabaseAccessToken();
+          const currentBearer = headers['Authorization']?.replace(/^Bearer\s+/i, '').trim();
+          if (sbToken && sbToken !== currentBearer) {
+            supabaseOverrideUntil = Date.now() + 5 * 60_000;
+            return await this.request<T>(endpoint, {
+              ...options,
+              _permissionRetried: true,
+              headers: {
+                ...(customHeaders as Record<string, string>),
+                Authorization: `Bearer ${sbToken}`,
+              },
+            });
+          }
+        }
+
+        throw new Error(errMessage);
       }
 
       return await response.json();
     } catch (error: any) {
-      // Auto-fallback on network failure if not already retried
-      const errMsg = (error?.message || '').toLowerCase();
-      const isNetworkError =
-        errMsg.includes('network request failed') ||
-        errMsg.includes('failed to fetch') ||
-        errMsg.includes('fetch failed') ||
-        errMsg.includes('connectexception') ||
-        errMsg.includes('networkerror') ||
-        errMsg.includes('noroutetohost') ||
-        errMsg.includes('unreachable');
+      // Auto-fallback on network failure if we haven't already tried the fallback host
+      const isNetworkError = isNetworkFailureMessage(error?.message);
 
-      if (!_isRetry && isNetworkError) {
-        const fallbackBase = this.baseUrl.includes('app.getaipilot.com')
-          ? getLocalDevBffUrl()
-          : 'https://app.getaipilot.com';
+      if (!_hasFallenBack && isNetworkError) {
+        const fallbackBase = getFallbackBaseUrl(this.baseUrl);
 
-        if (fallbackBase && fallbackBase !== this.baseUrl) {
+        if (fallbackBase) {
+          if (!this.baseUrl.includes('app.getaipilot.com')) {
+            skipLocalBffUntil = Date.now() + 30_000;
+          }
           try {
-            const fallbackClient = new ApiClient(fallbackBase);
-            return await fallbackClient.request<T>(endpoint, {
+            return await this.createFallbackClient(fallbackBase).request<T>(endpoint, {
               ...options,
-              _isRetry: true,
+              _hasFallenBack: true,
             });
-          } catch {
-            // Fall through to error reporting below
+          } catch (fallbackError: any) {
+            // Surface the fallback server's real error (e.g. 401/Session expired/502/504) instead of masking it with localhost's "Failed to fetch"
+            throw fallbackError;
           }
         }
       }
@@ -220,11 +343,23 @@ class ApiClient {
           return false;
         }
 
-        const response = await fetch(`${this.baseUrl}/mobile/v1/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
+        const attemptRefresh = async (baseUrl: string) =>
+          fetch(`${baseUrl}/mobile/v1/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+        let response: Response;
+        try {
+          response = await attemptRefresh(this.baseUrl);
+        } catch (refreshNetErr: any) {
+          const fallbackBase = getFallbackBaseUrl(this.baseUrl);
+          if (!fallbackBase || !isNetworkFailureMessage(refreshNetErr?.message)) {
+            throw refreshNetErr;
+          }
+          response = await attemptRefresh(fallbackBase);
+        }
 
         if (response.ok) {
           const data = await response.json();

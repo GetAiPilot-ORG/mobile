@@ -39,6 +39,7 @@ import {
   Cancel01Icon,
   CheckmarkCircle01Icon,
   Copy01Icon,
+  CreditCardIcon,
   Edit02Icon,
   Forward01Icon,
   Layout01Icon,
@@ -63,8 +64,11 @@ import {
   ConversionReport,
   CreatedTemplatePage,
   fetchConversionReport,
+  fetchMetaReport,
   fetchUserCreatedTemplates,
   fetchUserTelegramChannels,
+  getDateRange,
+  MetaReport,
   TelegramSetup,
   TrackingCampaign,
   TrackingInventory,
@@ -81,6 +85,7 @@ const emptyInventory: TrackingInventory = {
     link: null,
   },
   operations: { pending: 0, dead: 0 },
+  meta_accounts: [],
   sites: [],
   connections: [],
   campaigns: [],
@@ -125,7 +130,10 @@ export default function TelegramConversionScreen() {
   const [fallbackPages, setFallbackPages] = useState<CreatedTemplatePage[]>([]);
   const [fallbackChannels, setFallbackChannels] = useState<AvailableChannel[]>([]);
   const [report, setReport] = useState<ConversionReport | null>(null);
+  const [metaReport, setMetaReport] = useState<MetaReport[]>([]);
   const [reportDays, setReportDays] = useState<7 | 30>(7);
+  const [selectedCampaignFilter, setSelectedCampaignFilter] = useState("");
+  const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [chartSeries, setChartSeries] = useState<
     "all" | "views" | "joins" | "leaves"
   >("all");
@@ -136,6 +144,14 @@ export default function TelegramConversionScreen() {
   const [busyKey, setBusyKey] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [copiedKey, setCopiedKey] = useState("");
+
+  // Meta Ads Reporting & Mapping Forms
+  const [metaSetupExpanded, setMetaSetupExpanded] = useState(false);
+  const [metaAdAccountId, setMetaAdAccountId] = useState("");
+  const [metaAccessToken, setMetaAccessToken] = useState("");
+  const [mapTrackingCampaignId, setMapTrackingCampaignId] = useState("");
+  const [mapMetaAccountId, setMapMetaAccountId] = useState("");
+  const [mapMetaCampaignId, setMapMetaCampaignId] = useState("");
 
   // Created Designs Dropdown
   const [selectedDesignId, setSelectedDesignId] = useState("");
@@ -180,12 +196,14 @@ export default function TelegramConversionScreen() {
     async (showLoader = false) => {
       if (showLoader) setLoading(true);
       try {
-        const [invResult, pagesResult, channelsResult, reportResult] =
+        const range = getDateRange(reportDays, timezone);
+        const [invResult, pagesResult, channelsResult, reportResult, metaResult] =
           await Promise.allSettled([
             trackingRequest<TrackingInventory>("list"),
             fetchUserCreatedTemplates(authUser?.id),
             fetchUserTelegramChannels(authUser?.id),
-            fetchConversionReport(reportDays),
+            fetchConversionReport(reportDays, selectedCampaignFilter, timezone),
+            fetchMetaReport(range.from, range.to, selectedCampaignFilter),
           ]);
 
         if (pagesResult.status === "fulfilled") {
@@ -208,6 +226,12 @@ export default function TelegramConversionScreen() {
           if (inv.connections.length > 0) {
             setSelectedConnectionId((prev) => prev || inv.connections[0].id);
           }
+          if ((inv.meta_accounts || []).length > 0) {
+            setMapMetaAccountId((prev) => prev || inv.meta_accounts![0].id);
+          }
+          if (inv.campaigns.length > 0) {
+            setMapTrackingCampaignId((prev) => prev || inv.campaigns[0].id);
+          }
         } else {
           setErrorMsg(
             invResult.reason instanceof Error
@@ -219,12 +243,15 @@ export default function TelegramConversionScreen() {
         if (reportResult.status === "fulfilled") {
           setReport(reportResult.value);
         }
+        if (metaResult.status === "fulfilled") {
+          setMetaReport(metaResult.value);
+        }
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [authUser?.id, reportDays],
+    [authUser?.id, reportDays, selectedCampaignFilter, timezone],
   );
 
   useEffect(() => {
@@ -768,10 +795,118 @@ export default function TelegramConversionScreen() {
         joins: acc.joins + Number(r.acquisitions || 0),
         active: acc.active + Number(r.active || 0),
         leaves: acc.leaves + Number(r.leave_events || 0),
+        pending: acc.pending + Number(r.pending || 0),
+        ambiguous: acc.ambiguous + Number(r.ambiguous || 0),
       }),
-      { views: 0, clicks: 0, joins: 0, active: 0, leaves: 0 },
+      { views: 0, clicks: 0, joins: 0, active: 0, leaves: 0, pending: 0, ambiguous: 0 },
     );
   }, [report]);
+
+  const metaAccounts = inventory.meta_accounts || [];
+  const availableTimezones = useMemo(
+    () =>
+      Array.from(
+        new Set(["Asia/Kolkata", "UTC", ...metaAccounts.map((a) => a.timezone).filter(Boolean)]),
+      ),
+    [metaAccounts],
+  );
+  const currentRange = useMemo(
+    () => getDateRange(reportDays, timezone),
+    [reportDays, timezone],
+  );
+  const reportRows = report?.campaigns || [];
+  const financeReady =
+    !errorMsg &&
+    reportRows.length > 0 &&
+    metaReport.length === reportRows.length &&
+    metaReport.every(
+      (m) =>
+        m.complete &&
+        m.status === "connected" &&
+        m.timezone === timezone &&
+        m.currency === metaReport[0].currency,
+    );
+  const metaSpend = useMemo(
+    () => metaReport.reduce((sum, m) => sum + Number(m.spend || 0), 0),
+    [metaReport],
+  );
+  const metaLinkClicks = useMemo(
+    () => metaReport.reduce((sum, m) => sum + Number(m.link_clicks || 0), 0),
+    [metaReport],
+  );
+  const formatMoney = useCallback(
+    (val: number, currencyOverride?: string) => {
+      const currency = currencyOverride || metaReport[0]?.currency || "INR";
+      try {
+        return new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency,
+          maximumFractionDigits: 2,
+        }).format(val);
+      } catch {
+        return `${currency} ${val.toFixed(2)}`;
+      }
+    },
+    [metaReport],
+  );
+
+  const handleConnectMeta = async () => {
+    const cleanId = metaAdAccountId.trim().replace(/^act_/, "");
+    const cleanToken = metaAccessToken.trim();
+    if (!/^\d+$/.test(cleanId)) {
+      showNotice("Invalid Account ID", "Enter a valid numeric Meta Ad Account ID (e.g. act_123456789).");
+      return;
+    }
+    if (!cleanToken) {
+      showNotice("Missing Token", "Paste your authorized Meta reporting access token.");
+      return;
+    }
+    const saved = await runAction(
+      "connect-meta",
+      "connect_meta",
+      { account_id: cleanId, access_token: cleanToken },
+      "Meta Reporting Connected",
+      "Meta ad account connected. Now sync dates and map your campaigns.",
+    );
+    if (saved) {
+      setMetaAdAccountId("");
+      setMetaAccessToken("");
+    }
+  };
+
+  const handleSyncMetaAccount = async (accountId: string) => {
+    await runAction(
+      `sync-meta-${accountId}`,
+      "sync_meta",
+      { id: accountId, from: currentRange.from, to: currentRange.to },
+      "Meta Reporting Synchronized",
+      `Synced Meta ad spend & link clicks for ${currentRange.from} to ${currentRange.to}.`,
+    );
+  };
+
+  const handleMapMetaCampaign = async () => {
+    const cleanCampaign = mapTrackingCampaignId.trim();
+    const cleanAccount = mapMetaAccountId.trim();
+    const cleanMetaCampaignId = mapMetaCampaignId.trim();
+    if (!cleanCampaign || !cleanAccount || !/^\d+$/.test(cleanMetaCampaignId)) {
+      showNotice("Missing Details", "Select a tracking campaign, Meta ad account, and numeric Meta campaign ID.");
+      return;
+    }
+    const res = await runAction(
+      "map-meta",
+      "map_meta",
+      {
+        id: cleanCampaign,
+        account_id: cleanAccount,
+        meta_campaign_id: cleanMetaCampaignId,
+      },
+      "Campaign Mapped",
+      "Meta advertising campaign linked for ad spend & ROI attribution.",
+    );
+    if (res) {
+      setMapMetaCampaignId("");
+    }
+  };
 
   const dailyChartData = useMemo(() => {
     const count = reportDays === 7 ? 7 : 14;
@@ -1235,10 +1370,370 @@ export default function TelegramConversionScreen() {
     );
   };
 
+  const renderMetaSpendCard = () => {
+    const costPerJoin =
+      financeReady && reportTotals.joins > 0
+        ? formatMoney(metaSpend / reportTotals.joins)
+        : "—";
+    const costPerActive =
+      financeReady && reportTotals.active > 0
+        ? formatMoney(metaSpend / reportTotals.active)
+        : "—";
+    const joinToClickRatio =
+      report?.first_party_complete !== false && reportTotals.clicks > 0
+        ? `${((reportTotals.joins / reportTotals.clicks) * 100).toFixed(1)}%`
+        : "—";
+
+    return (
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <View style={styles.metaIconWrap}>
+              <HugeiconsIcon
+                icon={CreditCardIcon}
+                size={16}
+                color="#7C3AED"
+                strokeWidth={2}
+              />
+            </View>
+            <View>
+              <Text style={styles.sectionTitle}>Meta Ads Spend & ROI</Text>
+              <Text style={styles.chartSub}>
+                {currentRange.from} → {currentRange.to} · {timezone}
+              </Text>
+            </View>
+          </View>
+          <View
+            style={financeReady ? styles.verifiedBadge : styles.pendingBadge}
+          >
+            <Text
+              style={
+                financeReady
+                  ? styles.verifiedBadgeText
+                  : styles.pendingBadgeText
+              }
+            >
+              {financeReady ? "Synced" : metaAccounts.length > 0 ? "Map & Sync" : "Not Connected"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.kpiGrid}>
+          {[
+            {
+              label: "Meta Ad Spend",
+              value: financeReady ? formatMoney(metaSpend) : "Unavailable",
+              color: "#7C3AED",
+            },
+            {
+              label: "Meta Link Clicks",
+              value: financeReady
+                ? metaLinkClicks.toLocaleString("en-IN")
+                : "—",
+              color: isDark ? "#38BDF8" : "#0284C7",
+            },
+            {
+              label: "Cost / Join",
+              value: costPerJoin,
+              color: "#10B981",
+            },
+            {
+              label: "Cost / Active",
+              value: costPerActive,
+              color: "#F59E0B",
+            },
+            {
+              label: "Join-to-Click",
+              value: joinToClickRatio,
+              color: "#4F46E5",
+            },
+            {
+              label: "Pending Req",
+              value: reportTotals.pending,
+              color: colors.textSecondary,
+            },
+          ].map((item) => (
+            <View key={item.label} style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>{item.label}</Text>
+              <Text
+                style={[styles.kpiValueSmall, { color: item.color }]}
+                numberOfLines={1}
+              >
+                {item.value}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.metaHintBox}>
+          <Text style={styles.metaHintText}>
+            {financeReady
+              ? "Meta-reported spend for the selected dates divided by verified acquisitions or currently active members in that cohort."
+              : "Connect Meta reporting, map each tracking campaign to its numeric Meta Campaign ID, and sync dates. Currency & timezone must match across selected campaigns."}
+          </Text>
+        </View>
+
+        <View style={styles.metaCardActionRow}>
+          <Pressable
+            style={styles.ghostBtn}
+            onPress={() => {
+              soundService.play("click");
+              setMetaSetupExpanded((prev) => !prev);
+            }}
+          >
+            <Text style={styles.ghostBtnText}>
+              {metaSetupExpanded
+                ? "Hide Meta Setup"
+                : metaAccounts.length > 0
+                  ? "Manage & Map Meta"
+                  : "Connect Meta Reporting"}
+            </Text>
+          </Pressable>
+
+          {metaAccounts.length > 0 ? (
+            <Pressable
+              style={[
+                styles.primaryBtnSmall,
+                busyKey.startsWith("sync-meta-") && { opacity: 0.7 },
+              ]}
+              disabled={!!busyKey}
+              onPress={() => void handleSyncMetaAccount(metaAccounts[0].id)}
+            >
+              <Text style={styles.primaryBtnSmallText}>
+                {busyKey.startsWith("sync-meta-")
+                  ? "Syncing..."
+                  : "Sync Selected Dates"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+    );
+  };
+
+  const renderMetaReportingPanel = () => (
+    <View style={styles.sectionCard}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionHeaderLeft}>
+          <HugeiconsIcon
+            icon={Megaphone01Icon}
+            size={18}
+            color="#7C3AED"
+            strokeWidth={2}
+          />
+          <Text style={styles.sectionTitle}>Meta Ads Reporting</Text>
+        </View>
+        <Text style={styles.countPill}>{metaAccounts.length} connected</Text>
+      </View>
+
+      <Text style={styles.sectionDesc}>
+        Connect an authorized read-only Marketing API reporting token for your ad account. The token is encrypted server-side.
+      </Text>
+
+      <View style={styles.formStack}>
+        <Text style={styles.inputLabel}>Meta Ad Account ID</Text>
+        <TextInput
+          value={metaAdAccountId}
+          onChangeText={setMetaAdAccountId}
+          placeholder="act_123456789"
+          placeholderTextColor={colors.inputPlaceholder}
+          autoCapitalize="none"
+          style={styles.input}
+        />
+
+        <Text style={styles.inputLabel}>Authorized Reporting Access Token</Text>
+        <TextInput
+          value={metaAccessToken}
+          onChangeText={setMetaAccessToken}
+          placeholder="Paste Meta Marketing API token (ads_read)"
+          placeholderTextColor={colors.inputPlaceholder}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={styles.input}
+        />
+
+        <Pressable
+          style={[
+            styles.primaryBtn,
+            (busyKey === "connect-meta" || !!busyKey) && { opacity: 0.7 },
+          ]}
+          disabled={!!busyKey}
+          onPress={() => void handleConnectMeta()}
+        >
+          <Text style={styles.primaryBtnText}>
+            {busyKey === "connect-meta"
+              ? "Connecting Meta Account..."
+              : "Connect Meta Reporting"}
+          </Text>
+        </Pressable>
+      </View>
+
+      {metaAccounts.length > 0 && (
+        <View style={[styles.listStack, { marginTop: 6 }]}>
+          <Text style={styles.subHeading}>Connected Ad Accounts</Text>
+          {metaAccounts.map((acc) => {
+            const syncing = busyKey === `sync-meta-${acc.id}`;
+            return (
+              <View key={acc.id} style={styles.itemCard}>
+                <View style={styles.titleBadgeRow}>
+                  <Text style={styles.itemTitle} numberOfLines={1}>
+                    {acc.name}
+                  </Text>
+                  <View
+                    style={
+                      acc.status === "connected"
+                        ? styles.verifiedBadge
+                        : styles.pendingBadge
+                    }
+                  >
+                    <Text
+                      style={
+                        acc.status === "connected"
+                          ? styles.verifiedBadgeText
+                          : styles.pendingBadgeText
+                      }
+                    >
+                      {acc.status}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.itemMeta}>
+                  {acc.account_id} · {acc.currency} · {acc.timezone}
+                </Text>
+                <Text style={styles.itemUrl}>
+                  Last sync:{" "}
+                  {acc.last_synced_at
+                    ? new Date(acc.last_synced_at).toLocaleString("en-IN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                    : "Not synced yet"}
+                </Text>
+                {acc.last_error_code ? (
+                  <Text style={styles.warnText}>
+                    Sync error: {acc.last_error_code}. Reconnect token or retry sync.
+                  </Text>
+                ) : null}
+                <Pressable
+                  style={[styles.ghostBtn, syncing && { opacity: 0.7 }]}
+                  disabled={!!busyKey}
+                  onPress={() => void handleSyncMetaAccount(acc.id)}
+                >
+                  <Text style={styles.ghostBtnText}>
+                    {syncing
+                      ? "Syncing Dates..."
+                      : `Sync ${currentRange.from} to ${currentRange.to}`}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {metaAccounts.length > 0 && inventory.campaigns.length > 0 && (
+        <View style={[styles.formStack, { marginTop: 8 }]}>
+          <Text style={styles.subHeading}>Map an Advertising Campaign</Text>
+          <Text style={styles.sectionDesc}>
+            Each Meta campaign can map to one tracking campaign so ad spend isn&apos;t duplicated.
+          </Text>
+
+          <Text style={styles.inputLabel}>Tracking Campaign</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {inventory.campaigns.map((camp) => {
+              const active = mapTrackingCampaignId === camp.id;
+              return (
+                <Pressable
+                  key={camp.id}
+                  onPress={() => setMapTrackingCampaignId(camp.id)}
+                  style={[
+                    styles.selectChip,
+                    active && styles.selectChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.selectChipText,
+                      active && styles.selectChipTextActive,
+                    ]}
+                  >
+                    {camp.name}
+                    {camp.meta_campaign_id ? ` (#${camp.meta_campaign_id})` : ""}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Text style={styles.inputLabel}>Meta Ad Account</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {metaAccounts.map((acc) => {
+              const active = mapMetaAccountId === acc.id;
+              return (
+                <Pressable
+                  key={acc.id}
+                  onPress={() => setMapMetaAccountId(acc.id)}
+                  style={[
+                    styles.selectChip,
+                    active && styles.selectChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.selectChipText,
+                      active && styles.selectChipTextActive,
+                    ]}
+                  >
+                    {acc.name} ({acc.currency})
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <Text style={styles.inputLabel}>Meta Campaign ID</Text>
+          <TextInput
+            value={mapMetaCampaignId}
+            onChangeText={setMapMetaCampaignId}
+            placeholder="Numeric Meta campaign ID (e.g. 120214567890123)"
+            placeholderTextColor={colors.inputPlaceholder}
+            keyboardType="number-pad"
+            style={styles.input}
+          />
+
+          <Pressable
+            style={[
+              styles.primaryBtn,
+              busyKey === "map-meta" && { opacity: 0.7 },
+            ]}
+            disabled={!!busyKey}
+            onPress={() => void handleMapMetaCampaign()}
+          >
+            <Text style={styles.primaryBtnText}>
+              {busyKey === "map-meta"
+                ? "Saving Mapping..."
+                : "Save Campaign Mapping"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+
   const renderCampaignCard = (c: TrackingCampaign) => {
     const site = inventory.sites.find((s) => s.id === c.site_id);
     const conn = inventory.connections.find((ch) => ch.id === c.connection_id);
     const perf = report?.campaigns.find((r) => r.id === c.id);
+    const metaPerf = metaReport.find((m) => m.campaign_id === c.id);
     const campaignUrl = site ? `${site.url}?gap_campaign=${c.public_key}` : "";
     const isExternal = Boolean(site && !site.landing_page_id);
     const showInstall = expandedInstallMap[c.id] === true;
@@ -1267,6 +1762,7 @@ export default function TelegramConversionScreen() {
             </Text>
             <Text style={styles.itemUrl} numberOfLines={1}>
               {site?.name || "Unknown page"} · {conn?.title || "Telegram channel"}
+              {c.meta_campaign_id ? ` · Meta #${c.meta_campaign_id}` : ""}
             </Text>
           </View>
           <View
@@ -1325,6 +1821,35 @@ export default function TelegramConversionScreen() {
                 <Text style={styles.campaignMetricLbl}>{m.label}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* Per-campaign Meta Ad Spend & Clicks strip when synced */}
+        {metaPerf && metaPerf.status === "connected" && (
+          <View style={styles.campaignMetaRow}>
+            <Text style={styles.campaignMetaText}>
+              Meta Spend:{" "}
+              <Text style={styles.campaignMetaStrong}>
+                {formatMoney(Number(metaPerf.spend || 0), metaPerf.currency)}
+              </Text>
+            </Text>
+            <Text style={styles.campaignMetaText}>
+              Meta Clicks:{" "}
+              <Text style={styles.campaignMetaStrong}>
+                {Number(metaPerf.link_clicks || 0).toLocaleString("en-IN")}
+              </Text>
+            </Text>
+            {perf && perf.acquisitions > 0 ? (
+              <Text style={styles.campaignMetaText}>
+                CPJ:{" "}
+                <Text style={styles.campaignMetaStrong}>
+                  {formatMoney(
+                    Number(metaPerf.spend || 0) / perf.acquisitions,
+                    metaPerf.currency,
+                  )}
+                </Text>
+              </Text>
+            ) : null}
           </View>
         )}
 
@@ -3521,6 +4046,8 @@ export default function TelegramConversionScreen() {
                 </View>
               </View>
             )}
+
+            {renderMetaReportingPanel()}
             </>
             )}
 
@@ -3812,7 +4339,74 @@ export default function TelegramConversionScreen() {
                   </Text>
                 </Pressable>
               ))}
+              {availableTimezones.length > 1 &&
+                availableTimezones.map((tz) => (
+                  <Pressable
+                    key={tz}
+                    onPress={() => setTimezone(tz)}
+                    style={[
+                      styles.selectChip,
+                      timezone === tz && styles.selectChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.selectChipText,
+                        timezone === tz && styles.selectChipTextActive,
+                      ]}
+                    >
+                      {tz}
+                    </Text>
+                  </Pressable>
+                ))}
             </View>
+
+            {inventory.campaigns.length > 1 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
+              >
+                <Pressable
+                  onPress={() => setSelectedCampaignFilter("")}
+                  style={[
+                    styles.selectChip,
+                    selectedCampaignFilter === "" && styles.selectChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.selectChipText,
+                      selectedCampaignFilter === "" && styles.selectChipTextActive,
+                    ]}
+                  >
+                    All Campaigns
+                  </Text>
+                </Pressable>
+                {inventory.campaigns.map((camp) => {
+                  const active = selectedCampaignFilter === camp.id;
+                  return (
+                    <Pressable
+                      key={camp.id}
+                      onPress={() => setSelectedCampaignFilter(camp.id)}
+                      style={[
+                        styles.selectChip,
+                        active && styles.selectChipActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.selectChipText,
+                          active && styles.selectChipTextActive,
+                        ]}
+                      >
+                        {camp.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )}
 
             <View style={styles.kpiGrid}>
               {[
@@ -3839,6 +4433,10 @@ export default function TelegramConversionScreen() {
                 </View>
               ))}
             </View>
+
+            {renderMetaSpendCard()}
+
+            {metaSetupExpanded && renderMetaReportingPanel()}
 
             {renderTrendChart()}
 
@@ -5736,5 +6334,57 @@ const createStyles = (colors: AppColors, isDark: boolean) =>
       lineHeight: 16,
       fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
       color: "#E2E8F0",
+    },
+    metaIconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(124, 58, 237, 0.2)" : "#F3E8FF",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    kpiValueSmall: {
+      fontSize: 17,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+    },
+    metaHintBox: {
+      borderRadius: 10,
+      padding: 10,
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#F8FAFC",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0",
+    },
+    metaHintText: {
+      fontSize: 11.5,
+      lineHeight: 16,
+      color: colors.textSecondary,
+    },
+    metaCardActionRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: 8,
+    },
+    campaignMetaRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(124, 58, 237, 0.14)" : "#F5F3FF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(167, 139, 250, 0.25)" : "#DDD6FE",
+    },
+    campaignMetaText: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+    campaignMetaStrong: {
+      fontWeight: "700",
+      color: isDark ? "#DDD6FE" : "#5B21B6",
     },
   });

@@ -419,7 +419,7 @@ export class HubAdapter {
     );
 
     let role: UserRole = 'Agent';
-    if (rawRole === 'owner') {
+    if (rawRole === 'owner' || (!member?.organization_id && !rawRole)) {
       role = 'Owner';
     } else if (isPlatformAdmin || rawRole === 'admin' || rawRole === 'administrator') {
       role = 'Admin';
